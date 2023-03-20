@@ -10,7 +10,7 @@ copyright: "&copy; 2022 Tailored Apps"
 # Repository
 repo_name: "SharedComponents"
 repo_url: "https://github.com/tailored-apps/SharedComponents"
-edit_uri: "https://github.com/tailored-apps/SharedComponents/tree/master/docs"
+edit_uri: "https://github.com/tailored-apps/SharedComponents/edit/master/docs"
 
 # Configuration
 docs_dir: "docs"
