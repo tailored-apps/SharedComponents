@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
+      <TargetFramework>net7.0</TargetFramework>
+      <AssemblyName>TailoredApps.Shared.ExceptionHandling</AssemblyName>
+      <RootNamespace>TailoredApps.Shared.ExceptionHandling</RootNamespace>
+      <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="FluentValidation" Version="11.5.1" />
+    </ItemGroup>
+</Project>

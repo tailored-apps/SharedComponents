@@ -1,0 +1,91 @@
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+name: Create Release
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v1
+
+        # Install .NET Core SDK
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Dotnet Pack 
+      working-directory: .
+      run: dotnet build TailoredApps.Shared.sln -c Release -p:Version=${GITHUB_REF##*/v}
+      
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.DateTime/bin/Release/netstandard2.0/
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.Email/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.EntityFramework/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.ExceptionHandling/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.Logging.WebApiCore/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.MediatR/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.MediatR.Caching/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.MediatR.Email/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.MediatR.ImageClassification/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.MediatR.PagedRequest/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.Payments/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.Payments.Provider.CashBill/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.Querying/bin/Release/net7.0
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+      
+
+    - name: Create Release
+      uses: actions/create-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: true
