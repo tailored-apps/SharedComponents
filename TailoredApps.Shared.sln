@@ -41,9 +41,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.MediatR
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.Payments.Tests", "tests\TailoredApps.Shared.Payments.Tests\TailoredApps.Shared.Payments.Tests.csproj", "{E9D7FEE6-5623-4741-BC1B-F5615A988922}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{67660FD2-434D-4B18-A01E-BF3FA9EC4F1D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{AE73F67B-14A5-48A7-9654-FF8A7755169A}"
 	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
 		.github\workflows\ci-pr.yml = .github\workflows\ci-pr.yml
+		.github\workflows\ci.yml = .github\workflows\ci.yml
 		.github\workflows\manual-build.yml = .github\workflows\manual-build.yml
 		.github\workflows\release.yml = .github\workflows\release.yml
 	EndProjectSection
