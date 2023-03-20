@@ -17,7 +17,6 @@ docs_dir: "docs"
 # Configuration
 theme:
   name: material
-  custom_dir: material/.overrides
   features:
     - announce.dismiss
     - content.action.edit
