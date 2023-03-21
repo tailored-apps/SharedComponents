@@ -6,6 +6,7 @@
 		<AssemblyName>TailoredApps.Shared.MediatR</AssemblyName>
 		<RootNamespace>TailoredApps.Shared.MediatR</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>

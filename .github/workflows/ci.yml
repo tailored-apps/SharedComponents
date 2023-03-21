@@ -24,6 +24,11 @@ jobs:
         with:
           key: ${{ github.ref }}
           path: .cache
+      - name: Install DocXml
+        run: dotnet tool install xmldocmd -g 
+      - name: generate docs
+        working-directory: src/TailoredApps.Shared.DateTime/bin/Debug/netstandard2.0
+        run: xmldocmd ./TailoredApps.Shared.DateTime.dll ../../../../docs/Libraries/
       - run: pip install mkdocs-material 
       - name: Publish
         run: mkdocs gh-deploy --force
