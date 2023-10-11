@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Xunit;
 
 namespace TailoredApps.Shared.Email.Tests

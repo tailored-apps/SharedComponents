@@ -136,7 +136,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             return await Task.Run(() =>
              {
                  var secretPhrase = options.Value.ShopSecretPhrase;
-                 var toCalc= (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
+                 var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
                  var signStatus = Hash(toCalc);
                  return signStatus;
              });

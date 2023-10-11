@@ -11,7 +11,7 @@ namespace TailoredApps.Shared.EntityFramework.Tests.UnitOfWork.Audit
         public void Should_Throw_When_Current_Entity_Is_Null()
         {
             // act & assert
-            Assert.Throws<ArgumentNullException>(() => new EntityChange<ExampleEntity>(null, new ExampleEntity(),null, AuditEntityState.Modified));
+            Assert.Throws<ArgumentNullException>(() => new EntityChange<ExampleEntity>(null, new ExampleEntity(), null, AuditEntityState.Modified));
         }
 
         [Fact]

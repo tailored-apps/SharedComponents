@@ -108,7 +108,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             //{
             var status = await cashbillService.GetPaymentStatus(request.TransactionId);
 
-            return new PaymentResponse { PaymentUniqueId = status.Id, RedirectUrl = status.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(status.Status), ResponseObject="OK" };
+            return new PaymentResponse { PaymentUniqueId = status.Id, RedirectUrl = status.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(status.Status), ResponseObject = "OK" };
             // }
             // return null;
         }

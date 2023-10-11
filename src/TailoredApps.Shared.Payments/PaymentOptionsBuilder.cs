@@ -12,7 +12,7 @@ namespace TailoredApps.Shared.Payments
 
         public IServiceCollection Services { get; private set; }
 
-        public IPaymentOptionsBuilder RegisterPaymentProvider<TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider 
+        public IPaymentOptionsBuilder RegisterPaymentProvider<TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider
             => WithPaymentProvider<TPaymentProvider>();
 
         public IPaymentOptionsBuilder RegisterPaymentProvider<TPaymentProvider>(Func<IServiceProvider, TPaymentProvider> implementationFactory) where TPaymentProvider : class, IPaymentProvider
@@ -22,7 +22,7 @@ namespace TailoredApps.Shared.Payments
         private IPaymentOptionsBuilder WithPaymentProvider<TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider
         {
 
-            Services.AddTransient<IPaymentProvider,TPaymentProvider>();
+            Services.AddTransient<IPaymentProvider, TPaymentProvider>();
             return this;
         }
 
@@ -46,7 +46,7 @@ namespace TailoredApps.Shared.Payments
         }
 
         public static IPaymentOptionsBuilder AddPaymentsForWebApi<TTargetPaymentServiceInterface, TTargetPaymentService>(this IServiceCollection services)
-            where TTargetPaymentService :  class,TTargetPaymentServiceInterface
+            where TTargetPaymentService : class, TTargetPaymentServiceInterface
             where TTargetPaymentServiceInterface : class
         {
             return services.AddPayments<TTargetPaymentServiceInterface, TTargetPaymentService>();

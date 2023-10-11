@@ -10,7 +10,7 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions
         public static IInternalEntityChange CreateInternalEntityChange(this IAuditEntityEntry auditEntityEntry)
         {
             var genericType = InternalEntityChangeGenericType.MakeGenericType(auditEntityEntry.EntityType);
-           var keys= auditEntityEntry.GetPrimaryKeys();
+            var keys = auditEntityEntry.GetPrimaryKeys();
             var entityChange = Activator.CreateInstance(genericType,
                 auditEntityEntry.CurrentEntity,
                 auditEntityEntry.OriginalEntity,

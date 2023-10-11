@@ -33,7 +33,7 @@ namespace TailoredApps.Shared.ExceptionHandling.Model
         }
         public override string ToString()
         {
-            return JsonSerializer.Serialize(this,typeof(ExceptionHandlingResultModel), new JsonSerializerOptions
+            return JsonSerializer.Serialize(this, typeof(ExceptionHandlingResultModel), new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true

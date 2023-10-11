@@ -16,7 +16,7 @@ namespace TailoredApps.Shared.ExceptionHandling.Providers
             var validationException = sourceException as ValidationException;
             if (validationException != null)
             {
-                var validationData = validationException.Errors.DistinctBy(x=> new { x.PropertyName, x.ErrorMessage}).Select(x => new ExceptionOrValidationError(x.PropertyName,  x.ErrorMessage ));
+                var validationData = validationException.Errors.DistinctBy(x => new { x.PropertyName, x.ErrorMessage }).Select(x => new ExceptionOrValidationError(x.PropertyName, x.ErrorMessage));
                 return new ExceptionHandlingResultModel(validationException.Message, validationData);
             }
             else

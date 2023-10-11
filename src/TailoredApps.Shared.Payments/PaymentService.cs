@@ -1,9 +1,8 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace TailoredApps.Shared.Payments
 {
@@ -35,7 +34,7 @@ namespace TailoredApps.Shared.Payments
         }
         public async Task<PaymentResponse> RegisterPayment(PaymentRequest request)
         {
-            var provider =  paymentService.Single(x => x.Key == request.PaymentProvider);
+            var provider = paymentService.Single(x => x.Key == request.PaymentProvider);
             return await provider.RequestPayment(request);
         }
 
