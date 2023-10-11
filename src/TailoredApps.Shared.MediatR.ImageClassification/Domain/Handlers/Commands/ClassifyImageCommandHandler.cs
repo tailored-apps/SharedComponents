@@ -1,6 +1,4 @@
-﻿
-using System.IO;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands;

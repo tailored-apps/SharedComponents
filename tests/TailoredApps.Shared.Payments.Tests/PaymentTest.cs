@@ -1,14 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.IO;
 using System.Linq;
-using System.Numerics;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Text.Unicode;
+using System.Threading.Tasks;
 using TailoredApps.Shared.Payments.Provider.CashBill;
 using Xunit;
 
@@ -18,7 +12,7 @@ namespace TailoredApps.Shared.Payments.Tests
     {
 
         [Fact]
-        public void CanRequestPaymentProvidersEmpty()
+        public async Task CanRequestPaymentProvidersEmpty()
         {
             var host = Host.CreateDefaultBuilder()
                  .ConfigureAppConfiguration(a => a.AddEnvironmentVariables())
@@ -28,13 +22,13 @@ namespace TailoredApps.Shared.Payments.Tests
                  }).Build();
 
             var paymentService = host.Services.GetService<IPaymentService>();
-            var providers = paymentService.GetProviders().GetAwaiter().GetResult();
+            var providers = await paymentService.GetProviders();
             Assert.Empty(providers);
         }
 
 
         [Fact]
-        public void CanRequestPaymentProvidersOnCashbillAndRequestTransaction()
+        public async Task CanRequestPaymentProvidersOnCashbillAndRequestTransaction()
         {
             var host = Host.CreateDefaultBuilder()
                  .ConfigureAppConfiguration(a => a.AddEnvironmentVariables())
@@ -46,16 +40,16 @@ namespace TailoredApps.Shared.Payments.Tests
                  });
             var builder = host.Build();
             var paymentService = builder.Services.GetService<IPaymentService>();
-            var providers = paymentService.GetProviders().GetAwaiter().GetResult();
-            var cashbill = paymentService.GetProviders().GetAwaiter().GetResult().Single(z => z.Id == "Cashbill");
-            var cashbillChannels = paymentService.GetChannels(cashbill.Id, "PLN").GetAwaiter().GetResult();
+            var providers = await paymentService.GetProviders();
+            var cashbill = await paymentService.GetProviders();
+            var cashbillChannels = await paymentService.GetChannels(cashbill.Single(z => z.Id == "Cashbill").Id, "PLN");
 
             Assert.NotEmpty(cashbillChannels);
 
 
-            var payment = paymentService.RegisterPayment(new PaymentRequest
+            var payment = await paymentService.RegisterPayment(new PaymentRequest
             {
-                PaymentProvider = cashbill.Id,
+                PaymentProvider = cashbill.Single(z => z.Id == "Cashbill").Id,
                 PaymentChannel = cashbillChannels.Single().Id,
                 Amount = 1.29m,
                 AdditionalData = "na fajki",
@@ -73,20 +67,20 @@ namespace TailoredApps.Shared.Payments.Tests
                 Referer = "Sylwester marzeń",
                 Street = "Kurska 20",
                 Title = "Pięć gwiazdek trzy gwiazdki i konfederację!"
-            }).GetAwaiter().GetResult();
+            });
 
             Assert.NotNull(payment);
             Assert.NotEmpty(payment.RedirectUrl);
             Assert.Equal(PaymentStatusEnum.Created, payment.PaymentStatus);
 
-            var status = paymentService.GetStatus(cashbill.Id, payment.PaymentUniqueId).GetAwaiter().GetResult();
+            var status = await paymentService.GetStatus(cashbill.Single(z => z.Id == "Cashbill").Id, payment.PaymentUniqueId);
             Assert.NotNull(status);
             Assert.Equal(PaymentStatusEnum.Created, status.PaymentStatus);
         }
 
 
         [Fact]
-        public void TransactionChange()
+        public async Task TransactionChange()
         {
             var host = Host.CreateDefaultBuilder()
                  .ConfigureAppConfiguration(a => a.AddEnvironmentVariables())
@@ -98,9 +92,9 @@ namespace TailoredApps.Shared.Payments.Tests
                  });
             var builder = host.Build();
             var paymentService = builder.Services.GetService<IPaymentService>();
-            var providers = paymentService.GetProviders().GetAwaiter().GetResult();
-            var cashbill = paymentService.GetProviders().GetAwaiter().GetResult().Single(z => z.Id == "Cashbill");
-            var cashbillChannels = paymentService.GetChannels(cashbill.Id, "PLN").GetAwaiter().GetResult();
+            var providers = await paymentService.GetProviders();
+            var cashbill = providers.Single(z => z.Id == "Cashbill");
+            var cashbillChannels = await paymentService.GetChannels(cashbill.Id, "PLN");
 
             Assert.NotEmpty(cashbillChannels);
 
@@ -114,7 +108,7 @@ namespace TailoredApps.Shared.Payments.Tests
                     { "args", new Microsoft.Extensions.Primitives.StringValues("TEST_6f7zsddbw") },
                     { "sign", new Microsoft.Extensions.Primitives.StringValues("2050dc9f7149ef52d07f621d7d0d41b6") }
                 }
-            }).GetAwaiter().GetResult();
+            });
 
             Assert.NotNull(payment);
         }

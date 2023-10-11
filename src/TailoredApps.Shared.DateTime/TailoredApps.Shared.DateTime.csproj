@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
-		<TargetFramework>netstandard2.0</TargetFramework>
+		<TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
 		<AssemblyName>TailoredApps.Shared.DateTime</AssemblyName>
 		<RootNamespace>TailoredApps.Shared.DateTime</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>

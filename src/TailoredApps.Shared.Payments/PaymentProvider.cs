@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
-
-namespace TailoredApps.Shared.Payments
+﻿namespace TailoredApps.Shared.Payments
 {
 
     public class PaymentProvider

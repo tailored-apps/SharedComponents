@@ -49,6 +49,6 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
             return response;
         }
 
-    
+
     }
 }
