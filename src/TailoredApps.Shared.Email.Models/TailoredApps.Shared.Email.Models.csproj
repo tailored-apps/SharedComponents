@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
+		<TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+		<AssemblyName>TailoredApps.Shared.Email.Models</AssemblyName>
+		<RootNamespace>TailoredApps.Shared.Email.Models</RootNamespace>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Version>0.0.1</Version>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+	</PropertyGroup>
+
+</Project>

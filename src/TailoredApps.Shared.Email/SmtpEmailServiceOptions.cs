@@ -1,7 +1,9 @@
 ﻿namespace TailoredApps.Shared.Email
 {
+
     public class SmtpEmailServiceOptions
     {
+        public static string ConfigurationKey => "Mail:Providers:Smtp";
         public string Host { get; set; }
         public int Port { get; set; }
         public string Password { get; set; }
