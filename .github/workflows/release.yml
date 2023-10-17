@@ -74,6 +74,14 @@ jobs:
       working-directory: src/TailoredApps.Shared.Querying/bin/Release
       run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
       continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.Email.Models/bin/Release
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
+    - name: Dotnet Nuget Push   
+      working-directory: src/TailoredApps.Shared.Email.Office365/bin/Release
+      run: dotnet nuget push TailoredApps.Shared.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+      continue-on-error: true
       
 
     - name: Create Release

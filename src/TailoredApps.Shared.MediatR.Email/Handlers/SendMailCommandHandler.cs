@@ -10,9 +10,9 @@ namespace TailoredApps.Shared.MediatR.Email.Handlers
 {
     public class SendMailCommandHandler : ISendMailCommandHandler
     {
-        private readonly IEmailService emailService;
+        private readonly IEmailProvider emailService;
         private readonly IMailMessageBuilder mailMessageBuilder;
-        public SendMailCommandHandler(IEmailService emailService, IMailMessageBuilder mailMessageBuilder)
+        public SendMailCommandHandler(IEmailProvider emailService, IMailMessageBuilder mailMessageBuilder)
         {
             this.emailService = emailService;
             this.mailMessageBuilder = mailMessageBuilder;
@@ -20,14 +20,12 @@ namespace TailoredApps.Shared.MediatR.Email.Handlers
 
         public async Task<SendMailResponse> Handle(SendMail request, CancellationToken cancellationToken)
         {
-            var task = Task.Run<SendMailResponse>(() =>
-            {
+            
                 var body = mailMessageBuilder.Build(request.Template, request.TemplateVariables, request.Templates);
-                emailService.SendMail(request.Recipent, request.Subject, body, request.Attachments);
-                return new SendMailResponse();
-            });
+                await emailService.SendMail(request.Recipent, request.Subject, body, request.Attachments);
+                return new SendMailResponse() { };
+            
 
-            return await task;
         }
     }
 }
