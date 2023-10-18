@@ -23,8 +23,7 @@ namespace TailoredApps.Shared.Email.Office365
 
             };
         private readonly IConfidentialClientApplication confidentialClientApplication;
-        private readonly IConfidentialClientApplication creat;
-        public Office365EmailProvider(IOptions<AuthenticationConfig> options, IConfidentialClientApplication confidentialClientApplication)
+        public Office365EmailProvider(IOptions<AuthenticationConfig> options)
         {
             this.options = options;
             this.confidentialClientApplication = confidentialClientApplication;
@@ -57,7 +56,7 @@ namespace TailoredApps.Shared.Email.Office365
 
             app.AddInMemoryTokenCache();
 
-            creat = app;
+            confidentialClientApplication = app;
         }
 
 
@@ -135,29 +134,6 @@ namespace TailoredApps.Shared.Email.Office365
     }
     public static class Office365EmailProviderExtensions
     {
-        /// <summary>
-        /// Checks if the sample is configured for using ClientSecret or Certificate. This method is just for the sake of this sample.
-        /// You won't need this verification in your production application since you will be authenticating in AAD using one mechanism only.
-        /// </summary>
-        /// <param name="config">Configuration from appsettings.json</param>
-        /// <returns></returns>
-        private static bool IsAppUsingClientSecret(AuthenticationConfig config)
-        {
-            string clientSecretPlaceholderValue = "[Enter here a client secret for your application]";
-
-            if (!String.IsNullOrWhiteSpace(config.ClientSecret) && config.ClientSecret != clientSecretPlaceholderValue)
-            {
-                return true;
-            }
-
-            else if (config.Certificate != null)
-            {
-                return false;
-            }
-
-            else
-                throw new Exception("You must choose between using client secret or certificate. Please update appsettings.json file.");
-        }
         public static void RegisterOffice365Provider(this IServiceCollection services)
         {
             services.AddOptions<AuthenticationConfig>();
