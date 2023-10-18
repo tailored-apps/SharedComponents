@@ -9,13 +9,9 @@ using Microsoft.Identity.Client;
 using Microsoft.Identity.Web;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TailoredApps.Shared.Email.Models;
-using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace TailoredApps.Shared.Email.Office365
 {
@@ -27,13 +23,67 @@ namespace TailoredApps.Shared.Email.Office365
 
             };
         private readonly IConfidentialClientApplication confidentialClientApplication;
+        private readonly IConfidentialClientApplication creat;
         public Office365EmailProvider(IOptions<AuthenticationConfig> options, IConfidentialClientApplication confidentialClientApplication)
         {
             this.options = options;
             this.confidentialClientApplication = confidentialClientApplication;
+
+            // You can run this sample using ClientSecret or Certificate. The code will differ only when instantiating the IConfidentialClientApplication
+            bool isUsingClientSecret = IsAppUsingClientSecret(options.Value);
+
+            // Even if this is a console application here, a daemon application is a confidential client application
+            IConfidentialClientApplication app;
+
+            if (isUsingClientSecret)
+            {
+                // Even if this is a console application here, a daemon application is a confidential client application
+                app = ConfidentialClientApplicationBuilder.Create(options.Value.ClientId)
+                    .WithClientSecret(options.Value.ClientSecret)
+                    .WithAuthority(new Uri(options.Value.Authority))
+                    .Build();
+            }
+
+            else
+            {
+                ICertificateLoader certificateLoader = new DefaultCertificateLoader();
+                certificateLoader.LoadIfNeeded(options.Value.Certificate);
+
+                app = ConfidentialClientApplicationBuilder.Create(options.Value.ClientId)
+                    .WithCertificate(options.Value.Certificate.Certificate)
+                    .WithAuthority(new Uri(options.Value.Authority))
+                    .Build();
+            }
+
+            app.AddInMemoryTokenCache();
+
+            creat = app;
         }
 
 
+        /// <summary>
+        /// Checks if the sample is configured for using ClientSecret or Certificate. This method is just for the sake of this sample.
+        /// You won't need this verification in your production application since you will be authenticating in AAD using one mechanism only.
+        /// </summary>
+        /// <param name="config">Configuration from appsettings.json</param>
+        /// <returns></returns>
+        private static bool IsAppUsingClientSecret(AuthenticationConfig config)
+        {
+            string clientSecretPlaceholderValue = "[Enter here a client secret for your application]";
+
+            if (!String.IsNullOrWhiteSpace(config.ClientSecret) && config.ClientSecret != clientSecretPlaceholderValue)
+            {
+                return true;
+            }
+
+            else if (config.Certificate != null)
+            {
+                return false;
+            }
+
+            else
+                throw new Exception("You must choose between using client secret or certificate. Please update appsettings.json file.");
+        }
         public async Task<ICollection<MailMessage>> GetMail(string folderName = "", string sender = "", string recipent = "")
         {
             var response = new List<MailMessage>();
@@ -113,50 +163,8 @@ namespace TailoredApps.Shared.Email.Office365
             services.AddOptions<AuthenticationConfig>();
             services.ConfigureOptions<Office365EmailConfigureOptions>();
             services.AddTransient<IEmailProvider, Office365EmailProvider>();
-
-
-
-            services.AddSingleton<IConfidentialClientApplication>(creat =>
-            {
-
-                var config = creat.GetService<AuthenticationConfig>();
-
-
-
-                // You can run this sample using ClientSecret or Certificate. The code will differ only when instantiating the IConfidentialClientApplication
-                bool isUsingClientSecret = IsAppUsingClientSecret(config);
-
-                // Even if this is a console application here, a daemon application is a confidential client application
-                IConfidentialClientApplication app;
-
-                if (isUsingClientSecret)
-                {
-                    // Even if this is a console application here, a daemon application is a confidential client application
-                    app = ConfidentialClientApplicationBuilder.Create(config.ClientId)
-                        .WithClientSecret(config.ClientSecret)
-                        .WithAuthority(new Uri(config.Authority))
-                        .Build();
-                }
-
-                else
-                {
-                    ICertificateLoader certificateLoader = new DefaultCertificateLoader();
-                    certificateLoader.LoadIfNeeded(config.Certificate);
-
-                    app = ConfidentialClientApplicationBuilder.Create(config.ClientId)
-                        .WithCertificate(config.Certificate.Certificate)
-                        .WithAuthority(new Uri(config.Authority))
-                        .Build();
-                }
-
-                app.AddInMemoryTokenCache();
-                return app;
-
-            });
         }
     }
-
-
 
     public class Office365EmailConfigureOptions : IConfigureOptions<AuthenticationConfig>
     {
