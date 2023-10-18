@@ -116,7 +116,7 @@ namespace TailoredApps.Shared.Email.Office365
                         HtmlBody = message.HtmlBody,
                         Topic = message.Subject,
                         Copy = string.Join(",", message.Cc?.Select(z => z.Name)),
-                        Sender = message.Sender.Name,
+                        Sender = string.Join(",", message.From?.Select(z => z.Name)),
                         Recipent = string.Join(",", message.To?.Select(z => z.Name)),
                         Body = message.TextBody,
                     });
