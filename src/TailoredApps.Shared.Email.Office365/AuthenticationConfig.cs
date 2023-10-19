@@ -35,6 +35,13 @@ namespace TailoredApps.Shared.Email.Office365
         /// Guid used by the application to uniquely identify itself to Azure AD
         /// </summary>
         public string ClientId { get; set; }
+     
+        /// <summary>
+        /// MailBox
+        /// </summary>
+        public string MailBox { get; set; }
+
+        
 
         /// <summary>
         /// URL of the authority

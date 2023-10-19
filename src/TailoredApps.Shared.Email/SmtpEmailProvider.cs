@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -17,7 +18,7 @@ namespace TailoredApps.Shared.Email
             this.options = options;
         }
 
-        public async Task<ICollection<Models.MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "")
+        public async Task<ICollection<Models.MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
         {
             throw new System.NotImplementedException();
         }

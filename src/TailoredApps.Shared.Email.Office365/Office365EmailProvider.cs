@@ -7,9 +7,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 using Microsoft.Identity.Web;
+using MimeKit;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Mail;
 using System.Threading.Tasks;
 using TailoredApps.Shared.Email.Models;
 
@@ -83,17 +86,21 @@ namespace TailoredApps.Shared.Email.Office365
             else
                 throw new Exception("You must choose between using client secret or certificate. Please update appsettings.json file.");
         }
-        public async Task<ICollection<MailMessage>> GetMail(string folderName = "", string sender = "", string recipent = "")
+        public async Task<ICollection<Models.MailMessage>> GetMail(string folderName = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
         {
-            var response = new List<MailMessage>();
+            var response = new List<Models.MailMessage>();
             var authToken = await confidentialClientApplication.AcquireTokenForClient(scopes).ExecuteAsync();
-            var oauth2 = new SaslMechanismOAuth2("contact@tailoredapps.pl", authToken.AccessToken);
+            var oauth2 = new SaslMechanismOAuth2(options.Value.MailBox, authToken.AccessToken);
 
             using (var client = new ImapClient())
             {
                 await client.ConnectAsync("outlook.office365.com", 993, SecureSocketOptions.SslOnConnect);
                 await client.AuthenticateAsync(oauth2);
-                var folder = client.Inbox.GetSubfolder(folderName);
+                var folder = client.Inbox;
+                if (!string.IsNullOrEmpty(folderName))
+                {
+                    folder = folder.GetSubfolder(folderName);
+                }
                 folder.Open(FolderAccess.ReadOnly);
 
                 var query = SearchQuery.All;
@@ -105,26 +112,55 @@ namespace TailoredApps.Shared.Email.Office365
                 {
                     query = query.And(SearchQuery.ToContains(recipent));
                 }
+                if (fromLast.HasValue)
+                {
+                    query = query.And(SearchQuery.DeliveredAfter(DateTime.Now - fromLast.Value));
+                }
+
                 var uids = folder.Search(query);
                 var items = folder.Fetch(uids, MessageSummaryItems.UniqueId | MessageSummaryItems.Headers);
 
                 foreach (var uid in uids)
                 {
                     var message = folder.GetMessage(uid);
-                    response.Add(new MailMessage
+
+                    var mailMessage = new Models.MailMessage
                     {
                         HtmlBody = message.HtmlBody,
                         Topic = message.Subject,
-                        Copy = string.Join(",", message.Cc?.Select(z => z.Name)),
-                        Sender = string.Join(",", message.From?.Select(z => z.Name)),
-                        Recipent = string.Join(",", message.To?.Select(z => z.Name)),
-                        Body = message.TextBody,
-                    });
+                        Copy = string.Join(",", message.Cc?.Select(z => z.ToString())),
+                        Sender = string.Join(",", message.From?.Select(z => z.ToString())),
+                        Recipent = string.Join(",", message.To?.Select(z => z.ToString())),
+                        Body = message.GetTextBody(MimeKit.Text.TextFormat.Plain),
+                        Date = message.Date,
+                        Attachements = GetAttachements(message.Attachments)
+                    };
 
                 }
                 await client.DisconnectAsync(true);
             }
             return response;
+        }
+
+        private Dictionary<string, string> GetAttachements(IEnumerable<MimeEntity> attachments)
+        {
+            var result = new Dictionary<string, string>();
+            foreach (var attachement in attachments)
+            {
+                if (attachement is MimePart)
+                {
+
+                    var res = attachement as MimePart;
+                    byte[] bytes;
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        res.Content.Stream.CopyTo(memoryStream);
+                        bytes = memoryStream.ToArray();
+                    }
+                    result.Add(res.ContentType.ToString(), Convert.ToBase64String(bytes));
+                }
+            }
+            return result;
         }
 
         public async Task SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
@@ -158,6 +194,7 @@ namespace TailoredApps.Shared.Email.Office365
             options.ApiUrl = section.ApiUrl;
             options.Tenant = section.Tenant;
             options.ClientId = section.ClientId;
+            options.MailBox = section.MailBox;
             options.ClientSecret = section.ClientSecret;
             options.Certificate = section.Certificate;
         }

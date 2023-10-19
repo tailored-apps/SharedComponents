@@ -7,7 +7,7 @@ namespace TailoredApps.Shared.Email
 {
     public class EmailServiceToConsolleWritter : IEmailProvider
     {
-        public async Task<ICollection<MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "")
+        public async Task<ICollection<MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
         {
             return new List<MailMessage>();
         }
