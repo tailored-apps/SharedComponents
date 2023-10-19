@@ -135,6 +135,7 @@ namespace TailoredApps.Shared.Email.Office365
                         Date = message.Date,
                         Attachements = GetAttachements(message.Attachments)
                     };
+                    response.Add(mailMessage);
 
                 }
                 await client.DisconnectAsync(true);
