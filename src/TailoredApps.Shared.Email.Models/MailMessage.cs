@@ -12,5 +12,6 @@ namespace TailoredApps.Shared.Email.Models
         public string Body { get; set; }
         public string HtmlBody { get; set; }
         public Dictionary<string, string> Attachements { get; set; }
+        public DateTimeOffset Date { get; set; }
     }
 }
