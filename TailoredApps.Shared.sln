@@ -35,7 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.Payment
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore", "src\TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore\TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.csproj", "{5C6FFD3B-B9E3-47D8-8A77-5973198C7B16}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.MediatR.ImageClassification", "src\TailoredApps.Shared.MediatR.ImageClassification\TailoredApps.Shared.MediatR.ImageClassification.csproj", "{C454266F-AF6D-450B-B899-9359180BAE94}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.MediatR.ML", "src\TailoredApps.Shared.MediatR.ML\TailoredApps.Shared.MediatR.ML.csproj", "{C454266F-AF6D-450B-B899-9359180BAE94}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.Payments.Tests", "tests\TailoredApps.Shared.Payments.Tests\TailoredApps.Shared.Payments.Tests.csproj", "{E9D7FEE6-5623-4741-BC1B-F5615A988922}"
 EndProject
@@ -56,6 +56,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.Email.Models", "src\TailoredApps.Shared.Email.Models\TailoredApps.Shared.Email.Models.csproj", "{8A579598-C00F-48C7-90CE-C64DEB009BF8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.Email.Office365", "src\TailoredApps.Shared.Email.Office365\TailoredApps.Shared.Email.Office365.csproj", "{571BD399-6253-434A-A242-932E85938735}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.MediatR.ML.Tests", "tests\TailoredApps.Shared.MediatR.ML.Tests\TailoredApps.Shared.MediatR.ML.Tests.csproj", "{730E6162-5535-4ECD-B847-6ACA6075627D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -139,6 +141,10 @@ Global
 		{571BD399-6253-434A-A242-932E85938735}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{571BD399-6253-434A-A242-932E85938735}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{571BD399-6253-434A-A242-932E85938735}.Release|Any CPU.Build.0 = Release|Any CPU
+		{730E6162-5535-4ECD-B847-6ACA6075627D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{730E6162-5535-4ECD-B847-6ACA6075627D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{730E6162-5535-4ECD-B847-6ACA6075627D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{730E6162-5535-4ECD-B847-6ACA6075627D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -148,6 +154,7 @@ Global
 		{3EC07550-F703-496D-A49D-A9848022E6F7} = {A72F88B4-0070-4412-88B7-877223C35EB0}
 		{1F7A57C6-1836-44C4-BECB-3DF4ADB86CEA} = {A72F88B4-0070-4412-88B7-877223C35EB0}
 		{E9D7FEE6-5623-4741-BC1B-F5615A988922} = {A72F88B4-0070-4412-88B7-877223C35EB0}
+		{730E6162-5535-4ECD-B847-6ACA6075627D} = {A72F88B4-0070-4412-88B7-877223C35EB0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3B0AE9D3-47D2-4395-AACE-F0A742A2D85D}
