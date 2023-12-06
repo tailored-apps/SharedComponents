@@ -17,6 +17,8 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         }
         public static IServiceCollection AddPredictionEngine(this IServiceCollection services, IConfiguration configuration)
         {
+
+            services.ConfigureOptions<Office365EmailConfigureOptions>();
             services.AddPredictionEnginePool<InMemoryImageData, ImagePredictionScore>()
                 .FromFile(configuration[ImageClassificationOptions.ModelFilePathConfig])
                 .AddAdapter();
