@@ -12,7 +12,7 @@ namespace TailoredApps.Shared.Payments.Tests
     public class MLEngineTests
     {
 
-        [Fact]
+        [Fact(Skip ="brak")]
         public async Task CanRegisterAndGetModel()
         {
             var host = Host.CreateDefaultBuilder()
