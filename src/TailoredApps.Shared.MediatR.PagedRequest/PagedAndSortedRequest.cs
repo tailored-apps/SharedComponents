@@ -4,7 +4,7 @@ using TailoredApps.Shared.Querying;
 
 namespace TailoredApps.Shared.MediatR.PagedRequest
 {
-    public class PagedAndSortedRequest<TResponse, TQuery, TModel> : IPagedAndSortedQuery<TQuery>, IRequest<TResponse>
+    public class PagedAndSortedRequest<TResponse, TQuery, TModel> : IPagedAndSortedRequest<TResponse, TQuery, TModel>, IRequest<TResponse>
         where TQuery : QueryBase
         where TResponse : IPagedResult<TModel>
     {

@@ -47,4 +47,11 @@ namespace TailoredApps.Shared.Querying
     {
         T Filter { get; set; }
     }
+
+    public interface IPagedAndSortedRequest<TResponse,TQuery,TModel> : IPagedAndSortedQuery<TQuery>
+        where TQuery:QueryBase
+        where TResponse: IPagedResult<TModel>
+    {
+
+    }
 }
