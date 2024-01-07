@@ -8,20 +8,20 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         public const string ConfigurationKey = "ImageClassification";
         public const string ModelFilePathConfig = "ImageClassification:ModelFilePath";
         public string ModelFilePath { get; set; }
-    }
-    public class Office365EmailConfigureOptions : IConfigureOptions<ImageClassificationOptions>
-    {
-        private readonly IConfiguration configuration;
-        public Office365EmailConfigureOptions(IConfiguration configuration)
+        public class ImageClassificationConfigureOptions : IConfigureOptions<ImageClassificationOptions>
         {
-            this.configuration = configuration;
-        }
+            private readonly IConfiguration configuration;
+            public ImageClassificationConfigureOptions(IConfiguration configuration)
+            {
+                this.configuration = configuration;
+            }
 
-        public void Configure(ImageClassificationOptions options)
-        {
-            var section = configuration.GetSection(ImageClassificationOptions.ConfigurationKey).Get<ImageClassificationOptions>();
+            public void Configure(ImageClassificationOptions options)
+            {
+                var section = configuration.GetSection(ImageClassificationOptions.ConfigurationKey).Get<ImageClassificationOptions>();
 
-            options.ModelFilePath= section.ModelFilePath;
+                options.ModelFilePath = section.ModelFilePath;
+            }
         }
     }
 }

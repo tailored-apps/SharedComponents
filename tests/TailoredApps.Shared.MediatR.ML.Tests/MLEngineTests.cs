@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using System.Linq;
 using System.Threading.Tasks;
 using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
+using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
 using Xunit;
 
@@ -19,7 +20,10 @@ namespace TailoredApps.Shared.Payments.Tests
                  .ConfigureAppConfiguration(a => a.AddEnvironmentVariables())
                  .ConfigureServices((_, services) =>
                  {
-                     services.AddPredictionEngine(_.Configuration);
+                     services.AddPredictionEngine(services =>
+                     {
+                         services.RegisterMachineLearningModel<InMemoryImageData, ImagePredictionScore>("");
+                     });
                  }).Build();
 
             var paymentService = host.Services.GetService<IClassificationService>();
