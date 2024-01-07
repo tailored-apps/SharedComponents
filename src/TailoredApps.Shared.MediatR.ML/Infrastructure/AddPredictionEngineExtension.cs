@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.ML;
+using System;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
+using TailoredApps.Shared.MediatR.ML.Infrastructure;
+using static TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions;
 
 namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 {
@@ -15,13 +18,13 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             builder.Services.AddSingleton<IPredictionEnginePoolAdapter<TData, TPrediction>, PredictionEnginePoolAdapter<TData, TPrediction>>();
             return builder;
         }
-        public static IServiceCollection AddPredictionEngine(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddPredictionEngine(this IServiceCollection services, Action<PredictionEngineServiceConfiguration> configuration)
         {
 
-            services.ConfigureOptions<Office365EmailConfigureOptions>();
-            services.AddPredictionEnginePool<InMemoryImageData, ImagePredictionScore>()
-                .FromFile(configuration[ImageClassificationOptions.ModelFilePathConfig])
-                .AddAdapter();
+            services.ConfigureOptions<ImageClassificationConfigureOptions>();
+            var serviceConfig = new PredictionEngineServiceConfiguration(services);
+
+            configuration.Invoke(serviceConfig);
             services.AddScoped<IClassificationService, ClassificationService>();
             services.AddScoped<IModelInfoService, ModelInfoService>();
             services.AddScoped<IModelHelper, ModelHelper>();
