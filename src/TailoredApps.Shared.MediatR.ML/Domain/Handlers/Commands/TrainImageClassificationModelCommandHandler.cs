@@ -12,9 +12,9 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
 {
     public class TrainImageClassificationModelCommandHandler : ITrainImageClassificationModelCommandHandler
     {
-        private readonly IClassificationService classificationService;
+        private readonly IImageClassificationService classificationService;
         private readonly IModelHelper modelHelper;
-        public TrainImageClassificationModelCommandHandler(IClassificationService classificationService, IModelHelper modelHelper)
+        public TrainImageClassificationModelCommandHandler(IImageClassificationService classificationService, IModelHelper modelHelper)
         {
             this.classificationService = classificationService;
             this.modelHelper = modelHelper;
@@ -26,9 +26,11 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
             IEnumerable<ImageData> images = LoadImagesFromDirectory(request.Source);
             var modelInfo = classificationService.Train(images, request.Source,request.ModelDestFolderPath);
             var version = modelHelper.AddVersion(request.ModelDestFolderPath);
+            modelHelper.AddLabels(request.ModelDestFolderPath, modelInfo.labels);
             response.ModelPath = request.ModelDestFolderPath;
             response.ModelVersion = version;
-            response.ModelInfo = modelInfo;
+            response.ModelInfo = modelInfo.info;
+            response.Labels = modelInfo.labels;
             return response;
 
         }

@@ -5,15 +5,12 @@ using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
 
 namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 {
-    public class ModelInfoService : IModelInfoService
+    public class ModelInfoService : IModelInfoService 
     {
-        private readonly IPredictionEnginePoolAdapter<InMemoryImageData, ImagePredictionScore> predictionEnginePool;
         private readonly IModelHelper modelHelper;
         private readonly IOptions<ImageClassificationOptions> options;
-        public ModelInfoService(IPredictionEnginePoolAdapter<InMemoryImageData, ImagePredictionScore> predictionEnginePool, IOptions<ImageClassificationOptions> options, IModelHelper modelHelper)
+        public ModelInfoService(IOptions<ImageClassificationOptions> options, IModelHelper modelHelper)
         {
-            this.predictionEnginePool = predictionEnginePool;
-            this.options = options;
             this.modelHelper = modelHelper;
         }
         public string ModelChecksum => modelHelper.GetChecksum(options.Value.ModelFilePath);
@@ -24,6 +21,6 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 
         public string ModelFileName => Path.GetFileName(options.Value.ModelFilePath);
 
-        public string[] Labels => predictionEnginePool.GetLabels();
+        public string[] Labels => modelHelper.GetLabels(options.Value.ModelFilePath);
     }
 }

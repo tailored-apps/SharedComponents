@@ -4,10 +4,10 @@ using TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands;
 
 namespace TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure
 {
-    public interface IClassificationService
+    public interface IImageClassificationService
     {
         ImagePrediction Predict(byte[] image, string fileName);
         ModelInfo GetModelInfo();
-        string Train(IEnumerable<ImageData> images, string trainingSetFolder, string modelDestFolderPath);
+        (string info, string[] labels) Train(IEnumerable<ImageData> images, string trainingSetFolder, string modelDestFolderPath);
     }
 }

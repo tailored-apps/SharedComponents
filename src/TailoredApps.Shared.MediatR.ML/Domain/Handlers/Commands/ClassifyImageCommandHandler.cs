@@ -9,8 +9,8 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
 {
     public class ClassifyImageCommandHandler : IClassifyImageCommandHandler
     {
-        private readonly IClassificationService classificationService;
-        public ClassifyImageCommandHandler(IClassificationService classificationService)
+        private readonly IImageClassificationService classificationService;
+        public ClassifyImageCommandHandler(IImageClassificationService classificationService)
         {
             this.classificationService = classificationService;
         }
@@ -19,14 +19,8 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
             return await Task.Run(() =>
             {
                 var response = new ClassifyImageResponse { };
-                byte[] image;
-                string fileName;
 
-                image = request.FileByteArray;
-                fileName = request.FileName;
-
-
-                var predictions = classificationService.Predict(image, fileName);
+                var predictions = classificationService.Predict(request.FileByteArray, request.FileName);
                 response.ImagePrediction = predictions;
 
                 return response;

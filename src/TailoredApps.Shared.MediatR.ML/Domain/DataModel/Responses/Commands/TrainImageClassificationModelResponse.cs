@@ -7,6 +7,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Respo
         public string ModelPath { get; set; }
         public string ModelVersion { get; internal set; }
         public string ModelInfo { get; internal set; }
+        public string[] Labels { get; internal set; }
     }
 }
 

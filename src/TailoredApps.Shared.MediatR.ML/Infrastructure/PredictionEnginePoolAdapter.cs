@@ -15,6 +15,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         public PredictionEnginePoolAdapter(PredictionEnginePool<TData, TPrediction> predictionEngine)
         {
             predictionEnginePool = predictionEngine;
+            
         }
 
         public string[] GetLabels()
@@ -27,7 +28,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 
         public TPrediction Predict(TData example)
         {
-            return predictionEnginePool.Predict(example);
+            return predictionEnginePool.Predict<TData, TPrediction>(example);
         }
     }
 }

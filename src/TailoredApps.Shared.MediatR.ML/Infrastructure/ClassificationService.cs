@@ -12,12 +12,12 @@ using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
 
 namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 {
-    public class ClassificationService : IClassificationService
+    public class ImageClassificationService : IImageClassificationService
+
     {
         private readonly IPredictionEnginePoolAdapter<InMemoryImageData, ImagePredictionScore> predictionEnginePool;
         private readonly IModelInfoService modelInfoService;
-        public ClassificationService(
-            IPredictionEnginePoolAdapter<InMemoryImageData, ImagePredictionScore> predictionEnginePool, IModelInfoService modelInfoService)
+        public ImageClassificationService(IPredictionEnginePoolAdapter<InMemoryImageData, ImagePredictionScore> predictionEnginePool, IModelInfoService modelInfoService)
         {
             this.predictionEnginePool = predictionEnginePool;
             this.modelInfoService = modelInfoService;
@@ -37,17 +37,17 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         {
             var imageData = new InMemoryImageData(image, null, fileName);
             ImagePredictionScore prediction = predictionEnginePool.Predict(imageData);
-            ModelInfo modelInfo = GetModelInfo();
+           // ModelInfo modelInfo = GetModelInfo();
 
             ImagePrediction imagePrediction = new ImagePrediction()
             {
                 PredictedScore = prediction.Score.Max(),
                 FileName = fileName,
                 PredictedLabel = prediction.PredictedLabel,
-                ModelInfo = modelInfo,
-                Scores = modelInfo.Labels
-                    .Zip(prediction.Score, (key, value) => new { key, value })
-                    .ToDictionary(x => x.key, x => x.value)
+                //ModelInfo = modelInfo,
+                //Scores = modelInfo.Labels
+                //    .Zip(prediction.Score, (key, value) => new { key, value })
+                //    .ToDictionary(x => x.key, x => x.value)
 
             }
             ;
@@ -55,7 +55,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 
         }
 
-        public string Train(IEnumerable<ImageData> images, string trainingSetFolder, string modelDestFolderPath)
+        public (string info, string[] labels) Train(IEnumerable<ImageData> images, string trainingSetFolder, string modelDestFolderPath)
         {
             var mlContext = new MLContext(seed: 1);
             IDataView dataView = mlContext.Data.LoadFromEnumerable(images);
@@ -83,21 +83,25 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             ITransformer trainedModel = pipeline.Fit(trainDataView);
             watch.Stop();
             var elapsed = watch.ElapsedMilliseconds / 1000;
-
+            var res = EvaluateModel(mlContext, testDataView, trainedModel);
             mlContext.Model.Save(trainedModel, trainDataView.Schema, modelDestFolderPath);
-            return EvaluateModel(mlContext, testDataView, trainedModel);
+            return (res.info,res.labels);
         }
-        private string  EvaluateModel(MLContext mlContext, IDataView testDataView, ITransformer trainDataView)
+        private (string[] labels, string info)  EvaluateModel(MLContext mlContext, IDataView testDataView, ITransformer trainDataView)
         {
             var watch = Stopwatch.StartNew();
             var predictionDataView = trainDataView.Transform(testDataView);
-
+            var labels = GetLabels(predictionDataView.Schema);
             var metrics = mlContext.MulticlassClassification.Evaluate(predictionDataView, labelColumnName: "LabelAsKey", predictedLabelColumnName: "PredictedLabel");
-           return  PrintMultiClassClassificationMetrics("TF DNN:", metrics);
+
+            watch.Stop();
+            var elapsed = watch.ElapsedMilliseconds / 1000;
+            return (labels, PrintMultiClassClassificationMetrics("TF DNN:", metrics));
         }
 
         private string  PrintMultiClassClassificationMetrics(string name, MulticlassClassificationMetrics metrics)
         {
+            
             var builder = new StringBuilder();
 
             builder.AppendLine($"accuracy macro {metrics.MacroAccuracy:0.####}, the closer to 1 better");
@@ -112,5 +116,13 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             }
             return builder.ToString();
         }
+
+        public string[] GetLabels(DataViewSchema schema)
+        {
+            var labelBuffer = new VBuffer<ReadOnlyMemory<char>>();
+            schema["Score"].Annotations.GetValue("SlotNames", ref labelBuffer);
+            return labelBuffer.DenseValues().Select(l => l.ToString()).ToArray();
+        }
+
     }
 }
