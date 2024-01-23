@@ -2,5 +2,6 @@
 {
     public class SendMailResponse
     {
+        public string MessageId { get; internal set; }
     }
 }

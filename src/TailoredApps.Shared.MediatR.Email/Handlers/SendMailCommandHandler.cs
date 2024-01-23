@@ -20,11 +20,11 @@ namespace TailoredApps.Shared.MediatR.Email.Handlers
 
         public async Task<SendMailResponse> Handle(SendMail request, CancellationToken cancellationToken)
         {
-            
-                var body = mailMessageBuilder.Build(request.Template, request.TemplateVariables, request.Templates);
-                await emailService.SendMail(request.Recipent, request.Subject, body, request.Attachments);
-                return new SendMailResponse() { };
-            
+
+            var body = mailMessageBuilder.Build(request.Template, request.TemplateVariables, request.Templates);
+            var messageId = await emailService.SendMail(request.Recipent, request.Subject, body, request.Attachments);
+            return new SendMailResponse() { MessageId= messageId };
+
 
         }
     }
