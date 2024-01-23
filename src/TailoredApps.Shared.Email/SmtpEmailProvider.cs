@@ -32,7 +32,7 @@ namespace TailoredApps.Shared.Email
                 client.Credentials = new NetworkCredential(options.Value.UserName, options.Value.Password);
                 client.EnableSsl = options.Value.EnableSsl;
                 client.Port = options.Value.Port;
-                
+
                 var mailMessage = new MailMessage
                 {
                     Sender = new MailAddress(options.Value.From),
@@ -54,13 +54,13 @@ namespace TailoredApps.Shared.Email
                 {
                     mailMessage.To.Add(options.Value.CatchAll);
                 }
-                
+
                 mailMessage.Body = messageBody;
                 mailMessage.IsBodyHtml = false;
                 mailMessage.BodyEncoding = System.Text.Encoding.UTF8;
-                var msgId= $"<{Guid.NewGuid().ToString().Replace(" - ","")}@{mailMessage.Sender.Host}>";
+                var msgId = $"<{Guid.NewGuid().ToString().Replace(" - ", "")}@{mailMessage.Sender.Host}>";
                 mailMessage.Headers.Add(new System.Collections.Specialized.NameValueCollection() { { "Message-ID", msgId } });
-                client.SendAsync(mailMessage,null);
+                await client.SendMailAsync(mailMessage);
                 return msgId;
             }
         }
@@ -101,9 +101,9 @@ namespace TailoredApps.Shared.Email
             options.Password = section.Password;
             options.EnableSsl = section.EnableSsl;
             options.UserName = section.UserName;
-            options.From = section.From; 
+            options.From = section.From;
             options.IsProd = section.IsProd;
             options.CatchAll = section.CatchAll;
-    }
+        }
     }
 }
