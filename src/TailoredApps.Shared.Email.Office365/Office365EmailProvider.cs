@@ -164,7 +164,7 @@ namespace TailoredApps.Shared.Email.Office365
             return result;
         }
 
-        public async Task SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
+        public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
         {
             throw new NotImplementedException();
         }

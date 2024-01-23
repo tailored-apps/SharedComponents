@@ -7,7 +7,7 @@ namespace TailoredApps.Shared.Email
 {
     public interface IEmailProvider
     {
-        Task SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments);
+        Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments);
         Task<ICollection<Models.MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "", TimeSpan? fromLast = null);
 
     }

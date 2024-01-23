@@ -23,7 +23,7 @@ namespace TailoredApps.Shared.Email
             throw new System.NotImplementedException();
         }
 
-        public async Task SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
+        public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
         {
 
             using (var client = new SmtpClient(options.Value.Host, options.Value.Port))
@@ -31,9 +31,11 @@ namespace TailoredApps.Shared.Email
                 client.UseDefaultCredentials = false;
                 client.Credentials = new NetworkCredential(options.Value.UserName, options.Value.Password);
                 client.EnableSsl = options.Value.EnableSsl;
-
+                client.Port = options.Value.Port;
+                
                 var mailMessage = new MailMessage
                 {
+                    Sender = new MailAddress(options.Value.From),
                     From = new MailAddress(options.Value.From),
                     Subject = topic
                 };
@@ -52,10 +54,14 @@ namespace TailoredApps.Shared.Email
                 {
                     mailMessage.To.Add(options.Value.CatchAll);
                 }
+                
                 mailMessage.Body = messageBody;
-                mailMessage.IsBodyHtml = true;
-
-                client.Send(mailMessage);
+                mailMessage.IsBodyHtml = false;
+                mailMessage.BodyEncoding = System.Text.Encoding.UTF8;
+                var msgId= $"<{Guid.NewGuid().ToString().Replace(" - ","")}@{mailMessage.Sender.Host}>";
+                mailMessage.Headers.Add(new System.Collections.Specialized.NameValueCollection() { { "Message-ID", msgId } });
+                client.SendAsync(mailMessage,null);
+                return msgId;
             }
         }
     }
