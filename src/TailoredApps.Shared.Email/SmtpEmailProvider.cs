@@ -56,7 +56,7 @@ namespace TailoredApps.Shared.Email
                 }
 
                 mailMessage.Body = messageBody;
-                mailMessage.IsBodyHtml = false;
+                mailMessage.IsBodyHtml = true;
                 mailMessage.BodyEncoding = System.Text.Encoding.UTF8;
                 var msgId = $"<{Guid.NewGuid().ToString().Replace(" - ", "")}@{mailMessage.Sender.Host}>";
                 mailMessage.Headers.Add(new System.Collections.Specialized.NameValueCollection() { { "Message-ID", msgId } });
