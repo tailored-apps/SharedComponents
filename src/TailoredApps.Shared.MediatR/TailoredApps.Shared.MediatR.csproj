@@ -2,11 +2,26 @@
 
 	<PropertyGroup>
 		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
-		<TargetFrameworks>net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
 		<AssemblyName>TailoredApps.Shared.MediatR</AssemblyName>
 		<RootNamespace>TailoredApps.Shared.MediatR</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		
+		<Authors>Lukasz Kowalski</Authors>
+		<Company>Tailored Apps.</Company>
+		<Product>Shared.MediatR</Product>
+		<Description>Shared.MediatR is a popular high-performance MediatR framework for .NET</Description>
+		<Copyright>Copyright © Lukasz Kowalski</Copyright>
+		<Summary>Shared.MediatR is a popular high-performance MediatR framework for .NET</Summary>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<Title>Shared.MediatR</Title>
+		<PackageId>TailoredApps.Shared.MediatR</PackageId>
+		<PackageTags>Mediator support for .NET</PackageTags>
+		<PackageIconUrl>https://www.nuget.org/profiles/TailoredApps/avatar?imageSize=512</PackageIconUrl>
+		<PackageProjectUrl>https://shared.tailoredapps.pl</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -1,22 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
 		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
 		<AssemblyName>TailoredApps.Shared.Email.Office365</AssemblyName>
 		<RootNamespace>TailoredApps.Shared.Email.Office365</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Version>0.0.1</Version>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		
+		<Authors>Lukasz Kowalski</Authors>
+		<Company>Tailored Apps.</Company>
+		<Product>Shared.Email</Product>
+		<Description>Shared.Email.Office365 is a simple Office365 for Email for .NET</Description>
+		<Copyright>Copyright © Lukasz Kowalski</Copyright>
+		<Summary>Shared.Email.Office365 is a simple Office365 for Email for .NET</Summary>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<Title>Shared.Email</Title>
+		<PackageId>TailoredApps.Shared.Email.Office365</PackageId>
+		<PackageTags>Mediator support for .NET</PackageTags>
+		<PackageIconUrl>https://www.nuget.org/profiles/TailoredApps/avatar?imageSize=512</PackageIconUrl>
+		<PackageProjectUrl>https://shared.tailoredapps.pl</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Identity.Web" Version="2.*" />
-		<PackageReference Include="MailKit" Version="4.*" />
+	  <PackageReference Include="MailKit" Version="4.7.1.1" />
+	  <PackageReference Include="Microsoft.Identity.Web" Version="3.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\TailoredApps.Shared.Email\TailoredApps.Shared.Email.csproj" />
+	  <ProjectReference Include="..\TailoredApps.Shared.Email\TailoredApps.Shared.Email.csproj" />
 	</ItemGroup>
 
 </Project>

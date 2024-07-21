@@ -8,6 +8,21 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Version>0.0.1</Version>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+
+		<Authors>Lukasz Kowalski</Authors>
+		<Company>Tailored Apps.</Company>
+		<Product>Shared.DateTime</Product>
+		<Description>Shared.DateTime is a simple abstraction for DateTime for .NET</Description>
+		<Copyright>Copyright © Lukasz Kowalski</Copyright>
+		<Summary>Shared.DateTime is a simple abstraction for DateTime for .NET</Summary>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<Title>Shared.DateTime</Title>
+		<PackageId>TailoredApps.Shared.DateTime</PackageId>
+		<PackageTags>Mediator support for .NET</PackageTags>
+		<PackageIconUrl>https://www.nuget.org/profiles/TailoredApps/avatar?imageSize=512</PackageIconUrl>
+		<PackageProjectUrl>https://shared.tailoredapps.pl</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	</PropertyGroup>
 
 </Project>

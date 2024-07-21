@@ -8,6 +8,21 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Version>0.0.1</Version>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+
+		<Authors>Lukasz Kowalski</Authors>
+		<Company>Tailored Apps.</Company>
+		<Product>Shared.Email</Product>
+		<Description>Shared.Email.Models is a simple Models for Email for .NET</Description>
+		<Copyright>Copyright © Lukasz Kowalski</Copyright>
+		<Summary>Shared.Email is a simple Models for Email for .NET</Summary>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<Title>Shared.Email</Title>
+		<PackageId>TailoredApps.Shared.Email.Models</PackageId>
+		<PackageTags>Mediator support for .NET</PackageTags>
+		<PackageIconUrl>https://www.nuget.org/profiles/TailoredApps/avatar?imageSize=512</PackageIconUrl>
+		<PackageProjectUrl>https://shared.tailoredapps.pl</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	</PropertyGroup>
 
 </Project>
