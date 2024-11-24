@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
-		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>net6.0;net8.0;net9.0</TargetFrameworks>
 		<AssemblyName>TailoredApps.Shared.MediatR</AssemblyName>
 		<RootNamespace>TailoredApps.Shared.MediatR</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -29,7 +29,12 @@
 		<PackageReference Include="MediatR" Version="12.*" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.*" />
 		<PackageReference Include="Polly" Version="8.*" />
-		<PackageReference Include="Scrutor" Version="4.*" />
+		<PackageReference Include="Scrutor" Version="5.0.2" />
+
+		<PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.*" Condition="'$(TargetFramework)' == 'net9.0'" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.*" Condition="'$(TargetFramework)' == 'net9.0'" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.*" Condition="'$(TargetFramework)' == 'net9.0'" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="9.*" Condition="'$(TargetFramework)' == 'net9.0'" />
 		
 		<PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="8.*" Condition="'$(TargetFramework)' == 'net8.0'" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.*" Condition="'$(TargetFramework)' == 'net8.0'" />
