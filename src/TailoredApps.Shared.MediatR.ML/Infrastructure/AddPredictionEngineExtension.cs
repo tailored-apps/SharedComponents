@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.ML;
 using System;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
