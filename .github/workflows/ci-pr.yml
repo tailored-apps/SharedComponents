@@ -12,10 +12,10 @@ jobs:
     name: Build and test
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setting up .NET Core SDK ${{ env.NETCORE_VERSION }}...
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.NETCORE_VERSION }}
 
@@ -32,6 +32,6 @@ jobs:
         run: dotnet test --no-build --configuration Release --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat="opencover"
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
