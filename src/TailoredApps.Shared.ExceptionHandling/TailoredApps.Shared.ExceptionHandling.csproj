@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 	  <SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
-	  <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+	  <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
       <AssemblyName>TailoredApps.Shared.ExceptionHandling</AssemblyName>
       <RootNamespace>TailoredApps.Shared.ExceptionHandling</RootNamespace>
       <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
