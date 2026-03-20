@@ -32,6 +32,18 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             return hash;
         }
 
+        /// <summary>
+        /// Oblicza MD5 stringa UTF-8.
+        /// CashBill wysyła w notyfikacjach backchannel sign oparty na MD5 (nie SHA1).
+        /// Formuła: MD5(cmd + transactionId + shopSecretPhrase)
+        /// </summary>
+        private static string HashMd5(string input)
+        {
+            var buffer = Encoding.UTF8.GetBytes(input);
+            using var md5 = MD5.Create();
+            return BitConverter.ToString(md5.ComputeHash(buffer)).Replace("-", "").ToLower();
+        }
+
         public async Task<ICollection<PaymentChannels>> GetPaymentChannels(string currency)
         {
             var shopId = options.Value.ShopId;
@@ -134,12 +146,14 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         public async Task<string> GetSignForNotificationService(TransactionStatusChanged transactionStatusChanged)
         {
             return await Task.Run(() =>
-             {
-                 var secretPhrase = options.Value.ShopSecretPhrase;
-                 var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
-                 var signStatus = Hash(toCalc);
-                 return signStatus;
-             });
+            {
+                var secretPhrase = options.Value.ShopSecretPhrase;
+                var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
+                // BUG FIX: CashBill wysyła sign MD5(cmd + args + secret), nie SHA1.
+                // Zweryfikowane empirycznie na podstawie rzeczywistych webhook logów (2026-03-20).
+                var signStatus = HashMd5(toCalc);
+                return signStatus;
+            });
         }
 
 
