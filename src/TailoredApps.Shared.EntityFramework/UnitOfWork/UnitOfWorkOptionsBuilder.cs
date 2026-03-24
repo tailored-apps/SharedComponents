@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
@@ -52,8 +52,24 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork
         }
     }
 
+    /// <summary>
+    /// Provides extension methods on <see cref="IServiceCollection"/> for registering
+    /// the Unit of Work infrastructure.
+    /// </summary>
     public static class ServiceCollectionExtensions
     {
+        /// <summary>
+        /// Registers the Unit of Work services for the specified DbContext and its interface,
+        /// wiring up the context, hooks manager, and scoped UoW instances.
+        /// </summary>
+        /// <typeparam name="TTargetDbContextInterface">The interface type exposed to consumers.</typeparam>
+        /// <typeparam name="TTargetDbContext">
+        /// The concrete EF Core DbContext type that implements <typeparamref name="TTargetDbContextInterface"/>.
+        /// </typeparam>
+        /// <param name="services">The service collection to register into.</param>
+        /// <returns>
+        /// An <see cref="IUnitOfWorkOptionsBuilder"/> for registering lifecycle hooks and other options.
+        /// </returns>
         public static IUnitOfWorkOptionsBuilder AddUnitOfWork<TTargetDbContextInterface, TTargetDbContext>(this IServiceCollection services)
             where TTargetDbContext : DbContext, TTargetDbContextInterface
             where TTargetDbContextInterface : class

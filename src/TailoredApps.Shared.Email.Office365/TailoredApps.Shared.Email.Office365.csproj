@@ -23,9 +23,13 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	</PropertyGroup>
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);NU5048</NoWarn>
+	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="MailKit" Version="4.13.0" />
+	  <PackageReference Include="MailKit" Version="4.15.1" />
+	  <PackageReference Include="MimeKit" Version="4.15.1" />
 	  <PackageReference Include="Microsoft.Identity.Web" Version="3.11.0" />
 	</ItemGroup>
 

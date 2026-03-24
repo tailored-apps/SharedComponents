@@ -33,8 +33,24 @@ public class AdyenServiceOptions
     /// <summary>HMAC klucz (hex) do weryfikacji powiadomień webhooka.</summary>
     public string NotificationHmacKey { get; set; } = string.Empty;
 
-    /// <summary>True = środowisko testowe (checkout-test.adyen.com), False = produkcja.</summary>
-    public bool IsTest { get; set; } = true;
+    /// <summary>Adyen environment name, e.g. "test" or "live". Used alongside <see cref="CheckoutUrl"/>.</summary>
+    public string Environment { get; set; } = "test";
+
+    /// <summary>
+    /// Full base URL of the Adyen Checkout API (e.g. "https://checkout-test.adyen.com/v71").
+    /// When set, takes precedence over the value derived from <see cref="IsTest"/>.
+    /// </summary>
+    public string? CheckoutUrl { get; set; }
+
+    /// <summary>
+    /// True = test environment (checkout-test.adyen.com), False = production.
+    /// Ignored when <see cref="CheckoutUrl"/> is explicitly set.
+    /// </summary>
+    public bool IsTest
+    {
+        get => Environment.Equals("test", StringComparison.OrdinalIgnoreCase);
+        set => Environment = value ? "test" : "live";
+    }
 }
 
 // ─── Internal models ─────────────────────────────────────────────────────────
@@ -98,9 +114,11 @@ public class AdyenServiceCaller : IAdyenServiceCaller
         this.httpClientFactory = httpClientFactory;
     }
 
-    private string BaseUrl => options.IsTest
-        ? "https://checkout-test.adyen.com/v71"
-        : "https://checkout-live.adyen.com/v71";
+    private string BaseUrl => !string.IsNullOrEmpty(options.CheckoutUrl)
+        ? options.CheckoutUrl
+        : options.IsTest
+            ? "https://checkout-test.adyen.com/v71"
+            : "https://checkout-live.adyen.com/v71";
 
     private HttpClient CreateClient()
     {
@@ -249,18 +267,30 @@ public class AdyenProvider : IPaymentProvider
         var status = PaymentStatusEnum.Processing;
         try
         {
-            var doc = JsonDocument.Parse(body);
-            if (doc.RootElement.TryGetProperty("eventCode", out var ev))
+            var doc  = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+
+            // Adyen sends notifications wrapped in notificationItems array
+            JsonElement item = root;
+            if (root.TryGetProperty("notificationItems", out var items) &&
+                items.GetArrayLength() > 0 &&
+                items[0].TryGetProperty("NotificationRequestItem", out var nri))
             {
-                status = ev.GetString() switch
-                {
-                    "AUTHORISATION"        => PaymentStatusEnum.Finished,
-                    "CANCELLATION"         => PaymentStatusEnum.Rejected,
-                    "REFUND"               => PaymentStatusEnum.Rejected,
-                    "AUTHORISATION_FAILED" => PaymentStatusEnum.Rejected,
-                    _                      => PaymentStatusEnum.Processing,
-                };
+                item = nri;
             }
+
+            var eventCode = item.TryGetProperty("eventCode", out var ev) ? ev.GetString() : null;
+            var success   = item.TryGetProperty("success",   out var s)  ? s.GetString()  : "true";
+            var succeeded = !string.Equals(success, "false", StringComparison.OrdinalIgnoreCase);
+
+            status = eventCode switch
+            {
+                "AUTHORISATION"        => succeeded ? PaymentStatusEnum.Finished   : PaymentStatusEnum.Rejected,
+                "CANCELLATION"         => PaymentStatusEnum.Rejected,
+                "REFUND"               => succeeded ? PaymentStatusEnum.Finished   : PaymentStatusEnum.Rejected,
+                "AUTHORISATION_FAILED" => PaymentStatusEnum.Rejected,
+                _                      => PaymentStatusEnum.Processing,
+            };
         }
         catch { /* ignore */ }
 

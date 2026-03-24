@@ -148,6 +148,8 @@ public class RevolutProvider : IPaymentProvider
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
         var (id, checkoutUrl) = await caller.CreateOrderAsync(request);
+        if (id is null)
+            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "API error" };
         return new PaymentResponse
         {
             PaymentUniqueId = id,
@@ -164,6 +166,7 @@ public class RevolutProvider : IPaymentProvider
         {
             "completed"  => PaymentStatusEnum.Finished,
             "processing" => PaymentStatusEnum.Processing,
+            "pending"    => PaymentStatusEnum.Processing,
             "authorised" => PaymentStatusEnum.Processing,
             "failed"     => PaymentStatusEnum.Rejected,
             "cancelled"  => PaymentStatusEnum.Rejected,
@@ -189,11 +192,12 @@ public class RevolutProvider : IPaymentProvider
             if (doc.RootElement.TryGetProperty("event", out var ev))
                 status = ev.GetString() switch
                 {
-                    "ORDER_COMPLETED"  => PaymentStatusEnum.Finished,
-                    "ORDER_AUTHORISED" => PaymentStatusEnum.Processing,
-                    "ORDER_CANCELLED"  => PaymentStatusEnum.Rejected,
-                    "PAYMENT_DECLINED" => PaymentStatusEnum.Rejected,
-                    _                  => PaymentStatusEnum.Processing,
+                    "ORDER_COMPLETED"         => PaymentStatusEnum.Finished,
+                    "ORDER_AUTHORISED"        => PaymentStatusEnum.Processing,
+                    "ORDER_CANCELLED"         => PaymentStatusEnum.Rejected,
+                    "ORDER_PAYMENT_DECLINED"  => PaymentStatusEnum.Rejected,
+                    "PAYMENT_DECLINED"        => PaymentStatusEnum.Rejected,
+                    _                         => PaymentStatusEnum.Processing,
                 };
         }
         catch { /* ignore */ }

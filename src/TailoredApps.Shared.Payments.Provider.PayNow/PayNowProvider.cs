@@ -19,8 +19,12 @@ public class PayNowServiceOptions
     public string ApiKey       { get; set; } = string.Empty;
     /// <summary>SignatureKey.</summary>
     public string SignatureKey { get; set; } = string.Empty;
-    /// <summary>ApiUrl.</summary>
-    public string ApiUrl       { get; set; } = "https://api.paynow.pl";
+    /// <summary>Base URL of the PayNow API endpoint.</summary>
+    public string ServiceUrl   { get; set; } = "https://api.paynow.pl";
+
+    /// <summary>Alias for ServiceUrl — backwards compatibility.</summary>
+    [Obsolete("Use ServiceUrl instead.")]
+    public string ApiUrl { get => ServiceUrl; set => ServiceUrl = value; }
     /// <summary>ReturnUrl.</summary>
     public string ReturnUrl    { get; set; } = string.Empty;
     /// <summary>ContinueUrl.</summary>
@@ -105,7 +109,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         };
 
         var content  = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync($"{options.ApiUrl}/v2/payments", content);
+        var response = await client.PostAsync($"{options.ServiceUrl}/v2/payments", content);
         var json     = await response.Content.ReadAsStringAsync();
         var result   = JsonSerializer.Deserialize<PayNowPaymentResponse>(json);
         return (result?.PaymentId, result?.RedirectUrl);
@@ -115,7 +119,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
     public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId)
     {
         using var client = CreateClient();
-        var response = await client.GetAsync($"{options.ApiUrl}/v2/payments/{paymentId}/status");
+        var response = await client.GetAsync($"{options.ServiceUrl}/v2/payments/{paymentId}/status");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
         var json   = await response.Content.ReadAsStringAsync();
         var status = JsonSerializer.Deserialize<PayNowStatusResponse>(json)?.Status;
@@ -173,6 +177,8 @@ public class PayNowProvider : IPaymentProvider
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
         var (paymentId, redirectUrl) = await caller.CreatePaymentAsync(request);
+        if (paymentId is null)
+            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "API error" };
         return new PaymentResponse
         {
             PaymentUniqueId = paymentId,
@@ -243,7 +249,7 @@ public class PayNowConfigureOptions : IConfigureOptions<PayNowServiceOptions>
         if (s is null) return;
         options.ApiKey       = s.ApiKey;
         options.SignatureKey = s.SignatureKey;
-        options.ApiUrl       = s.ApiUrl;
+        options.ServiceUrl       = s.ServiceUrl;
         options.ReturnUrl    = s.ReturnUrl;
         options.ContinueUrl  = s.ContinueUrl;
     }

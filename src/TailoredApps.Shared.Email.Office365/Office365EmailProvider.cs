@@ -29,7 +29,6 @@ namespace TailoredApps.Shared.Email.Office365
         public Office365EmailProvider(IOptions<AuthenticationConfig> options)
         {
             this.options = options;
-            this.confidentialClientApplication = confidentialClientApplication;
 
             // You can run this sample using ClientSecret or Certificate. The code will differ only when instantiating the IConfidentialClientApplication
             bool isUsingClientSecret = IsAppUsingClientSecret(options.Value);
