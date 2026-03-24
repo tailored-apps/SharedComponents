@@ -91,6 +91,7 @@ namespace TailoredApps.Shared.Email
 
 
 
+    /// <summary>Wczytuje opcje SMTP z konfiguracji aplikacji.</summary>
     public class SmtpEmailConfigureOptions : IConfigureOptions<SmtpEmailServiceOptions>
     {
         private readonly IConfiguration configuration;
