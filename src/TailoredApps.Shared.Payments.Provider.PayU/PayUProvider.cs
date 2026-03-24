@@ -228,7 +228,7 @@ public class PayUProvider : IPaymentProvider
                 new PaymentChannel { Id = "blik",     Name = "BLIK",              Description = "BLIK",                PaymentModel = PaymentModel.OneTime },
                 new PaymentChannel { Id = "c",        Name = "Karta płatnicza",   Description = "Visa, Mastercard",    PaymentModel = PaymentModel.OneTime },
                 new PaymentChannel { Id = "o",        Name = "Przelew online",    Description = "Pekao, mBank, iPKO",  PaymentModel = PaymentModel.OneTime },
-                new PaymentChannel { Id = "ai",       Name = "Raty",              Description = "Raty PayU",           PaymentModel = PaymentModel.Installment },
+                new PaymentChannel { Id = "ai",       Name = "Raty",              Description = "Raty PayU",           PaymentModel = PaymentModel.OneTime },
                 new PaymentChannel { Id = "ap",       Name = "Apple Pay",         Description = "Apple Pay",           PaymentModel = PaymentModel.OneTime },
                 new PaymentChannel { Id = "jp",       Name = "Google Pay",        Description = "Google Pay",          PaymentModel = PaymentModel.OneTime },
             ],

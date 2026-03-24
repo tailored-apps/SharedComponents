@@ -1,97 +1,159 @@
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
-using Adyen;
-using Adyen.Model.Checkout;
-using Adyen.Service.Checkout;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Environment = Adyen.Model.Enum.Environment;
 
 namespace TailoredApps.Shared.Payments.Provider.Adyen;
 
 // ─── Options ─────────────────────────────────────────────────────────────────
 
-/// <summary>Konfiguracja Adyen. Sekcja: <c>Payments:Providers:Adyen</c>.</summary>
+/// <summary>Konfiguracja Adyen Checkout API. Sekcja: <c>Payments:Providers:Adyen</c>.</summary>
 public class AdyenServiceOptions
 {
+    /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:Adyen";
-    public string ApiKey              { get; set; } = string.Empty;
-    public string MerchantAccount     { get; set; } = string.Empty;
-    public string ClientKey           { get; set; } = string.Empty;
-    public string ReturnUrl           { get; set; } = string.Empty;
-    /// <summary>HMAC klucz do weryfikacji powiadomień webhooka (hex).</summary>
+
+    /// <summary>Adyen API key (X-API-Key).</summary>
+    public string ApiKey { get; set; } = string.Empty;
+
+    /// <summary>Identyfikator konta merchantskiego.</summary>
+    public string MerchantAccount { get; set; } = string.Empty;
+
+    /// <summary>Client key do Drop-in / Components (opcjonalnie).</summary>
+    public string ClientKey { get; set; } = string.Empty;
+
+    /// <summary>URL powrotu po płatności.</summary>
+    public string ReturnUrl { get; set; } = string.Empty;
+
+    /// <summary>HMAC klucz (hex) do weryfikacji powiadomień webhooka.</summary>
     public string NotificationHmacKey { get; set; } = string.Empty;
-    /// <summary>True = sandbox (test), False = live.</summary>
-    public bool   IsTest              { get; set; } = true;
+
+    /// <summary>True = środowisko testowe (checkout-test.adyen.com), False = produkcja.</summary>
+    public bool IsTest { get; set; } = true;
+}
+
+// ─── Internal models ─────────────────────────────────────────────────────────
+
+file class AdyenAmount
+{
+    [JsonPropertyName("value")]    public long   Value    { get; set; }
+    [JsonPropertyName("currency")] public string Currency { get; set; } = string.Empty;
+}
+
+file class AdyenSessionRequest
+{
+    [JsonPropertyName("merchantAccount")] public string      MerchantAccount { get; set; } = string.Empty;
+    [JsonPropertyName("amount")]          public AdyenAmount Amount          { get; set; } = new();
+    [JsonPropertyName("reference")]       public string      Reference       { get; set; } = string.Empty;
+    [JsonPropertyName("returnUrl")]       public string      ReturnUrl       { get; set; } = string.Empty;
+    [JsonPropertyName("shopperEmail")]    public string?     ShopperEmail    { get; set; }
+    [JsonPropertyName("countryCode")]     public string?     CountryCode     { get; set; }
+}
+
+file class AdyenSessionResponse
+{
+    [JsonPropertyName("id")]          public string? Id          { get; set; }
+    [JsonPropertyName("sessionData")] public string? SessionData { get; set; }
+    [JsonPropertyName("url")]         public string? Url         { get; set; }
+}
+
+file class AdyenStatusResponse
+{
+    [JsonPropertyName("status")] public string? Status { get; set; }
+    [JsonPropertyName("resultCode")] public string? ResultCode { get; set; }
 }
 
 // ─── Interface ────────────────────────────────────────────────────────────────
 
-/// <summary>Abstrakcja nad Adyen Checkout API.</summary>
+/// <summary>Abstrakcja nad Adyen Checkout API v71 (Sessions).</summary>
 public interface IAdyenServiceCaller
 {
-    Task<CreateCheckoutSessionResponse> CreateSessionAsync(PaymentRequest request);
-    Task<PaymentDetailsResponse> GetPaymentStatusAsync(string pspReference);
+    /// <summary>Tworzy sesję płatności Adyen i zwraca id sesji oraz URL checkout.</summary>
+    Task<(string? sessionId, string? checkoutUrl, string? error)> CreateSessionAsync(PaymentRequest request);
+
+    /// <summary>Pobiera status płatności na podstawie pspReference lub sessionId.</summary>
+    Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId);
+
+    /// <summary>Weryfikuje HMAC podpis powiadomienia webhooka.</summary>
     bool VerifyNotificationHmac(string payload, string hmacSignature);
 }
 
 // ─── Caller ───────────────────────────────────────────────────────────────────
 
-/// <summary>Implementacja <see cref="IAdyenServiceCaller"/> opakowująca oficjalny Adyen SDK.</summary>
+/// <summary>Implementacja <see cref="IAdyenServiceCaller"/> oparta na Adyen Checkout REST API v71.</summary>
 public class AdyenServiceCaller : IAdyenServiceCaller
 {
     private readonly AdyenServiceOptions options;
+    private readonly IHttpClientFactory httpClientFactory;
 
-    public AdyenServiceCaller(IOptions<AdyenServiceOptions> options)
+    /// <summary>Inicjalizuje instancję <see cref="AdyenServiceCaller"/>.</summary>
+    public AdyenServiceCaller(IOptions<AdyenServiceOptions> options, IHttpClientFactory httpClientFactory)
     {
         this.options = options.Value;
+        this.httpClientFactory = httpClientFactory;
     }
 
-    private Client CreateClient()
+    private string BaseUrl => options.IsTest
+        ? "https://checkout-test.adyen.com/v71"
+        : "https://checkout-live.adyen.com/v71";
+
+    private HttpClient CreateClient()
     {
-        var config = new Config
-        {
-            XApiKey     = options.ApiKey,
-            Environment = options.IsTest ? Environment.Test : Environment.Live,
-        };
-        return new Client(config);
+        var client = httpClientFactory.CreateClient("Adyen");
+        client.DefaultRequestHeaders.Add("X-API-Key", options.ApiKey);
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        return client;
     }
 
-    public async Task<CreateCheckoutSessionResponse> CreateSessionAsync(PaymentRequest request)
+    /// <inheritdoc/>
+    public async Task<(string? sessionId, string? checkoutUrl, string? error)> CreateSessionAsync(PaymentRequest request)
     {
-        var client   = CreateClient();
-        var checkout = new PaymentsService(client);
-
-        var amount = new Adyen.Model.Checkout.Amount
+        using var client = CreateClient();
+        var body = new AdyenSessionRequest
         {
-            Value    = (long)(request.Amount * 100),
-            Currency = request.Currency.ToUpperInvariant(),
+            MerchantAccount = options.MerchantAccount,
+            Amount          = new AdyenAmount { Value = (long)(request.Amount * 100), Currency = request.Currency.ToUpperInvariant() },
+            Reference       = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
+            ReturnUrl       = options.ReturnUrl,
+            ShopperEmail    = request.Email,
+            CountryCode     = request.Country ?? "PL",
         };
+        var content  = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var response = await client.PostAsync($"{BaseUrl}/sessions", content);
+        var json     = await response.Content.ReadAsStringAsync();
 
-        var sessionRequest = new CreateCheckoutSessionRequest(
-            merchantAccount: options.MerchantAccount,
-            amount:          amount,
-            returnUrl:       options.ReturnUrl,
-            reference:       request.AdditionalData ?? Guid.NewGuid().ToString("N")
-        )
-        {
-            ShopperEmail     = request.Email,
-            ShopperReference = request.Email,
-            CountryCode      = request.Country ?? "PL",
-        };
+        if (!response.IsSuccessStatusCode)
+            return (null, null, json);
 
-        return await checkout.SessionsAsync(sessionRequest);
+        var result = JsonSerializer.Deserialize<AdyenSessionResponse>(json);
+        return (result?.Id, result?.Url, null);
     }
 
-    public async Task<PaymentDetailsResponse> GetPaymentStatusAsync(string pspReference)
+    /// <inheritdoc/>
+    public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId)
     {
-        var client   = CreateClient();
-        var checkout = new PaymentsService(client);
-        var details  = new PaymentDetailsRequest(details: new PaymentCompletionDetails(), paymentData: pspReference);
-        return await checkout.PaymentsDetailsAsync(details);
+        using var client = CreateClient();
+        var response = await client.GetAsync($"{BaseUrl}/payments/{paymentId}/details");
+        if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
+        var json   = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<AdyenStatusResponse>(json);
+        return result?.ResultCode switch
+        {
+            "Authorised" => PaymentStatusEnum.Finished,
+            "Refused"    => PaymentStatusEnum.Rejected,
+            "Cancelled"  => PaymentStatusEnum.Rejected,
+            "Pending"    => PaymentStatusEnum.Processing,
+            "Received"   => PaymentStatusEnum.Processing,
+            _            => PaymentStatusEnum.Created,
+        };
     }
 
+    /// <inheritdoc/>
     public bool VerifyNotificationHmac(string payload, string hmacSignature)
     {
         try
@@ -107,21 +169,27 @@ public class AdyenServiceCaller : IAdyenServiceCaller
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
-/// <summary>Implementacja <see cref="IPaymentProvider"/> dla Adyen.</summary>
+/// <summary>Implementacja <see cref="IPaymentProvider"/> dla Adyen Checkout.</summary>
 public class AdyenProvider : IPaymentProvider
 {
     private readonly IAdyenServiceCaller caller;
 
-    public AdyenProvider(IAdyenServiceCaller caller)
-    {
-        this.caller = caller;
-    }
+    /// <summary>Inicjalizuje instancję <see cref="AdyenProvider"/>.</summary>
+    public AdyenProvider(IAdyenServiceCaller caller) => this.caller = caller;
 
-    public string Key         => "Adyen";
-    public string Name        => "Adyen";
+    /// <inheritdoc/>
+    public string Key => "Adyen";
+
+    /// <inheritdoc/>
+    public string Name => "Adyen";
+
+    /// <inheritdoc/>
     public string Description => "Globalny operator płatności Adyen — karty, BLIK, iDEAL i inne.";
-    public string Url         => "https://www.adyen.com";
 
+    /// <inheritdoc/>
+    public string Url => "https://www.adyen.com";
+
+    /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
     {
         ICollection<PaymentChannel> channels = currency.ToUpperInvariant() switch
@@ -134,9 +202,9 @@ public class AdyenProvider : IPaymentProvider
             ],
             "EUR" =>
             [
-                new PaymentChannel { Id = "scheme",          Name = "Karta płatnicza",    Description = "Visa, Mastercard", PaymentModel = PaymentModel.OneTime },
-                new PaymentChannel { Id = "ideal",           Name = "iDEAL",              Description = "Przelew iDEAL",    PaymentModel = PaymentModel.OneTime },
-                new PaymentChannel { Id = "sepadirectdebit", Name = "SEPA Direct Debit",  Description = "SEPA",             PaymentModel = PaymentModel.OneTime },
+                new PaymentChannel { Id = "scheme",          Name = "Karta płatnicza",   Description = "Visa, Mastercard", PaymentModel = PaymentModel.OneTime },
+                new PaymentChannel { Id = "ideal",           Name = "iDEAL",             Description = "Przelew iDEAL",    PaymentModel = PaymentModel.OneTime },
+                new PaymentChannel { Id = "sepadirectdebit", Name = "SEPA Direct Debit", Description = "SEPA",             PaymentModel = PaymentModel.OneTime },
             ],
             _ =>
             [
@@ -146,32 +214,30 @@ public class AdyenProvider : IPaymentProvider
         return Task.FromResult(channels);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
-        var session = await caller.CreateSessionAsync(request);
+        var (sessionId, checkoutUrl, error) = await caller.CreateSessionAsync(request);
+
+        if (sessionId is null)
+            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = error };
+
         return new PaymentResponse
         {
-            PaymentUniqueId = session.Id,
-            RedirectUrl     = session.Url,
+            PaymentUniqueId = sessionId,
+            RedirectUrl     = checkoutUrl,
             PaymentStatus   = PaymentStatusEnum.Created,
         };
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> GetStatus(string paymentId)
     {
-        var details = await caller.GetPaymentStatusAsync(paymentId);
-        var status = details.ResultCode?.ToString() switch
-        {
-            "Authorised" => PaymentStatusEnum.Finished,
-            "Refused"    => PaymentStatusEnum.Rejected,
-            "Cancelled"  => PaymentStatusEnum.Rejected,
-            "Pending"    => PaymentStatusEnum.Processing,
-            "Received"   => PaymentStatusEnum.Processing,
-            _            => PaymentStatusEnum.Created,
-        };
+        var status = await caller.GetPaymentStatusAsync(paymentId);
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
+    /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
@@ -183,7 +249,7 @@ public class AdyenProvider : IPaymentProvider
         var status = PaymentStatusEnum.Processing;
         try
         {
-            var doc = System.Text.Json.JsonDocument.Parse(body);
+            var doc = JsonDocument.Parse(body);
             if (doc.RootElement.TryGetProperty("eventCode", out var ev))
             {
                 status = ev.GetString() switch
@@ -207,19 +273,25 @@ public class AdyenProvider : IPaymentProvider
 /// <summary>Rozszerzenia DI dla Adyen.</summary>
 public static class AdyenProviderExtensions
 {
+    /// <summary>Rejestruje <see cref="AdyenProvider"/> i jego zależności w kontenerze DI.</summary>
     public static void RegisterAdyenProvider(this IServiceCollection services)
     {
         services.AddOptions<AdyenServiceOptions>();
         services.ConfigureOptions<AdyenConfigureOptions>();
+        services.AddHttpClient("Adyen");
         services.AddTransient<IAdyenServiceCaller, AdyenServiceCaller>();
     }
 }
 
-/// <summary>Wczytuje opcje Adyen z konfiguracji.</summary>
+/// <summary>Wczytuje opcje Adyen z konfiguracji aplikacji.</summary>
 public class AdyenConfigureOptions : IConfigureOptions<AdyenServiceOptions>
 {
     private readonly IConfiguration configuration;
+
+    /// <summary>Inicjalizuje instancję <see cref="AdyenConfigureOptions"/>.</summary>
     public AdyenConfigureOptions(IConfiguration configuration) => this.configuration = configuration;
+
+    /// <inheritdoc/>
     public void Configure(AdyenServiceOptions options)
     {
         var s = configuration.GetSection(AdyenServiceOptions.ConfigurationKey).Get<AdyenServiceOptions>();
