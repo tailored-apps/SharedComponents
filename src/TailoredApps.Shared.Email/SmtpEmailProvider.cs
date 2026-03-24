@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace TailoredApps.Shared.Email
 {
+    /// <summary>Implementacja <see cref="IEmailProvider"/> wysyłająca e-maile przez SMTP.</summary>
     public class SmtpEmailProvider : IEmailProvider
     {
         private readonly IOptions<SmtpEmailServiceOptions> options;
@@ -69,6 +70,7 @@ namespace TailoredApps.Shared.Email
         }
     }
 
+    /// <summary>Rozszerzenia DI dla dostawców e-mail SMTP i konsolowego.</summary>
     public static class SmtpEmailProviderExtensions
     {
         /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>

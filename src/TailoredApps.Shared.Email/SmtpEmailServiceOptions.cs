@@ -1,6 +1,7 @@
 ﻿namespace TailoredApps.Shared.Email
 {
 
+    /// <summary>Opcje konfiguracji dostawcy SMTP.</summary>
     public class SmtpEmailServiceOptions
     {
         /// <summary>Klucz sekcji konfiguracji.</summary>
