@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace TailoredApps.Shared.Email
 {
+    /// <summary>Interfejs dostawcy e-mail — wysyłanie i odbieranie wiadomości.</summary>
     public interface IEmailProvider
     {
         /// <summary>Wywołanie API.</summary>

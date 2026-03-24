@@ -4,13 +4,18 @@ using System.IO;
 
 namespace TailoredApps.Shared.Email.MailMessageBuilder
 {
+    /// <summary>Buduje wiadomości e-mail z szablonów z podmianą tokenów.</summary>
     public class TokenReplacingMailMessageBuilder : IMailMessageBuilder
     {
         private readonly IOptions<TokenReplacingMailMessageBuilderOptions> options;
+
+        /// <summary>Inicjalizuje instancję <see cref="TokenReplacingMailMessageBuilder"/>.</summary>
         public TokenReplacingMailMessageBuilder(IOptions<TokenReplacingMailMessageBuilderOptions> options)
         {
             this.options = options;
         }
+
+        /// <inheritdoc/>
         public string Build(string templateKey, IDictionary<string, string> variables, IDictionary<string, string> templates)
         {
             if (templates == null)

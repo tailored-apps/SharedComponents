@@ -5,6 +5,7 @@ using TailoredApps.Shared.Email.Models;
 
 namespace TailoredApps.Shared.Email
 {
+    /// <summary>Implementacja <see cref="IEmailProvider"/> wypisująca wiadomości na konsolę (dev/test).</summary>
     public class EmailServiceToConsolleWritter : IEmailProvider
     {
         /// <inheritdoc/>
