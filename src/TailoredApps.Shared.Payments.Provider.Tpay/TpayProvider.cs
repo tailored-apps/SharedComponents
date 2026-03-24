@@ -20,8 +20,16 @@ public class TpayServiceOptions
     public string ClientSecret { get; set; } = string.Empty;
     /// <summary>MerchantId.</summary>
     public string MerchantId   { get; set; } = string.Empty;
-    /// <summary>ApiUrl.</summary>
-    public string ApiUrl       { get; set; } = "https://api.tpay.com";
+    /// <summary>Base URL of the Tpay API endpoint.</summary>
+    public string ServiceUrl   { get; set; } = "https://api.tpay.com";
+
+    /// <summary>Alias for <see cref="ServiceUrl"/> — kept for backwards compatibility.</summary>
+    [Obsolete("Use ServiceUrl instead.")]
+    public string ApiUrl
+    {
+        get => ServiceUrl;
+        set => ServiceUrl = value;
+    }
     /// <summary>ReturnUrl.</summary>
     public string ReturnUrl    { get; set; } = string.Empty;
     /// <summary>NotifyUrl.</summary>
@@ -123,7 +131,7 @@ public class TpayServiceCaller : ITpayServiceCaller
             new("client_id",     options.ClientId),
             new("client_secret", options.ClientSecret),
         ]);
-        var response = await client.PostAsync($"{options.ApiUrl}/oauth/auth", content);
+        var response = await client.PostAsync($"{options.ServiceUrl}/oauth/auth", content);
         response.EnsureSuccessStatusCode();
         var json = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<TpayTokenResponse>(json)?.AccessToken ?? string.Empty;
@@ -151,7 +159,7 @@ public class TpayServiceCaller : ITpayServiceCaller
             body.Pay = new TpayPay { Channel = request.PaymentChannel };
 
         var content  = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync($"{options.ApiUrl}/transactions", content);
+        var response = await client.PostAsync($"{options.ServiceUrl}/transactions", content);
         var json     = await response.Content.ReadAsStringAsync();
         var tx       = JsonSerializer.Deserialize<TpayTransactionResponse>(json);
         return (tx?.TransactionId, tx?.PaymentUrl);
@@ -162,7 +170,7 @@ public class TpayServiceCaller : ITpayServiceCaller
     {
         using var client = httpClientFactory.CreateClient("Tpay");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await client.GetAsync($"{options.ApiUrl}/transactions/{transactionId}");
+        var response = await client.GetAsync($"{options.ServiceUrl}/transactions/{transactionId}");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
         var json   = await response.Content.ReadAsStringAsync();
         var status = JsonSerializer.Deserialize<TpayStatusResponse>(json)?.Status;
@@ -287,7 +295,7 @@ public class TpayConfigureOptions : IConfigureOptions<TpayServiceOptions>
         options.ClientId     = s.ClientId;
         options.ClientSecret = s.ClientSecret;
         options.MerchantId   = s.MerchantId;
-        options.ApiUrl       = s.ApiUrl;
+        options.ServiceUrl       = s.ServiceUrl;
         options.ReturnUrl    = s.ReturnUrl;
         options.NotifyUrl    = s.NotifyUrl;
         options.SecurityCode = s.SecurityCode;

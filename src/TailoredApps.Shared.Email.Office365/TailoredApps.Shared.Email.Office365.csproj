@@ -23,6 +23,9 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	</PropertyGroup>
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);NU5048</NoWarn>
+	</PropertyGroup>
 
 	<ItemGroup>
 	  <PackageReference Include="MailKit" Version="4.15.1" />
