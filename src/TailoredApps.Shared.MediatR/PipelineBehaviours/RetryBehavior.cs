@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Polly;
 using System;
@@ -10,17 +10,26 @@ using TailoredApps.Shared.MediatR.Interfaces.Messages;
 
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours
 {
+    /// <summary>
+    /// Pipeline behavior MediatR implementujący retry z opcjonalnym exponential backoff i circuit breakerem.
+    /// </summary>
+    /// <typeparam name="TRequest">Typ żądania MediatR.</typeparam>
+    /// <typeparam name="TResponse">Typ odpowiedzi.</typeparam>
     public class RetryBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
     {
         private readonly IEnumerable<IRetryableRequest<TRequest, TResponse>> _retryHandlers;
         private readonly ILogger<RetryBehavior<TRequest, TResponse>> _logger;
 
+        /// <summary>Inicjalizuje instancję <see cref="RetryBehavior{TRequest, TResponse}"/>.</summary>
+        /// <param name="retryHandlers">Kolekcja konfiguracji retry.</param>
+        /// <param name="logger">Logger.</param>
         public RetryBehavior(IEnumerable<IRetryableRequest<TRequest, TResponse>> retryHandlers, ILogger<RetryBehavior<TRequest, TResponse>> logger)
         {
             _retryHandlers = retryHandlers;
             _logger = logger;
         }
 
+        /// <inheritdoc/>
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             var retryHandler = _retryHandlers.FirstOrDefault();

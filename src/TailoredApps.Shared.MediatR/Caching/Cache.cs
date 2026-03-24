@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using System;
 using System.Text;
@@ -8,13 +8,19 @@ using TailoredApps.Shared.MediatR.Interfaces.Caching;
 
 namespace TailoredApps.Shared.MediatR.Caching
 {
+    /// <summary>Implementacja <see cref="ICache"/> oparta na <see cref="IDistributedCache"/> z serializacją Newtonsoft.Json.</summary>
     public class Cache : ICache
     {
         private readonly IDistributedCache distributedCache;
+
+        /// <summary>Inicjalizuje instancję <see cref="Cache"/>.</summary>
+        /// <param name="distributedCache">Implementacja distributed cache.</param>
         public Cache(IDistributedCache distributedCache)
         {
             this.distributedCache = distributedCache;
         }
+
+        /// <inheritdoc/>
         public async Task<T> GetAsync<T>(string cacheKey, CancellationToken cancellationToken)
         {
             var response = await distributedCache.GetAsync(cacheKey, cancellationToken);
@@ -27,6 +33,7 @@ namespace TailoredApps.Shared.MediatR.Caching
             return serialized;
         }
 
+        /// <inheritdoc/>
         public async Task SetAsync<TResponse>(string cacheKey, TResponse response, TimeSpan? slidingExpiration, DateTime? absoluteExpiration, TimeSpan? absoluteExpirationRelativeToNow, CancellationToken cancellationToken)
         {
             var serializedObject = JsonConvert.SerializeObject(response);

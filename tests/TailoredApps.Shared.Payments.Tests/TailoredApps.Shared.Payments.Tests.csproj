@@ -22,6 +22,13 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.CashBill\TailoredApps.Shared.Payments.Provider.CashBill.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Stripe\TailoredApps.Shared.Payments.Provider.Stripe.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Adyen\TailoredApps.Shared.Payments.Provider.Adyen.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.PayU\TailoredApps.Shared.Payments.Provider.PayU.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Przelewy24\TailoredApps.Shared.Payments.Provider.Przelewy24.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Tpay\TailoredApps.Shared.Payments.Provider.Tpay.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.HotPay\TailoredApps.Shared.Payments.Provider.HotPay.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.PayNow\TailoredApps.Shared.Payments.Provider.PayNow.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Revolut\TailoredApps.Shared.Payments.Provider.Revolut.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments\TailoredApps.Shared.Payments.csproj" />
 	</ItemGroup>
 

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Text.Json;
@@ -7,15 +7,23 @@ using System.Threading.Tasks;
 
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours
 {
+    /// <summary>
+    /// Pipeline behavior MediatR logujący czas wykonania żądania oraz ewentualne wyjątki.
+    /// </summary>
+    /// <typeparam name="TRequest">Typ żądania MediatR.</typeparam>
+    /// <typeparam name="TResponse">Typ odpowiedzi.</typeparam>
     public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
     {
         private readonly ILogger logger;
 
+        /// <summary>Inicjalizuje instancję <see cref="LoggingBehavior{TRequest, TResponse}"/>.</summary>
+        /// <param name="logger">Logger dla żądania.</param>
         public LoggingBehavior(ILogger<TRequest> logger)
         {
             this.logger = logger;
         }
 
+        /// <inheritdoc/>
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             var correlationId = Guid.NewGuid();

@@ -2,8 +2,10 @@
 
 namespace TailoredApps.Shared.Email.MailMessageBuilder
 {
+    /// <summary>Domyślna implementacja <see cref="IMailMessageBuilder"/> — zastępuje tokeny w szablonie.</summary>
     public class DefaultMessageBuilder : IMailMessageBuilder
     {
+        /// <inheritdoc/>
         public string Build(string templateKey, IDictionary<string, string> variables, IDictionary<string, string> templates)
         {
             if (templates.ContainsKey(templateKey))

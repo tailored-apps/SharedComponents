@@ -13,6 +13,7 @@ public class StripeProvider : IPaymentProvider
 {
     private readonly IStripeServiceCaller stripeCaller;
 
+    /// <summary>Inicjalizuje instancję providera.</summary>
     public StripeProvider(IStripeServiceCaller stripeCaller)
     {
         this.stripeCaller = stripeCaller;
@@ -22,6 +23,7 @@ public class StripeProvider : IPaymentProvider
 
     public string Key         => StripeProviderKey;
     public string Name        => StripeProviderKey;
+    /// <inheritdoc/>
     public string Description => "Globalny operator płatności kartą, BLIK i Przelewy24.";
     public string Url         => "https://stripe.com";
 
@@ -207,11 +209,13 @@ public class StripeConfigureOptions : IConfigureOptions<StripeServiceOptions>
 {
     private readonly IConfiguration configuration;
 
+    /// <summary>Inicjalizuje instancję konfiguracji.</summary>
     public StripeConfigureOptions(IConfiguration configuration)
     {
         this.configuration = configuration;
     }
 
+    /// <inheritdoc/>
     public void Configure(StripeServiceOptions options)
     {
         var section = configuration
