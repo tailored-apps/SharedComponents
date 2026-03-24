@@ -21,6 +21,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.CashBill\TailoredApps.Shared.Payments.Provider.CashBill.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Stripe\TailoredApps.Shared.Payments.Provider.Stripe.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments\TailoredApps.Shared.Payments.csproj" />
 	</ItemGroup>
 
