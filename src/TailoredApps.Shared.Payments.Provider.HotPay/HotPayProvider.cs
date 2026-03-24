@@ -131,6 +131,9 @@ public class HotPayProvider : IPaymentProvider
         var paymentId = Guid.NewGuid().ToString("N");
         var (resultId, redirectUrl) = await caller.InitPaymentAsync(request, paymentId);
 
+        if (resultId is null && redirectUrl is null)
+            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "API error" };
+
         return new PaymentResponse
         {
             PaymentUniqueId = resultId,

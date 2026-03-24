@@ -213,9 +213,9 @@ public class TpayProvider : IPaymentProvider
     {
         ICollection<PaymentChannel> channels =
         [
-            new PaymentChannel { Id = "150", Name = "BLIK",            Description = "BLIK",             PaymentModel = PaymentModel.OneTime },
-            new PaymentChannel { Id = "103", Name = "Karta płatnicza", Description = "Visa, Mastercard", PaymentModel = PaymentModel.OneTime },
-            new PaymentChannel { Id = "21",  Name = "Przelew online",  Description = "mTransfer, iPKO",  PaymentModel = PaymentModel.OneTime },
+            new PaymentChannel { Id = "blik", Name = "BLIK",            Description = "BLIK",             PaymentModel = PaymentModel.OneTime },
+            new PaymentChannel { Id = "card", Name = "Karta płatnicza", Description = "Visa, Mastercard", PaymentModel = PaymentModel.OneTime },
+            new PaymentChannel { Id = "bank", Name = "Przelew online",  Description = "mTransfer, iPKO",  PaymentModel = PaymentModel.OneTime },
         ];
         return Task.FromResult(channels);
     }
@@ -225,6 +225,8 @@ public class TpayProvider : IPaymentProvider
     {
         var token = await caller.GetAccessTokenAsync();
         var (transactionId, paymentUrl) = await caller.CreateTransactionAsync(token, request);
+        if (transactionId is null)
+            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "API error" };
         return new PaymentResponse
         {
             PaymentUniqueId = transactionId,
@@ -254,12 +256,19 @@ public class TpayProvider : IPaymentProvider
         try
         {
             var doc = JsonDocument.Parse(body);
-            if (doc.RootElement.TryGetProperty("tr_status", out var st))
+            var root = doc.RootElement;
+            // Support both "status" (API v2) and "tr_status" (legacy webhook) fields
+            if (root.TryGetProperty("status", out var st) || root.TryGetProperty("tr_status", out st))
                 status = st.GetString() switch
                 {
-                    "TRUE"  => PaymentStatusEnum.Finished,
-                    "FALSE" => PaymentStatusEnum.Rejected,
-                    _       => PaymentStatusEnum.Processing,
+                    "paid"       => PaymentStatusEnum.Finished,
+                    "correct"    => PaymentStatusEnum.Finished,
+                    "TRUE"       => PaymentStatusEnum.Finished,
+                    "pending"    => PaymentStatusEnum.Processing,
+                    "error"      => PaymentStatusEnum.Rejected,
+                    "chargeback" => PaymentStatusEnum.Rejected,
+                    "FALSE"      => PaymentStatusEnum.Rejected,
+                    _            => PaymentStatusEnum.Processing,
                 };
         }
         catch { /* ignore */ }

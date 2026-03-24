@@ -267,18 +267,30 @@ public class AdyenProvider : IPaymentProvider
         var status = PaymentStatusEnum.Processing;
         try
         {
-            var doc = JsonDocument.Parse(body);
-            if (doc.RootElement.TryGetProperty("eventCode", out var ev))
+            var doc  = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+
+            // Adyen sends notifications wrapped in notificationItems array
+            JsonElement item = root;
+            if (root.TryGetProperty("notificationItems", out var items) &&
+                items.GetArrayLength() > 0 &&
+                items[0].TryGetProperty("NotificationRequestItem", out var nri))
             {
-                status = ev.GetString() switch
-                {
-                    "AUTHORISATION"        => PaymentStatusEnum.Finished,
-                    "CANCELLATION"         => PaymentStatusEnum.Rejected,
-                    "REFUND"               => PaymentStatusEnum.Rejected,
-                    "AUTHORISATION_FAILED" => PaymentStatusEnum.Rejected,
-                    _                      => PaymentStatusEnum.Processing,
-                };
+                item = nri;
             }
+
+            var eventCode = item.TryGetProperty("eventCode", out var ev) ? ev.GetString() : null;
+            var success   = item.TryGetProperty("success",   out var s)  ? s.GetString()  : "true";
+            var succeeded = !string.Equals(success, "false", StringComparison.OrdinalIgnoreCase);
+
+            status = eventCode switch
+            {
+                "AUTHORISATION"        => succeeded ? PaymentStatusEnum.Finished   : PaymentStatusEnum.Rejected,
+                "CANCELLATION"         => PaymentStatusEnum.Rejected,
+                "REFUND"               => succeeded ? PaymentStatusEnum.Finished   : PaymentStatusEnum.Rejected,
+                "AUTHORISATION_FAILED" => PaymentStatusEnum.Rejected,
+                _                      => PaymentStatusEnum.Processing,
+            };
         }
         catch { /* ignore */ }
 

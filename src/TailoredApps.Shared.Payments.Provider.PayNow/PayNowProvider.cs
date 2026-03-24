@@ -177,6 +177,8 @@ public class PayNowProvider : IPaymentProvider
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
         var (paymentId, redirectUrl) = await caller.CreatePaymentAsync(request);
+        if (paymentId is null)
+            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "API error" };
         return new PaymentResponse
         {
             PaymentUniqueId = paymentId,

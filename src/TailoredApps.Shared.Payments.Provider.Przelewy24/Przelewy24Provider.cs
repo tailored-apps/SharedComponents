@@ -256,23 +256,35 @@ public class Przelewy24Provider : IPaymentProvider
         => Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = PaymentStatusEnum.Processing });
 
     /// <inheritdoc/>
-    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+    public async Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
         if (!caller.VerifyNotification(body))
-            return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
+            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" };
 
-        PaymentStatusEnum status;
         try
         {
-            var doc = JsonDocument.Parse(body);
-            status = doc.RootElement.TryGetProperty("error", out _)
-                ? PaymentStatusEnum.Rejected
-                : PaymentStatusEnum.Finished;
-        }
-        catch { status = PaymentStatusEnum.Processing; }
+            var doc  = JsonDocument.Parse(body);
+            var root = doc.RootElement;
 
-        return Task.FromResult(new PaymentResponse { PaymentStatus = status, ResponseObject = "OK" });
+            if (!root.TryGetProperty("sessionId",  out var sid)  ||
+                !root.TryGetProperty("amount",      out var amt)  ||
+                !root.TryGetProperty("currency",    out var cur)  ||
+                !root.TryGetProperty("orderId",     out var oid))
+                return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Missing fields" };
+
+            var status = await caller.VerifyTransactionAsync(
+                sid.GetString()!,
+                amt.GetInt64(),
+                cur.GetString()!,
+                oid.GetInt32());
+
+            return new PaymentResponse { PaymentStatus = status, ResponseObject = "OK" };
+        }
+        catch
+        {
+            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Parse error" };
+        }
     }
 }
 
