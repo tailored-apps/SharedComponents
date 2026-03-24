@@ -24,37 +24,30 @@ namespace TailoredApps.Shared.Payments.Tests;
 public class StripeWebhookSignatureTests
 {
     // ─── Test webhook secret (lokalny, nie produkcyjny) ──────────────────────
-    // W testach jednostkowych generujemy podpis ręcznie, żeby nie potrzebować
-    // połączenia z Stripe CLI ani rzeczywistym kontem.
-    private const string TestWebhookSecret = "whsec_test_1234567890abcdef1234567890abcdef";
+    // Stripe SDK obcina prefix "whsec_" automatycznie w EventUtility.
+    // HMAC klucz = reszta po "whsec_".
+    private const string TestWebhookSecret = "whsec_test1234567890abcdef1234567890abcdef";
 
-    // Przykładowy payload checkout.session.completed (uproszczony)
-    private const string SamplePayload = """
-        {
-          "id": "evt_test_001",
-          "type": "checkout.session.completed",
-          "data": {
-            "object": {
-              "id": "cs_test_abc123",
-              "payment_status": "paid",
-              "status": "complete"
-            }
-          }
-        }
-        """;
+    // Przykładowy payload checkout.session.completed (uproszczony, bez whitespace)
+    private const string SamplePayload = """{"id":"evt_test_001","type":"checkout.session.completed","data":{"object":{"id":"cs_test_abc123","payment_status":"paid","status":"complete"}}}""";
 
     /// <summary>
-    /// Oblicza poprawny nagłówek Stripe-Signature dla podanych danych.
-    /// Użyj tej metody w testach integracyjnych do generowania fixture'ów.
+    /// Oblicza poprawny nagłówek Stripe-Signature.
+    /// Stripe SDK: klucz HMAC = secret BEZ prefixu "whsec_".
+    /// Format: t={unix_ts},v1={hmac_hex}
+    /// Signed payload: "{t}.{rawPayload}" (HMAC-SHA256).
     /// </summary>
     public static string ComputeStripeSignature(string payload, string secret, long? timestamp = null)
     {
         var ts = timestamp ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var signedPayload = $"{ts}.{payload}";
-        var keyBytes   = Encoding.UTF8.GetBytes(secret.Replace("whsec_", string.Empty));
-        var dataBytes  = Encoding.UTF8.GetBytes(signedPayload);
-        var hmac       = HMACSHA256.HashData(keyBytes, dataBytes);
-        var signature  = Convert.ToHexString(hmac).ToLowerInvariant();
+        // Stripe SDK obcina "whsec_" — my też musimy
+        var rawKey    = secret.StartsWith("whsec_") ? secret.Substring(6) : secret;
+        var keyBytes  = Encoding.UTF8.GetBytes(rawKey);
+        var dataBytes = Encoding.UTF8.GetBytes(signedPayload);
+        using var hmac = new HMACSHA256(keyBytes);
+        var hash      = hmac.ComputeHash(dataBytes);
+        var signature = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
         return $"t={ts},v1={signature}";
     }
 
@@ -64,15 +57,13 @@ public class StripeWebhookSignatureTests
     [Fact]
     public void ConstructWebhookEvent_ValidSignature_ReturnsEvent()
     {
-        // Arrange
-        var signature = ComputeStripeSignature(SamplePayload, TestWebhookSecret);
-
         var caller = BuildCallerWithSecret(TestWebhookSecret);
 
-        // Act
+        // Stripe SDK tolerancja domyślna = 300s → timestamp musi być świeży
+        var signature = ComputeStripeSignature(SamplePayload, TestWebhookSecret);
+
         var stripeEvent = caller.ConstructWebhookEvent(SamplePayload, signature);
 
-        // Assert
         Assert.NotNull(stripeEvent);
         Assert.Equal("checkout.session.completed", stripeEvent.Type);
         Assert.Equal("evt_test_001", stripeEvent.Id);
@@ -84,13 +75,11 @@ public class StripeWebhookSignatureTests
     [Fact]
     public void ConstructWebhookEvent_InvalidSignature_ThrowsStripeException()
     {
-        // Arrange — poprawna forma nagłówka, ale zły klucz
-        var wrongSecret   = "whsec_wrong_secret_0000000000000000";
-        var badSignature  = ComputeStripeSignature(SamplePayload, wrongSecret);
+        var wrongSecret  = "whsec_wrongsecret0000000000000000000";
+        var badSignature = ComputeStripeSignature(SamplePayload, wrongSecret);
 
         var caller = BuildCallerWithSecret(TestWebhookSecret);
 
-        // Act & Assert
         Assert.Throws<StripeException>(() =>
             caller.ConstructWebhookEvent(SamplePayload, badSignature));
     }
@@ -102,13 +91,11 @@ public class StripeWebhookSignatureTests
     [Fact]
     public void ConstructWebhookEvent_StaleTimestamp_ThrowsStripeException()
     {
-        // Arrange — timestamp sprzed 10 minut
         var staleTimestamp = DateTimeOffset.UtcNow.AddMinutes(-10).ToUnixTimeSeconds();
-        var signature      = ComputeStripeSignature(SamplePayload, TestWebhookSecret, staleTimestamp);
+        var signature     = ComputeStripeSignature(SamplePayload, TestWebhookSecret, staleTimestamp);
 
         var caller = BuildCallerWithSecret(TestWebhookSecret);
 
-        // Act & Assert
         Assert.Throws<StripeException>(() =>
             caller.ConstructWebhookEvent(SamplePayload, signature));
     }
@@ -120,13 +107,11 @@ public class StripeWebhookSignatureTests
     [Fact]
     public void ConstructWebhookEvent_TamperedPayload_ThrowsStripeException()
     {
-        // Arrange — podpis wyliczony dla oryginalnego payloadu
-        var signature      = ComputeStripeSignature(SamplePayload, TestWebhookSecret);
+        var signature       = ComputeStripeSignature(SamplePayload, TestWebhookSecret);
         var tamperedPayload = SamplePayload.Replace("paid", "unpaid");
 
         var caller = BuildCallerWithSecret(TestWebhookSecret);
 
-        // Act & Assert
         Assert.Throws<StripeException>(() =>
             caller.ConstructWebhookEvent(tamperedPayload, signature));
     }
@@ -137,12 +122,13 @@ public class StripeWebhookSignatureTests
     {
         var host = Host.CreateDefaultBuilder()
             .ConfigureAppConfiguration(cfg => cfg.AddInMemoryCollection(
-            [
-                new($"Payments:Providers:Stripe:SecretKey",     "sk_test_unused"),
-                new($"Payments:Providers:Stripe:WebhookSecret", webhookSecret),
-                new($"Payments:Providers:Stripe:SuccessUrl",    "https://example.com/ok"),
-                new($"Payments:Providers:Stripe:CancelUrl",     "https://example.com/cancel"),
-            ]))
+                new Dictionary<string, string>
+                {
+                    ["Payments:Providers:Stripe:SecretKey"]     = "sk_test_unused",
+                    ["Payments:Providers:Stripe:WebhookSecret"] = webhookSecret,
+                    ["Payments:Providers:Stripe:SuccessUrl"]    = "https://example.com/ok",
+                    ["Payments:Providers:Stripe:CancelUrl"]     = "https://example.com/cancel",
+                }!))
             .ConfigureServices((_, services) =>
             {
                 services.RegisterStripeProvider();
