@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.Payment
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.Payments.Provider.CashBill", "src\TailoredApps.Shared.Payments.Provider.CashBill\TailoredApps.Shared.Payments.Provider.CashBill.csproj", "{BB9942AC-60EE-4C8D-B7D7-FD0DD6A2FCEB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.Payments.Provider.Stripe", "src\TailoredApps.Shared.Payments.Provider.Stripe\TailoredApps.Shared.Payments.Provider.Stripe.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore", "src\TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore\TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.csproj", "{5C6FFD3B-B9E3-47D8-8A77-5973198C7B16}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TailoredApps.Shared.MediatR.ML", "src\TailoredApps.Shared.MediatR.ML\TailoredApps.Shared.MediatR.ML.csproj", "{C454266F-AF6D-450B-B899-9359180BAE94}"
@@ -121,6 +123,10 @@ Global
 		{BB9942AC-60EE-4C8D-B7D7-FD0DD6A2FCEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB9942AC-60EE-4C8D-B7D7-FD0DD6A2FCEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB9942AC-60EE-4C8D-B7D7-FD0DD6A2FCEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5C6FFD3B-B9E3-47D8-8A77-5973198C7B16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5C6FFD3B-B9E3-47D8-8A77-5973198C7B16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C6FFD3B-B9E3-47D8-8A77-5973198C7B16}.Release|Any CPU.ActiveCfg = Release|Any CPU
