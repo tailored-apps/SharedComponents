@@ -133,20 +133,20 @@ public class MultiProviderPaymentTest
     // ─── Provider info ────────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData("Adyen",      "https://www.adyen.com")]
-    [InlineData("PayU",       "https://payu.pl")]
-    [InlineData("Przelewy24", "https://przelewy24.pl")]
-    [InlineData("Tpay",       "https://tpay.com")]
-    [InlineData("HotPay",     "https://hotpay.pl")]
-    [InlineData("PayNow",     "https://paynow.pl")]
-    [InlineData("Revolut",    "https://revolut.com/business")]
-    public async Task Provider_HasCorrectUrl(string providerKey, string expectedUrl)
+    [InlineData("Adyen",      "Adyen")]
+    [InlineData("PayU",       "PayU")]
+    [InlineData("Przelewy24", "Przelewy24")]
+    [InlineData("Tpay",       "Tpay")]
+    [InlineData("HotPay",     "HotPay")]
+    [InlineData("PayNow",     "PayNow")]
+    [InlineData("Revolut",    "Revolut")]
+    public async Task Provider_HasCorrectName(string providerKey, string expectedName)
     {
         var host      = BuildHost();
         var service   = host.Services.GetRequiredService<IPaymentService>();
         var providers = await service.GetProviders();
         var provider  = providers.Single(p => p.Id == providerKey);
-        Assert.Equal(expectedUrl, provider.Url);
+        Assert.Equal(expectedName, provider.Name);
     }
 
     // ─── Invalid webhook → Rejected ──────────────────────────────────────────

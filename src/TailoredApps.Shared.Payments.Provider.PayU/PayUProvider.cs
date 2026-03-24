@@ -12,17 +12,32 @@ namespace TailoredApps.Shared.Payments.Provider.PayU;
 
 // ─── Options ─────────────────────────────────────────────────────────────────
 
-/// <summary>Konfiguracja PayU. Sekcja: <c>Payments:Providers:PayU</c>.</summary>
+/// <summary>Konfiguracja PayU REST API v2.1. Sekcja: <c>Payments:Providers:PayU</c>.</summary>
 public class PayUServiceOptions
 {
+    /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:PayU";
-    public string ClientId     { get; set; } = string.Empty;
+
+    /// <summary>Identyfikator klienta OAuth (client_id).</summary>
+    public string ClientId { get; set; } = string.Empty;
+
+    /// <summary>Sekret klienta OAuth (client_secret).</summary>
     public string ClientSecret { get; set; } = string.Empty;
-    public string PosId        { get; set; } = string.Empty;
+
+    /// <summary>Identyfikator POS (merchantPosId).</summary>
+    public string PosId { get; set; } = string.Empty;
+
+    /// <summary>Klucz do podpisu powiadomień (second key / signature key).</summary>
     public string SignatureKey { get; set; } = string.Empty;
-    public string ServiceUrl   { get; set; } = "https://secure.snd.payu.com";
-    public string NotifyUrl    { get; set; } = string.Empty;
-    public string ContinueUrl  { get; set; } = string.Empty;
+
+    /// <summary>Bazowy URL API PayU (sandbox: https://secure.snd.payu.com).</summary>
+    public string ServiceUrl { get; set; } = "https://secure.snd.payu.com";
+
+    /// <summary>URL powiadomień o statusie transakcji.</summary>
+    public string NotifyUrl { get; set; } = string.Empty;
+
+    /// <summary>URL powrotu po płatności.</summary>
+    public string ContinueUrl { get; set; } = string.Empty;
 }
 
 // ─── Internal models ─────────────────────────────────────────────────────────
@@ -89,9 +104,16 @@ file class PayUOrderDetail
 /// <summary>Abstrakcja nad PayU REST API v2.1.</summary>
 public interface IPayUServiceCaller
 {
+    /// <summary>Pobiera token OAuth (grant_type=client_credentials).</summary>
     Task<string> GetAccessTokenAsync();
+
+    /// <summary>Tworzy zamówienie w PayU i zwraca orderId + redirectUri.</summary>
     Task<(string? orderId, string? redirectUri, string? error)> CreateOrderAsync(string token, PaymentRequest request);
+
+    /// <summary>Pobiera status zamówienia po orderId.</summary>
     Task<PaymentStatusEnum> GetOrderStatusAsync(string token, string orderId);
+
+    /// <summary>Weryfikuje podpis powiadomienia (OpenPayU-Signature header).</summary>
     bool VerifySignature(string body, string incomingSignature);
 }
 
@@ -103,12 +125,14 @@ public class PayUServiceCaller : IPayUServiceCaller
     private readonly PayUServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
 
+    /// <summary>Inicjalizuje instancję <see cref="PayUServiceCaller"/>.</summary>
     public PayUServiceCaller(IOptions<PayUServiceOptions> options, IHttpClientFactory httpClientFactory)
     {
         this.options = options.Value;
         this.httpClientFactory = httpClientFactory;
     }
 
+    /// <inheritdoc/>
     public async Task<string> GetAccessTokenAsync()
     {
         using var client = httpClientFactory.CreateClient("PayU");
@@ -123,6 +147,7 @@ public class PayUServiceCaller : IPayUServiceCaller
         return JsonSerializer.Deserialize<PayUTokenResponse>(json)?.AccessToken ?? string.Empty;
     }
 
+    /// <inheritdoc/>
     public async Task<(string? orderId, string? redirectUri, string? error)> CreateOrderAsync(string token, PaymentRequest request)
     {
         var handler = new HttpClientHandler { AllowAutoRedirect = false };
@@ -162,6 +187,7 @@ public class PayUServiceCaller : IPayUServiceCaller
         return (null, null, json);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentStatusEnum> GetOrderStatusAsync(string token, string orderId)
     {
         using var client = httpClientFactory.CreateClient("PayU");
@@ -173,18 +199,18 @@ public class PayUServiceCaller : IPayUServiceCaller
         var status = result?.Orders?.FirstOrDefault()?.Status;
         return status switch
         {
-            "COMPLETED"             => PaymentStatusEnum.Finished,
+            "COMPLETED"                => PaymentStatusEnum.Finished,
             "WAITING_FOR_CONFIRMATION" => PaymentStatusEnum.Processing,
-            "PENDING"               => PaymentStatusEnum.Processing,
-            "CANCELED"              => PaymentStatusEnum.Rejected,
-            "REJECTED"              => PaymentStatusEnum.Rejected,
-            _                       => PaymentStatusEnum.Created,
+            "PENDING"                  => PaymentStatusEnum.Processing,
+            "CANCELED"                 => PaymentStatusEnum.Rejected,
+            "REJECTED"                 => PaymentStatusEnum.Rejected,
+            _                          => PaymentStatusEnum.Created,
         };
     }
 
+    /// <inheritdoc/>
     public bool VerifySignature(string body, string incomingSignature)
     {
-        // PayU: OpenPayU-Signature header format: "sender=checkout;signature=<md5>;algorithm=MD5;content=DOCUMENT"
         var parts = incomingSignature.Split(';')
             .Select(p => p.Split('=', 2))
             .Where(p => p.Length == 2)
@@ -212,13 +238,22 @@ public class PayUProvider : IPaymentProvider
 {
     private readonly IPayUServiceCaller caller;
 
+    /// <summary>Inicjalizuje instancję <see cref="PayUProvider"/>.</summary>
     public PayUProvider(IPayUServiceCaller caller) => this.caller = caller;
 
-    public string Key         => "PayU";
-    public string Name        => "PayU";
-    public string Description => "Operator płatności PayU — przelewy, BLIK, karty, raty.";
-    public string Url         => "https://payu.pl";
+    /// <inheritdoc/>
+    public string Key => "PayU";
 
+    /// <inheritdoc/>
+    public string Name => "PayU";
+
+    /// <inheritdoc/>
+    public string Description => "Operator płatności PayU — przelewy, BLIK, karty, raty.";
+
+    /// <inheritdoc/>
+    public string Url => "https://payu.pl";
+
+    /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
     {
         ICollection<PaymentChannel> channels = currency.ToUpperInvariant() switch
@@ -240,6 +275,7 @@ public class PayUProvider : IPaymentProvider
         return Task.FromResult(channels);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
         var token = await caller.GetAccessTokenAsync();
@@ -256,6 +292,7 @@ public class PayUProvider : IPaymentProvider
         };
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> GetStatus(string paymentId)
     {
         var token  = await caller.GetAccessTokenAsync();
@@ -263,6 +300,7 @@ public class PayUProvider : IPaymentProvider
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
+    /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
@@ -295,6 +333,7 @@ public class PayUProvider : IPaymentProvider
 /// <summary>Rozszerzenia DI dla PayU.</summary>
 public static class PayUProviderExtensions
 {
+    /// <summary>Rejestruje <see cref="PayUProvider"/> i jego zależności w kontenerze DI.</summary>
     public static void RegisterPayUProvider(this IServiceCollection services)
     {
         services.AddOptions<PayUServiceOptions>();
@@ -304,11 +343,15 @@ public static class PayUProviderExtensions
     }
 }
 
-/// <summary>Wczytuje opcje PayU z konfiguracji.</summary>
+/// <summary>Wczytuje opcje PayU z konfiguracji aplikacji.</summary>
 public class PayUConfigureOptions : IConfigureOptions<PayUServiceOptions>
 {
     private readonly IConfiguration configuration;
+
+    /// <summary>Inicjalizuje instancję <see cref="PayUConfigureOptions"/>.</summary>
     public PayUConfigureOptions(IConfiguration configuration) => this.configuration = configuration;
+
+    /// <inheritdoc/>
     public void Configure(PayUServiceOptions options)
     {
         var s = configuration.GetSection(PayUServiceOptions.ConfigurationKey).Get<PayUServiceOptions>();

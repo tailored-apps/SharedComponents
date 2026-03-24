@@ -12,10 +12,15 @@ namespace TailoredApps.Shared.Payments.Provider.HotPay;
 /// <summary>Konfiguracja HotPay. Sekcja: <c>Payments:Providers:HotPay</c>.</summary>
 public class HotPayServiceOptions
 {
+    /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:HotPay";
+    /// <summary>SecretHash.</summary>
     public string SecretHash { get; set; } = string.Empty;
+    /// <summary>ServiceUrl.</summary>
     public string ServiceUrl { get; set; } = "https://platnosci.hotpay.pl";
+    /// <summary>ReturnUrl.</summary>
     public string ReturnUrl  { get; set; } = string.Empty;
+    /// <summary>NotifyUrl.</summary>
     public string NotifyUrl  { get; set; } = string.Empty;
 }
 
@@ -40,7 +45,9 @@ file class HotPayResponse
 /// <summary>Abstrakcja nad HotPay API.</summary>
 public interface IHotPayServiceCaller
 {
+    /// <summary>Wywołanie API.</summary>
     Task<(string? paymentId, string? redirectUrl)> InitPaymentAsync(PaymentRequest request, string paymentId);
+    /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifyNotification(string hash, string kwota, string idPlatnosci, string status);
 }
 
@@ -50,12 +57,14 @@ public class HotPayServiceCaller : IHotPayServiceCaller
     private readonly HotPayServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
 
+    /// <summary>Inicjalizuje instancję callera.</summary>
     public HotPayServiceCaller(IOptions<HotPayServiceOptions> options, IHttpClientFactory httpClientFactory)
     {
         this.options = options.Value;
         this.httpClientFactory = httpClientFactory;
     }
 
+    /// <inheritdoc/>
     public async Task<(string? paymentId, string? redirectUrl)> InitPaymentAsync(PaymentRequest request, string paymentId)
     {
         var amount   = request.Amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
@@ -81,6 +90,7 @@ public class HotPayServiceCaller : IHotPayServiceCaller
         return (result?.PaymentId ?? paymentId, result?.RedirectUrl);
     }
 
+    /// <inheritdoc/>
     public bool VerifyNotification(string hash, string kwota, string idPlatnosci, string status)
     {
         var data     = $"{options.SecretHash};{kwota};{idPlatnosci};{status}";
@@ -94,13 +104,16 @@ public class HotPayProvider : IPaymentProvider
 {
     private readonly IHotPayServiceCaller caller;
 
+    /// <summary>Inicjalizuje instancję providera.</summary>
     public HotPayProvider(IHotPayServiceCaller caller) => this.caller = caller;
 
     public string Key         => "HotPay";
     public string Name        => "HotPay";
+    /// <inheritdoc/>
     public string Description => "Operator płatności HotPay — BLIK, karty, przelewy.";
     public string Url         => "https://hotpay.pl";
 
+    /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
     {
         ICollection<PaymentChannel> channels =
@@ -112,6 +125,7 @@ public class HotPayProvider : IPaymentProvider
         return Task.FromResult(channels);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
         var paymentId = Guid.NewGuid().ToString("N");
@@ -125,9 +139,11 @@ public class HotPayProvider : IPaymentProvider
         };
     }
 
+    /// <inheritdoc/>
     public Task<PaymentResponse> GetStatus(string paymentId)
         => Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = PaymentStatusEnum.Processing });
 
+    /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var qs = payload.QueryParameters;
@@ -147,6 +163,7 @@ public class HotPayProvider : IPaymentProvider
 /// <summary>Rozszerzenia DI dla HotPay.</summary>
 public static class HotPayProviderExtensions
 {
+    /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterHotPayProvider(this IServiceCollection services)
     {
         services.AddOptions<HotPayServiceOptions>();
@@ -160,7 +177,9 @@ public static class HotPayProviderExtensions
 public class HotPayConfigureOptions : IConfigureOptions<HotPayServiceOptions>
 {
     private readonly IConfiguration configuration;
+    /// <summary>Inicjalizuje instancję konfiguracji.</summary>
     public HotPayConfigureOptions(IConfiguration configuration) => this.configuration = configuration;
+    /// <inheritdoc/>
     public void Configure(HotPayServiceOptions options)
     {
         var s = configuration.GetSection(HotPayServiceOptions.ConfigurationKey).Get<HotPayServiceOptions>();

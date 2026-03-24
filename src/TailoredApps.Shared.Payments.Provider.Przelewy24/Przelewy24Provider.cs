@@ -15,13 +15,19 @@ namespace TailoredApps.Shared.Payments.Provider.Przelewy24;
 /// <summary>Konfiguracja Przelewy24. Sekcja: <c>Payments:Providers:Przelewy24</c>.</summary>
 public class Przelewy24ServiceOptions
 {
+    /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:Przelewy24";
     public int    MerchantId { get; set; }
     public int    PosId      { get; set; }
+    /// <summary>ApiKey.</summary>
     public string ApiKey     { get; set; } = string.Empty;
+    /// <summary>CrcKey.</summary>
     public string CrcKey     { get; set; } = string.Empty;
+    /// <summary>ServiceUrl.</summary>
     public string ServiceUrl { get; set; } = "https://secure.przelewy24.pl";
+    /// <summary>ReturnUrl.</summary>
     public string ReturnUrl  { get; set; } = string.Empty;
+    /// <summary>NotifyUrl.</summary>
     public string NotifyUrl  { get; set; } = string.Empty;
 }
 
@@ -68,9 +74,13 @@ file class P24VerifyRequest
 /// <summary>Abstrakcja nad Przelewy24 REST API.</summary>
 public interface IPrzelewy24ServiceCaller
 {
+    /// <summary>Wywołanie API.</summary>
     Task<(string? token, string? error)> RegisterTransactionAsync(PaymentRequest request, string sessionId);
+    /// <summary>Wywołanie API.</summary>
     Task<PaymentStatusEnum> VerifyTransactionAsync(string sessionId, long amount, string currency, int orderId);
+    /// <summary>Oblicza podpis.</summary>
     string ComputeSign(string sessionId, int merchantId, long amount, string currency);
+    /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifyNotification(string body);
 }
 
@@ -82,6 +92,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
     private readonly Przelewy24ServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
 
+    /// <summary>Inicjalizuje instancję callera.</summary>
     public Przelewy24ServiceCaller(IOptions<Przelewy24ServiceOptions> options, IHttpClientFactory httpClientFactory)
     {
         this.options = options.Value;
@@ -97,6 +108,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
         return client;
     }
 
+    /// <inheritdoc/>
     public async Task<(string? token, string? error)> RegisterTransactionAsync(PaymentRequest request, string sessionId)
     {
         using var client = CreateClient();
@@ -124,6 +136,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
         return (result?.Data?.Token, response.IsSuccessStatusCode ? null : json);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentStatusEnum> VerifyTransactionAsync(string sessionId, long amount, string currency, int orderId)
     {
         using var client = CreateClient();
@@ -157,6 +170,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
+    /// <inheritdoc/>
     public bool VerifyNotification(string body)
     {
         try
@@ -195,6 +209,7 @@ public class Przelewy24Provider : IPaymentProvider
     private readonly IPrzelewy24ServiceCaller caller;
     private readonly Przelewy24ServiceOptions options;
 
+    /// <summary>Inicjalizuje instancję providera.</summary>
     public Przelewy24Provider(IPrzelewy24ServiceCaller caller, IOptions<Przelewy24ServiceOptions> options)
     {
         this.caller  = caller;
@@ -203,9 +218,11 @@ public class Przelewy24Provider : IPaymentProvider
 
     public string Key         => "Przelewy24";
     public string Name        => "Przelewy24";
+    /// <inheritdoc/>
     public string Description => "Operator płatności online Przelewy24 — przelewy, BLIK, karty.";
     public string Url         => "https://przelewy24.pl";
 
+    /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
     {
         ICollection<PaymentChannel> channels =
@@ -217,6 +234,7 @@ public class Przelewy24Provider : IPaymentProvider
         return Task.FromResult(channels);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
         var sessionId = Guid.NewGuid().ToString("N");
@@ -233,9 +251,11 @@ public class Przelewy24Provider : IPaymentProvider
         };
     }
 
+    /// <inheritdoc/>
     public Task<PaymentResponse> GetStatus(string paymentId)
         => Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = PaymentStatusEnum.Processing });
 
+    /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
@@ -261,6 +281,7 @@ public class Przelewy24Provider : IPaymentProvider
 /// <summary>Rozszerzenia DI dla Przelewy24.</summary>
 public static class Przelewy24ProviderExtensions
 {
+    /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterPrzelewy24Provider(this IServiceCollection services)
     {
         services.AddOptions<Przelewy24ServiceOptions>();
@@ -274,7 +295,9 @@ public static class Przelewy24ProviderExtensions
 public class Przelewy24ConfigureOptions : IConfigureOptions<Przelewy24ServiceOptions>
 {
     private readonly IConfiguration configuration;
+    /// <summary>Inicjalizuje instancję konfiguracji.</summary>
     public Przelewy24ConfigureOptions(IConfiguration configuration) => this.configuration = configuration;
+    /// <inheritdoc/>
     public void Configure(Przelewy24ServiceOptions options)
     {
         var s = configuration.GetSection(Przelewy24ServiceOptions.ConfigurationKey).Get<Przelewy24ServiceOptions>();

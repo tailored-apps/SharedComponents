@@ -16,6 +16,7 @@ public class StripeServiceCaller : IStripeServiceCaller
     // Stripe.net services — wstrzykiwane przez DI (możliwe mockowanie w testach)
     private readonly SessionService sessionService;
 
+    /// <summary>Inicjalizuje instancję callera.</summary>
     public StripeServiceCaller(IOptions<StripeServiceOptions> options, SessionService sessionService)
     {
         this.options = options.Value;

@@ -13,16 +13,19 @@ namespace TailoredApps.Shared.Email
     public class SmtpEmailProvider : IEmailProvider
     {
         private readonly IOptions<SmtpEmailServiceOptions> options;
+        /// <summary>Inicjalizuje instancję providera.</summary>
         public SmtpEmailProvider(IOptions<SmtpEmailServiceOptions> options)
         {
             this.options = options;
         }
 
+        /// <inheritdoc/>
         public async Task<ICollection<Models.MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
         {
             throw new System.NotImplementedException();
         }
 
+        /// <inheritdoc/>
         public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
         {
 
@@ -68,12 +71,14 @@ namespace TailoredApps.Shared.Email
 
     public static class SmtpEmailProviderExtensions
     {
+        /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
         public static void RegisterSmtpProvider(this IServiceCollection services)
         {
             services.AddOptions<SmtpEmailServiceOptions>();
             services.ConfigureOptions<SmtpEmailConfigureOptions>();
             services.AddTransient<IEmailProvider, SmtpEmailProvider>();
         }
+        /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
         public static void RegisterConsoleProvider(this IServiceCollection services)
         {
             services.AddOptions<SmtpEmailServiceOptions>();
@@ -87,11 +92,13 @@ namespace TailoredApps.Shared.Email
     public class SmtpEmailConfigureOptions : IConfigureOptions<SmtpEmailServiceOptions>
     {
         private readonly IConfiguration configuration;
+        /// <summary>Inicjalizuje instancję konfiguracji.</summary>
         public SmtpEmailConfigureOptions(IConfiguration configuration)
         {
             this.configuration = configuration;
         }
 
+        /// <inheritdoc/>
         public void Configure(SmtpEmailServiceOptions options)
         {
             var section = configuration.GetSection(SmtpEmailServiceOptions.ConfigurationKey).Get<SmtpEmailServiceOptions>();

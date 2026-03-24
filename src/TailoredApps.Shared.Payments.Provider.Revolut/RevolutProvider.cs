@@ -13,10 +13,15 @@ namespace TailoredApps.Shared.Payments.Provider.Revolut;
 /// <summary>Konfiguracja Revolut. Sekcja: <c>Payments:Providers:Revolut</c>.</summary>
 public class RevolutServiceOptions
 {
+    /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:Revolut";
+    /// <summary>ApiKey.</summary>
     public string ApiKey        { get; set; } = string.Empty;
+    /// <summary>ApiUrl.</summary>
     public string ApiUrl        { get; set; } = "https://merchant.revolut.com/api";
+    /// <summary>ReturnUrl.</summary>
     public string ReturnUrl     { get; set; } = string.Empty;
+    /// <summary>WebhookSecret.</summary>
     public string WebhookSecret { get; set; } = string.Empty;
 }
 
@@ -39,8 +44,11 @@ file class RevolutOrderResponse
 /// <summary>Abstrakcja nad Revolut Merchant API.</summary>
 public interface IRevolutServiceCaller
 {
+    /// <summary>Wywołanie API.</summary>
     Task<(string? id, string? checkoutUrl)> CreateOrderAsync(PaymentRequest request);
+    /// <summary>Wywołanie API.</summary>
     Task<(string? state, string? id)> GetOrderAsync(string orderId);
+    /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifyWebhookSignature(string payload, string timestamp, string signature);
 }
 
@@ -50,6 +58,7 @@ public class RevolutServiceCaller : IRevolutServiceCaller
     private readonly RevolutServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
 
+    /// <summary>Inicjalizuje instancję callera.</summary>
     public RevolutServiceCaller(IOptions<RevolutServiceOptions> options, IHttpClientFactory httpClientFactory)
     {
         this.options = options.Value;
@@ -64,6 +73,7 @@ public class RevolutServiceCaller : IRevolutServiceCaller
         return client;
     }
 
+    /// <inheritdoc/>
     public async Task<(string? id, string? checkoutUrl)> CreateOrderAsync(PaymentRequest request)
     {
         using var client = CreateClient();
@@ -82,6 +92,7 @@ public class RevolutServiceCaller : IRevolutServiceCaller
         return (result?.Id, result?.CheckoutUrl);
     }
 
+    /// <inheritdoc/>
     public async Task<(string? state, string? id)> GetOrderAsync(string orderId)
     {
         using var client = CreateClient();
@@ -113,13 +124,16 @@ public class RevolutProvider : IPaymentProvider
 {
     private readonly IRevolutServiceCaller caller;
 
+    /// <summary>Inicjalizuje instancję providera.</summary>
     public RevolutProvider(IRevolutServiceCaller caller) => this.caller = caller;
 
     public string Key         => "Revolut";
     public string Name        => "Revolut";
+    /// <inheritdoc/>
     public string Description => "Globalny operator płatności Revolut — karty, Revolut Pay.";
     public string Url         => "https://revolut.com/business";
 
+    /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
     {
         ICollection<PaymentChannel> channels =
@@ -130,6 +144,7 @@ public class RevolutProvider : IPaymentProvider
         return Task.FromResult(channels);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
         var (id, checkoutUrl) = await caller.CreateOrderAsync(request);
@@ -141,6 +156,7 @@ public class RevolutProvider : IPaymentProvider
         };
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> GetStatus(string paymentId)
     {
         var (state, _) = await caller.GetOrderAsync(paymentId);
@@ -156,6 +172,7 @@ public class RevolutProvider : IPaymentProvider
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
+    /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body      = payload.Payload?.ToString() ?? string.Empty;
@@ -188,6 +205,7 @@ public class RevolutProvider : IPaymentProvider
 /// <summary>Rozszerzenia DI dla Revolut.</summary>
 public static class RevolutProviderExtensions
 {
+    /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterRevolutProvider(this IServiceCollection services)
     {
         services.AddOptions<RevolutServiceOptions>();
@@ -201,7 +219,9 @@ public static class RevolutProviderExtensions
 public class RevolutConfigureOptions : IConfigureOptions<RevolutServiceOptions>
 {
     private readonly IConfiguration configuration;
+    /// <summary>Inicjalizuje instancję konfiguracji.</summary>
     public RevolutConfigureOptions(IConfiguration configuration) => this.configuration = configuration;
+    /// <inheritdoc/>
     public void Configure(RevolutServiceOptions options)
     {
         var s = configuration.GetSection(RevolutServiceOptions.ConfigurationKey).Get<RevolutServiceOptions>();

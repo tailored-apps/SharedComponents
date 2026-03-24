@@ -13,11 +13,17 @@ namespace TailoredApps.Shared.Payments.Provider.PayNow;
 /// <summary>Konfiguracja PayNow. Sekcja: <c>Payments:Providers:PayNow</c>.</summary>
 public class PayNowServiceOptions
 {
+    /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:PayNow";
+    /// <summary>ApiKey.</summary>
     public string ApiKey       { get; set; } = string.Empty;
+    /// <summary>SignatureKey.</summary>
     public string SignatureKey { get; set; } = string.Empty;
+    /// <summary>ApiUrl.</summary>
     public string ApiUrl       { get; set; } = "https://api.paynow.pl";
+    /// <summary>ReturnUrl.</summary>
     public string ReturnUrl    { get; set; } = string.Empty;
+    /// <summary>ContinueUrl.</summary>
     public string ContinueUrl  { get; set; } = string.Empty;
 }
 
@@ -52,8 +58,11 @@ file class PayNowStatusResponse
 /// <summary>Abstrakcja nad PayNow REST API v2.</summary>
 public interface IPayNowServiceCaller
 {
+    /// <summary>Wywołanie API.</summary>
     Task<(string? paymentId, string? redirectUrl)> CreatePaymentAsync(PaymentRequest request);
+    /// <summary>Wywołanie API.</summary>
     Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId);
+    /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifySignature(string body, string signature);
 }
 
@@ -63,6 +72,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
     private readonly PayNowServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
 
+    /// <summary>Inicjalizuje instancję callera.</summary>
     public PayNowServiceCaller(IOptions<PayNowServiceOptions> options, IHttpClientFactory httpClientFactory)
     {
         this.options = options.Value;
@@ -77,6 +87,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         return client;
     }
 
+    /// <inheritdoc/>
     public async Task<(string? paymentId, string? redirectUrl)> CreatePaymentAsync(PaymentRequest request)
     {
         using var client = CreateClient();
@@ -100,6 +111,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         return (result?.PaymentId, result?.RedirectUrl);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId)
     {
         using var client = CreateClient();
@@ -120,6 +132,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         };
     }
 
+    /// <inheritdoc/>
     public bool VerifySignature(string body, string signature)
     {
         var keyBytes  = Encoding.UTF8.GetBytes(options.SignatureKey);
@@ -134,13 +147,16 @@ public class PayNowProvider : IPaymentProvider
 {
     private readonly IPayNowServiceCaller caller;
 
+    /// <summary>Inicjalizuje instancję providera.</summary>
     public PayNowProvider(IPayNowServiceCaller caller) => this.caller = caller;
 
     public string Key         => "PayNow";
     public string Name        => "PayNow";
+    /// <inheritdoc/>
     public string Description => "Operator płatności PayNow (mBank) — BLIK, karty, przelewy.";
     public string Url         => "https://paynow.pl";
 
+    /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
     {
         ICollection<PaymentChannel> channels =
@@ -153,6 +169,7 @@ public class PayNowProvider : IPaymentProvider
         return Task.FromResult(channels);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
         var (paymentId, redirectUrl) = await caller.CreatePaymentAsync(request);
@@ -164,12 +181,14 @@ public class PayNowProvider : IPaymentProvider
         };
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> GetStatus(string paymentId)
     {
         var status = await caller.GetPaymentStatusAsync(paymentId);
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
+    /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
@@ -201,6 +220,7 @@ public class PayNowProvider : IPaymentProvider
 /// <summary>Rozszerzenia DI dla PayNow.</summary>
 public static class PayNowProviderExtensions
 {
+    /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterPayNowProvider(this IServiceCollection services)
     {
         services.AddOptions<PayNowServiceOptions>();
@@ -214,7 +234,9 @@ public static class PayNowProviderExtensions
 public class PayNowConfigureOptions : IConfigureOptions<PayNowServiceOptions>
 {
     private readonly IConfiguration configuration;
+    /// <summary>Inicjalizuje instancję konfiguracji.</summary>
     public PayNowConfigureOptions(IConfiguration configuration) => this.configuration = configuration;
+    /// <inheritdoc/>
     public void Configure(PayNowServiceOptions options)
     {
         var s = configuration.GetSection(PayNowServiceOptions.ConfigurationKey).Get<PayNowServiceOptions>();

@@ -12,13 +12,21 @@ namespace TailoredApps.Shared.Payments.Provider.Tpay;
 
 public class TpayServiceOptions
 {
+    /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:Tpay";
+    /// <summary>ClientId.</summary>
     public string ClientId     { get; set; } = string.Empty;
+    /// <summary>ClientSecret.</summary>
     public string ClientSecret { get; set; } = string.Empty;
+    /// <summary>MerchantId.</summary>
     public string MerchantId   { get; set; } = string.Empty;
+    /// <summary>ApiUrl.</summary>
     public string ApiUrl       { get; set; } = "https://api.tpay.com";
+    /// <summary>ReturnUrl.</summary>
     public string ReturnUrl    { get; set; } = string.Empty;
+    /// <summary>NotifyUrl.</summary>
     public string NotifyUrl    { get; set; } = string.Empty;
+    /// <summary>SecurityCode.</summary>
     public string SecurityCode { get; set; } = string.Empty;
 }
 
@@ -83,9 +91,13 @@ file class TpayStatusResponse
 /// <summary>Abstrakcja nad Tpay REST API.</summary>
 public interface ITpayServiceCaller
 {
+    /// <summary>Wywołanie API.</summary>
     Task<string> GetAccessTokenAsync();
+    /// <summary>Wywołanie API.</summary>
     Task<(string? transactionId, string? paymentUrl)> CreateTransactionAsync(string token, PaymentRequest request);
+    /// <summary>Wywołanie API.</summary>
     Task<PaymentStatusEnum> GetTransactionStatusAsync(string token, string transactionId);
+    /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifyNotification(string body, string signature);
 }
 
@@ -95,12 +107,14 @@ public class TpayServiceCaller : ITpayServiceCaller
     private readonly TpayServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
 
+    /// <summary>Inicjalizuje instancję callera.</summary>
     public TpayServiceCaller(IOptions<TpayServiceOptions> options, IHttpClientFactory httpClientFactory)
     {
         this.options = options.Value;
         this.httpClientFactory = httpClientFactory;
     }
 
+    /// <inheritdoc/>
     public async Task<string> GetAccessTokenAsync()
     {
         using var client = httpClientFactory.CreateClient("Tpay");
@@ -115,6 +129,7 @@ public class TpayServiceCaller : ITpayServiceCaller
         return JsonSerializer.Deserialize<TpayTokenResponse>(json)?.AccessToken ?? string.Empty;
     }
 
+    /// <inheritdoc/>
     public async Task<(string? transactionId, string? paymentUrl)> CreateTransactionAsync(string token, PaymentRequest request)
     {
         using var client = httpClientFactory.CreateClient("Tpay");
@@ -142,6 +157,7 @@ public class TpayServiceCaller : ITpayServiceCaller
         return (tx?.TransactionId, tx?.PaymentUrl);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentStatusEnum> GetTransactionStatusAsync(string token, string transactionId)
     {
         using var client = httpClientFactory.CreateClient("Tpay");
@@ -160,6 +176,7 @@ public class TpayServiceCaller : ITpayServiceCaller
         };
     }
 
+    /// <inheritdoc/>
     public bool VerifyNotification(string body, string signature)
     {
         var input    = body + options.SecurityCode;
@@ -174,13 +191,16 @@ public class TpayProvider : IPaymentProvider
 {
     private readonly ITpayServiceCaller caller;
 
+    /// <summary>Inicjalizuje instancję providera.</summary>
     public TpayProvider(ITpayServiceCaller caller) => this.caller = caller;
 
     public string Key         => "Tpay";
     public string Name        => "Tpay";
+    /// <inheritdoc/>
     public string Description => "Operator płatności Tpay — przelewy, BLIK, karty.";
     public string Url         => "https://tpay.com";
 
+    /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
     {
         ICollection<PaymentChannel> channels =
@@ -192,6 +212,7 @@ public class TpayProvider : IPaymentProvider
         return Task.FromResult(channels);
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
     {
         var token = await caller.GetAccessTokenAsync();
@@ -204,6 +225,7 @@ public class TpayProvider : IPaymentProvider
         };
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> GetStatus(string paymentId)
     {
         var token  = await caller.GetAccessTokenAsync();
@@ -211,6 +233,7 @@ public class TpayProvider : IPaymentProvider
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
+    /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
@@ -240,6 +263,7 @@ public class TpayProvider : IPaymentProvider
 /// <summary>Rozszerzenia DI dla Tpay.</summary>
 public static class TpayProviderExtensions
 {
+    /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterTpayProvider(this IServiceCollection services)
     {
         services.AddOptions<TpayServiceOptions>();
@@ -253,7 +277,9 @@ public static class TpayProviderExtensions
 public class TpayConfigureOptions : IConfigureOptions<TpayServiceOptions>
 {
     private readonly IConfiguration configuration;
+    /// <summary>Inicjalizuje instancję konfiguracji.</summary>
     public TpayConfigureOptions(IConfiguration configuration) => this.configuration = configuration;
+    /// <inheritdoc/>
     public void Configure(TpayServiceOptions options)
     {
         var s = configuration.GetSection(TpayServiceOptions.ConfigurationKey).Get<TpayServiceOptions>();

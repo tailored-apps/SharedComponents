@@ -6,6 +6,7 @@ namespace TailoredApps.Shared.Payments.Provider.Stripe;
 /// </summary>
 public class StripeServiceOptions
 {
+    /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:Stripe";
 
     /// <summary>
