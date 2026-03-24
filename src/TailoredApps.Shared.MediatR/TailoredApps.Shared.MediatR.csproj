@@ -7,7 +7,6 @@
 		<RootNamespace>TailoredApps.Shared.MediatR</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<NoWarn>CS1591</NoWarn>
 		
 		<Authors>Lukasz Kowalski</Authors>
 		<Company>Tailored Apps.</Company>
