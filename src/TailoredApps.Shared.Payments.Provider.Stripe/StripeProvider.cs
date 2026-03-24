@@ -121,21 +121,21 @@ public class StripeProvider : IPaymentProvider
 
         var response = stripeEvent.Type switch
         {
-            Events.CheckoutSessionCompleted =>
+            "checkout.session.completed" =>
                 HandleSessionCompleted(stripeEvent),
-            Events.CheckoutSessionExpired =>
+            "checkout.session.expired" =>
                 new PaymentResponse
                 {
                     PaymentStatus  = PaymentStatusEnum.Rejected,
                     ResponseObject = "OK",
                 },
-            Events.PaymentIntentSucceeded =>
+            "payment_intent.succeeded" =>
                 new PaymentResponse
                 {
                     PaymentStatus  = PaymentStatusEnum.Finished,
                     ResponseObject = "OK",
                 },
-            Events.PaymentIntentPaymentFailed =>
+            "payment_intent.payment_failed" =>
                 new PaymentResponse
                 {
                     PaymentStatus  = PaymentStatusEnum.Rejected,
