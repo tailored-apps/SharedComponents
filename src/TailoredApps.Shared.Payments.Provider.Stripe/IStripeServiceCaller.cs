@@ -1,4 +1,5 @@
 using global::Stripe;
+using global::Stripe.Checkout;
 
 namespace TailoredApps.Shared.Payments.Provider.Stripe;
 
