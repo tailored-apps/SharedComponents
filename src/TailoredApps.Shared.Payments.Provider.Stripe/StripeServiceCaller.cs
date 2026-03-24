@@ -77,8 +77,17 @@ public class StripeServiceCaller : IStripeServiceCaller
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// throwOnApiVersionMismatch=false — nie wymuszamy zgodności wersji API eventu z SDK.
+    /// Stripe może wysyłać eventy ze starszą wersją API podczas przejść między wersjami.
+    /// Weryfikacja podpisu HMAC-SHA256 jest zawsze wykonywana.
+    /// </remarks>
     public Event ConstructWebhookEvent(string payload, string stripeSignature)
-        => EventUtility.ConstructEvent(payload, stripeSignature, options.WebhookSecret);
+        => EventUtility.ConstructEvent(
+            payload,
+            stripeSignature,
+            options.WebhookSecret,
+            throwOnApiVersionMismatch: false);
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 

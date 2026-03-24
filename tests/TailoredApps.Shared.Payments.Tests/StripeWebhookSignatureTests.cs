@@ -41,9 +41,9 @@ public class StripeWebhookSignatureTests
     {
         var ts = timestamp ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var signedPayload = $"{ts}.{payload}";
-        // Stripe SDK obcina "whsec_" — my też musimy
-        var rawKey    = secret.StartsWith("whsec_") ? secret.Substring(6) : secret;
-        var keyBytes  = Encoding.UTF8.GetBytes(rawKey);
+        // Stripe SDK (EventUtility.ValidateSignature) używa pełnego sekretu jako klucza HMAC,
+        // włącznie z prefixem "whsec_" — musimy robić dokładnie to samo.
+        var keyBytes  = Encoding.UTF8.GetBytes(secret);
         var dataBytes = Encoding.UTF8.GetBytes(signedPayload);
         using var hmac = new HMACSHA256(keyBytes);
         var hash      = hmac.ComputeHash(dataBytes);
