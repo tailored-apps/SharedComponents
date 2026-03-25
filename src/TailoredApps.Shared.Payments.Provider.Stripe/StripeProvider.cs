@@ -2,6 +2,9 @@ using global::Stripe;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using TailoredApps.Shared.Payments;
 
 namespace TailoredApps.Shared.Payments.Provider.Stripe;
 
@@ -9,7 +12,7 @@ namespace TailoredApps.Shared.Payments.Provider.Stripe;
 /// Implementacja <see cref="IPaymentProvider"/> dla Stripe Checkout.
 /// Przepływ: RequestPayment → Stripe Checkout Session (hosted page) → webhook StatusChange.
 /// </summary>
-public class StripeProvider : IPaymentProvider
+public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
 {
     private readonly IStripeServiceCaller stripeCaller;
 
@@ -153,6 +156,53 @@ public class StripeProvider : IPaymentProvider
         return Task.FromResult(response);
     }
 
+    // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Handles an incoming Stripe webhook HTTP request.
+    /// Extracts the <c>Stripe-Signature</c> header, verifies the HMAC-SHA256 signature,
+    /// parses the event type and returns a normalised <see cref="PaymentWebhookResult"/>.
+    /// </summary>
+    /// <remarks>
+    /// Events that do not represent a terminal payment state
+    /// (e.g. <c>payment_method.attached</c>) result in <see cref="PaymentWebhookResult.Ignore"/>.
+    /// </remarks>
+    /// <param name="request">Unified HTTP webhook request.</param>
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    {
+        var rawBody   = request.Body ?? string.Empty;
+        var signature = request.Headers.TryGetValue("Stripe-Signature", out var sig)
+            ? sig.ToString()
+            : string.Empty;
+
+        var payload = new TransactionStatusChangePayload
+        {
+            Payload          = rawBody,
+            QueryParameters  = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                { "Stripe-Signature", signature },
+            },
+        };
+
+        var response = ((IPaymentProvider)this).TransactionStatusChange(payload).GetAwaiter().GetResult();
+
+        // Signature failure — TransactionStatusChange returns Rejected + message containing "signature"
+        if (response.PaymentStatus == PaymentStatusEnum.Rejected
+            && response.ResponseObject?.ToString()?.Contains("signature", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return Task.FromResult(PaymentWebhookResult.Fail(response.ResponseObject?.ToString() ?? "Invalid signature"));
+        }
+
+        // Non-actionable event (payment_method.attached, customer.created, …)
+        if (response.PaymentStatus == PaymentStatusEnum.Processing
+            || string.IsNullOrEmpty(response.PaymentUniqueId))
+        {
+            return Task.FromResult(PaymentWebhookResult.Ignore("Non-actionable Stripe event"));
+        }
+
+        return Task.FromResult(PaymentWebhookResult.Ok(response));
+    }
+
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     private static PaymentResponse HandleSessionCompleted(Event stripeEvent)
@@ -199,6 +249,12 @@ public static class StripeProviderExtensions
         services.ConfigureOptions<StripeConfigureOptions>();
         services.AddTransient<global::Stripe.Checkout.SessionService>();
         services.AddTransient<IStripeServiceCaller, StripeServiceCaller>();
+
+        // Register as both IPaymentProvider (for PaymentService aggregator)
+        // and IWebhookPaymentProvider (for webhook dispatch).
+        services.AddTransient<StripeProvider>();
+        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<StripeProvider>());
+        services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<StripeProvider>());
     }
 }
 

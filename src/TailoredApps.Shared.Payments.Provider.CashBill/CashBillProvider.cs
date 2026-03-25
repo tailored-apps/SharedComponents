@@ -1,15 +1,23 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TailoredApps.Shared.Payments;
 using TailoredApps.Shared.Payments.Provider.CashBill.Models;
 using static TailoredApps.Shared.Payments.Provider.CashBill.CashbillServiceCaller;
 
 namespace TailoredApps.Shared.Payments.Provider.CashBill
 {
-    public class CashBillProvider : IPaymentProvider
+    /// <summary>
+    /// Payment provider implementation for CashBill.
+    /// Supports both polling-based status checks and back-channel webhook notifications
+    /// via <see cref="IWebhookPaymentProvider"/>.
+    /// </summary>
+    public class CashBillProvider : IPaymentProvider, IWebhookPaymentProvider
     {
         private readonly ICashbillServiceCaller cashbillService;
         public CashBillProvider(ICashbillServiceCaller cashbillService)
@@ -112,16 +120,67 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             // }
             // return null;
         }
+
+        // ─── IWebhookPaymentProvider ─────────────────────────────────────────
+
+        /// <summary>
+        /// Handles an incoming CashBill back-channel HTTP notification.
+        /// </summary>
+        /// <remarks>
+        /// CashBill sends a GET/POST with query-string parameters:
+        /// <c>cmd</c> (event type), <c>args</c> (transaction ID), <c>sign</c> (MD5 signature).<br/>
+        /// The method:
+        /// <list type="number">
+        ///   <item>Validates that <c>args</c> (transaction ID) is present.</item>
+        ///   <item>Verifies the MD5 signature via <c>GetSignForNotificationService</c>.</item>
+        ///   <item>Fetches the current payment status from CashBill API.</item>
+        ///   <item>Returns a normalised <see cref="PaymentWebhookResult"/>.</item>
+        /// </list>
+        /// </remarks>
+        /// <param name="request">Unified HTTP webhook request containing query parameters.</param>
+        public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+        {
+            var cmd           = request.Query.TryGetValue("cmd",  out var c) ? c.ToString() : string.Empty;
+            var transactionId = request.Query.TryGetValue("args", out var a) ? a.ToString() : string.Empty;
+            var sign          = request.Query.TryGetValue("sign", out var s) ? s.ToString() : string.Empty;
+
+            if (string.IsNullOrEmpty(transactionId))
+                return PaymentWebhookResult.Fail("Missing transactionId (args) in query string.");
+
+            // Verify MD5 signature: MD5(cmd + args + shopSecretPhrase)
+            var notification  = new TransactionStatusChanged { Command = cmd, TransactionId = transactionId, Sign = sign };
+            var expectedSign  = await cashbillService.GetSignForNotificationService(notification);
+            if (!string.Equals(expectedSign, sign, StringComparison.OrdinalIgnoreCase))
+                return PaymentWebhookResult.Fail($"Invalid signature. expected={expectedSign} got={sign}");
+
+            // Signature valid — poll the API for the actual payment status
+            var statusResponse = await GetStatus(transactionId);
+            return PaymentWebhookResult.Ok(statusResponse);
+        }
     }
 
+    /// <summary>DI extension methods for the CashBill payment provider.</summary>
     public static class CashBillProviderExtensions
     {
+        /// <summary>
+        /// Registers the CashBill provider and its dependencies.
+        /// The provider is exposed as both <see cref="IPaymentProvider"/>
+        /// (used by the <c>PaymentService</c> aggregator)
+        /// and <see cref="IWebhookPaymentProvider"/>
+        /// (used for back-channel webhook dispatch).
+        /// </summary>
+        /// <param name="services">The DI service collection.</param>
         public static void RegisterCashbillProvider(this IServiceCollection services)
         {
             services.AddOptions<CashbillServiceOptions>();
             services.ConfigureOptions<CashbillConfigureOptions>();
             services.AddTransient<ICashbillServiceCaller, CashbillServiceCaller>();
             services.AddTransient<ICashbillHttpClient, CashbillHttpClient>();
+
+            // Register as both IPaymentProvider and IWebhookPaymentProvider
+            services.AddTransient<CashBillProvider>();
+            services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<CashBillProvider>());
+            services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<CashBillProvider>());
         }
     }
 
