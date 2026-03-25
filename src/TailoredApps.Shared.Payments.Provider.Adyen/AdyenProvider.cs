@@ -188,7 +188,7 @@ public class AdyenServiceCaller : IAdyenServiceCaller
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 /// <summary>Implementacja <see cref="IPaymentProvider"/> dla Adyen Checkout.</summary>
-public class AdyenProvider : IPaymentProvider
+public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
 {
     private readonly IAdyenServiceCaller caller;
 
@@ -255,6 +255,41 @@ public class AdyenProvider : IPaymentProvider
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
+    // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    {
+        var body = request.Body ?? string.Empty;
+        var hmac = request.Headers.TryGetValue("HmacSignature", out var h) ? h.ToString() : string.Empty;
+
+        var payload = new TransactionStatusChangePayload
+        {
+            Payload         = body,
+            QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                { "HmacSignature", hmac },
+            },
+        };
+
+        var response = await TransactionStatusChange(payload);
+
+        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
+        {
+            var msg = response.ResponseObject?.ToString() ?? string.Empty;
+            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                return PaymentWebhookResult.Fail(msg);
+        }
+
+        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+            return PaymentWebhookResult.Ignore("Non-actionable event");
+
+        return PaymentWebhookResult.Ok(response);
+    }
+
     /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
@@ -310,6 +345,9 @@ public static class AdyenProviderExtensions
         services.ConfigureOptions<AdyenConfigureOptions>();
         services.AddHttpClient("Adyen");
         services.AddTransient<IAdyenServiceCaller, AdyenServiceCaller>();
+        services.AddTransient<AdyenProvider>();
+        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<AdyenProvider>());
+        services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<AdyenProvider>());
     }
 }
 

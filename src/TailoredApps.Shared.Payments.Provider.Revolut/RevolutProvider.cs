@@ -120,7 +120,7 @@ public class RevolutServiceCaller : IRevolutServiceCaller
 }
 
 /// <summary>Implementacja <see cref="IPaymentProvider"/> dla Revolut.</summary>
-public class RevolutProvider : IPaymentProvider
+public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
 {
     private readonly IRevolutServiceCaller caller;
 
@@ -175,6 +175,43 @@ public class RevolutProvider : IPaymentProvider
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
+    // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    {
+        var body      = request.Body ?? string.Empty;
+        var timestamp = request.Headers.TryGetValue("Revolut-Request-Timestamp", out var t) ? t.ToString() : string.Empty;
+        var signature = request.Headers.TryGetValue("Revolut-Signature",         out var s) ? s.ToString() : string.Empty;
+
+        var payload = new TransactionStatusChangePayload
+        {
+            Payload         = body,
+            QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                { "Revolut-Request-Timestamp", timestamp },
+                { "Revolut-Signature",         signature },
+            },
+        };
+
+        var response = await TransactionStatusChange(payload);
+
+        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
+        {
+            var msg = response.ResponseObject?.ToString() ?? string.Empty;
+            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                return PaymentWebhookResult.Fail(msg);
+        }
+
+        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+            return PaymentWebhookResult.Ignore("Non-actionable event");
+
+        return PaymentWebhookResult.Ok(response);
+    }
+
     /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
@@ -216,6 +253,9 @@ public static class RevolutProviderExtensions
         services.ConfigureOptions<RevolutConfigureOptions>();
         services.AddHttpClient("Revolut");
         services.AddTransient<IRevolutServiceCaller, RevolutServiceCaller>();
+        services.AddTransient<RevolutProvider>();
+        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<RevolutProvider>());
+        services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<RevolutProvider>());
     }
 }
 
