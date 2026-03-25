@@ -119,13 +119,6 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/tailored-apps/SharedComponents
-  alternate:
-    - name: Polski
-      link: /
-      lang: pl
-    - name: English
-      link: /en/
-      lang: en
 
 # Extensions
 markdown_extensions:
