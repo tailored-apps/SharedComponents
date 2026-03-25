@@ -12,6 +12,7 @@ namespace TailoredApps.Shared.Email.Office365
     /// </summary>
     public class AuthenticationConfig
     {
+        /// <summary>The configuration key used to bind this section from application settings.</summary>
         public static string ConfigurationKey => "Mail:Providers:Office365";
         /// <summary>
         /// instance of Azure AD, for example public Azure or a Sovereign cloud (Azure China, Germany, US government, etc ...)

@@ -2,108 +2,111 @@ using System;
 
 namespace TailoredApps.Shared.Querying
 {
-    /// <summary>Bazowa klasa zapytania stronicowanego i sortowanego.</summary>
-    /// <typeparam name="TQuery">Typ filtru zapytania.</typeparam>
+    /// <summary>Base class for a paged and sorted query.</summary>
+    /// <typeparam name="TQuery">The type of the query filter.</typeparam>
     public abstract class PagedAndSortedQuery<TQuery> : IPagedAndSortedQuery<TQuery> where TQuery : QueryBase
     {
-        /// <summary>Numer strony (1-based).</summary>
+        /// <summary>Page number (1-based).</summary>
         public int? Page { get; set; }
 
-        /// <summary>Liczba elementów na stronie.</summary>
+        /// <summary>Number of items per page.</summary>
         public int? Count { get; set; }
 
-        /// <summary>Czy parametry stronicowania są podane.</summary>
+        /// <summary>Indicates whether paging parameters are specified.</summary>
         public bool IsPagingSpecified => Page.HasValue && Count.HasValue;
 
-        /// <summary>Pole sortowania.</summary>
+        /// <summary>The field to sort by.</summary>
         public string SortField { get; set; }
 
-        /// <summary>Kierunek sortowania.</summary>
+        /// <summary>The sort direction.</summary>
         public SortDirection? SortDir { get; set; }
 
-        /// <summary>Czy parametry sortowania są podane.</summary>
+        /// <summary>Indicates whether sorting parameters are specified.</summary>
         public bool IsSortingSpecified => !string.IsNullOrWhiteSpace(SortField) && SortDir.HasValue;
 
-        /// <summary>Obiekt filtra zapytania.</summary>
+        /// <summary>The query filter object.</summary>
         public TQuery Filter { get; set; }
 
-        /// <summary>Sprawdza, czy zapytanie jest sortowane po wskazanym polu.</summary>
-        /// <param name="fieldName">Nazwa pola do sprawdzenia.</param>
+        /// <summary>Determines whether the query is sorted by the specified field.</summary>
+        /// <param name="fieldName">The name of the field to check.</param>
+        /// <returns><c>true</c> if the query is sorted by <paramref name="fieldName"/>; otherwise, <c>false</c>.</returns>
         public bool IsSortBy(string fieldName) => string.Equals(SortField, fieldName, StringComparison.InvariantCultureIgnoreCase);
     }
 
-    /// <summary>Interfejs zapytania stronicowanego i sortowanego.</summary>
-    /// <typeparam name="TQuery">Typ filtru zapytania.</typeparam>
+    /// <summary>Interface for a paged and sorted query.</summary>
+    /// <typeparam name="TQuery">The type of the query filter.</typeparam>
     public interface IPagedAndSortedQuery<TQuery> : IQuery<TQuery>, IQueryParameters where TQuery : QueryBase
     {
-        /// <summary>Numer strony (1-based).</summary>
+        /// <summary>Page number (1-based).</summary>
         new int? Page { get; set; }
 
-        /// <summary>Liczba elementów na stronie.</summary>
+        /// <summary>Number of items per page.</summary>
         new int? Count { get; set; }
 
-        /// <summary>Czy parametry stronicowania są podane.</summary>
+        /// <summary>Indicates whether paging parameters are specified.</summary>
         new bool IsPagingSpecified { get; }
 
-        /// <summary>Pole sortowania.</summary>
+        /// <summary>The field to sort by.</summary>
         new string SortField { get; set; }
 
-        /// <summary>Kierunek sortowania.</summary>
+        /// <summary>The sort direction.</summary>
         new SortDirection? SortDir { get; set; }
 
-        /// <summary>Czy parametry sortowania są podane.</summary>
+        /// <summary>Indicates whether sorting parameters are specified.</summary>
         new bool IsSortingSpecified { get; }
 
-        /// <summary>Obiekt filtra zapytania.</summary>
+        /// <summary>The query filter object.</summary>
         new TQuery Filter { get; set; }
 
-        /// <summary>Sprawdza, czy zapytanie jest sortowane po wskazanym polu.</summary>
+        /// <summary>Determines whether the query is sorted by the specified field.</summary>
+        /// <param name="fieldName">The name of the field to check.</param>
+        /// <returns><c>true</c> if the query is sorted by <paramref name="fieldName"/>; otherwise, <c>false</c>.</returns>
         bool IsSortBy(string fieldName);
     }
 
-    /// <summary>Parametry stronicowania.</summary>
+    /// <summary>Paging parameters.</summary>
     public interface IPagingParameters
     {
-        /// <summary>Numer strony.</summary>
+        /// <summary>Page number.</summary>
         int? Page { get; }
 
-        /// <summary>Liczba elementów na stronie.</summary>
+        /// <summary>Number of items per page.</summary>
         int? Count { get; }
 
-        /// <summary>Czy parametry stronicowania są podane.</summary>
+        /// <summary>Indicates whether paging parameters are specified.</summary>
         bool IsPagingSpecified { get; }
     }
 
-    /// <summary>Parametry sortowania.</summary>
+    /// <summary>Sorting parameters.</summary>
     public interface ISortingParameters
     {
-        /// <summary>Pole sortowania.</summary>
+        /// <summary>The field to sort by.</summary>
         string SortField { get; }
 
-        /// <summary>Kierunek sortowania.</summary>
+        /// <summary>The sort direction.</summary>
         SortDirection? SortDir { get; }
 
-        /// <summary>Czy parametry sortowania są podane.</summary>
+        /// <summary>Indicates whether sorting parameters are specified.</summary>
         bool IsSortingSpecified { get; }
     }
 
-    /// <summary>Połączone parametry stronicowania i sortowania.</summary>
+    /// <summary>Combined paging and sorting parameters.</summary>
     public interface IQueryParameters : IPagingParameters, ISortingParameters
     {
     }
 
-    /// <summary>Interfejs zapytania z filtrem.</summary>
-    /// <typeparam name="T">Typ filtru.</typeparam>
+    /// <summary>Interface for a query with a filter object.</summary>
+    /// <typeparam name="T">The type of the filter.</typeparam>
     public interface IQuery<T>
     {
-        /// <summary>Obiekt filtra zapytania.</summary>
+        /// <summary>The query filter object.</summary>
         T Filter { get; set; }
     }
 
-    /// <summary>Interfejs stronicowanego żądania MediatR z filtrem i modelem odpowiedzi.</summary>
-    /// <typeparam name="TResponse">Typ odpowiedzi (musi implementować <see cref="IPagedResult{TModel}"/>).</typeparam>
-    /// <typeparam name="TQuery">Typ filtru zapytania.</typeparam>
-    /// <typeparam name="TModel">Typ elementu w wynikach.</typeparam>
+    /// <summary>Interface for a paged MediatR request with a filter and a response model.</summary>
+    /// <typeparam name="TResponse">The type of the response (must implement <see cref="IPagedResult{TModel}"/>).</typeparam>
+    /// <typeparam name="TQuery">The type of the query filter.</typeparam>
+    /// <typeparam name="TModel">The type of the item in the result set.</typeparam>
     public interface IPagedAndSortedRequest<TResponse, TQuery, TModel> : IPagedAndSortedQuery<TQuery>
         where TQuery : QueryBase
         where TResponse : IPagedResult<TModel>

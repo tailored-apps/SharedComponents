@@ -3,31 +3,31 @@ using System.Collections.Generic;
 
 namespace TailoredApps.Shared.Email.Models
 {
-    /// <summary>Model wiadomości e-mail.</summary>
+    /// <summary>Represents an e-mail message.</summary>
     public class MailMessage
     {
-        /// <summary>Temat wiadomości.</summary>
+        /// <summary>The subject of the message.</summary>
         public string Topic { get; set; }
 
-        /// <summary>Nadawca wiadomości.</summary>
+        /// <summary>The sender of the message.</summary>
         public string Sender { get; set; }
 
-        /// <summary>Odbiorca wiadomości.</summary>
+        /// <summary>The recipient of the message.</summary>
         public string Recipent { get; set; }
 
-        /// <summary>Kopia CC wiadomości.</summary>
+        /// <summary>The CC (carbon copy) recipient of the message.</summary>
         public string Copy { get; set; }
 
-        /// <summary>Treść wiadomości (plain text).</summary>
+        /// <summary>The plain-text body of the message.</summary>
         public string Body { get; set; }
 
-        /// <summary>Treść wiadomości (HTML).</summary>
+        /// <summary>The HTML body of the message.</summary>
         public string HtmlBody { get; set; }
 
-        /// <summary>Załączniki: nazwa pliku → zawartość Base64.</summary>
+        /// <summary>Attachments as a dictionary mapping file name to Base64-encoded content.</summary>
         public Dictionary<string, string> Attachements { get; set; }
 
-        /// <summary>Data wysłania wiadomości.</summary>
+        /// <summary>The date and time the message was sent.</summary>
         public DateTimeOffset Date { get; set; }
     }
 }

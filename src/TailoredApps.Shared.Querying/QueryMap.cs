@@ -3,26 +3,26 @@ using System.Linq.Expressions;
 
 namespace TailoredApps.Shared.Querying
 {
-    /// <summary>Mapowanie pola sortowania z modelu docelowego na pole źródłowe.</summary>
-    /// <typeparam name="TDestination">Typ modelu docelowego (DTO).</typeparam>
-    /// <typeparam name="TSource">Typ encji źródłowej.</typeparam>
+    /// <summary>Maps a sort field from a destination model to a source entity field.</summary>
+    /// <typeparam name="TDestination">The type of the destination model (DTO).</typeparam>
+    /// <typeparam name="TSource">The type of the source entity.</typeparam>
     public class QueryMap<TDestination, TSource>
     {
         /// <summary>
-        /// Inicjalizuje nowe mapowanie sortowania.
+        /// Initializes a new sort mapping.
         /// </summary>
-        /// <param name="destination">Wyrażenie na pole modelu docelowego.</param>
-        /// <param name="source">Wyrażenie na pole encji źródłowej.</param>
+        /// <param name="destination">An expression pointing to the destination model field.</param>
+        /// <param name="source">An expression pointing to the source entity field.</param>
         public QueryMap(Expression<Func<TDestination, object>> destination, Expression<Func<TSource, object>> source)
         {
             Source = source;
             Destination = destination;
         }
 
-        /// <summary>Wyrażenie wskazujące na pole encji źródłowej.</summary>
+        /// <summary>An expression pointing to the source entity field.</summary>
         public Expression<Func<TSource, object>> Source { get; }
 
-        /// <summary>Wyrażenie wskazujące na pole modelu docelowego.</summary>
+        /// <summary>An expression pointing to the destination model field.</summary>
         public Expression<Func<TDestination, object>> Destination { get; }
     }
 }
