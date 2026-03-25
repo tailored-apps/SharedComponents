@@ -37,11 +37,13 @@ namespace TailoredApps.Shared.Payments
 
             // If the provider also supports webhooks and is not already registered
             // as IWebhookPaymentProvider (e.g. by Register*Provider()), register it here too.
+            // Use non-generic overload — TPaymentProvider is constrained to IPaymentProvider only,
+            // so AddTransient<IWebhookPaymentProvider, TPaymentProvider>() would not compile.
             if (typeof(IWebhookPaymentProvider).IsAssignableFrom(typeof(TPaymentProvider))
                 && !Services.Any(d => d.ServiceType == typeof(IWebhookPaymentProvider)
                                       && d.ImplementationType == typeof(TPaymentProvider)))
             {
-                Services.AddTransient<IWebhookPaymentProvider, TPaymentProvider>();
+                Services.AddTransient(typeof(IWebhookPaymentProvider), typeof(TPaymentProvider));
             }
 
             return this;
@@ -56,7 +58,7 @@ namespace TailoredApps.Shared.Payments
                 && !Services.Any(d => d.ServiceType == typeof(IWebhookPaymentProvider)
                                       && d.ImplementationType == typeof(TPaymentProvider)))
             {
-                Services.AddTransient<IWebhookPaymentProvider, TPaymentProvider>();
+                Services.AddTransient(typeof(IWebhookPaymentProvider), typeof(TPaymentProvider));
             }
 
             return this;
