@@ -2,7 +2,7 @@
 site_name: "Tailored Apps. .NET Shared Components"
 site_description: "Reusable components for webapps"
 site_author: "Tailored Apps."
-site_url: "https://tailored-apps.github.io/"
+site_url: "https://shared.tailoredapps.pl/"
 
 # Copyright
 copyright: "&copy; 2022 Tailored Apps"
@@ -16,6 +16,42 @@ edit_uri: "https://github.com/tailored-apps/SharedComponents/edit/master/docs"
 docs_dir: "docs"
 extra_css:
   - stylesheets/extra.css
+
+# Navigation
+nav:
+  - Home: index.md
+  - Libraries:
+      - DateTime: Libraries/DateTime/index.md
+      - Email:
+          - Overview: Libraries/Email/index.md
+          - Models: Libraries/Email/Models.md
+          - Office365: Libraries/Email/Office365.md
+      - EntityFramework:
+          - Overview: Libraries/EntityFramework/index.md
+          - UnitOfWork.WebApiCore: Libraries/EntityFramework/UnitOfWork.WebApiCore.md
+      - ExceptionHandling: Libraries/ExceptionHandling/index.md
+      - MediatR:
+          - Overview: Libraries/MediatR/index.md
+          - Caching: Libraries/MediatR/Caching.md
+          - Email: Libraries/MediatR/Email.md
+          - ML: Libraries/MediatR/ML.md
+          - PagedRequest: Libraries/MediatR/PagedRequest.md
+      - Payments:
+          - Overview: Libraries/Payments/index.md
+          - Providers:
+              - Adyen: Libraries/Payments/Providers/Adyen.md
+              - CashBill: Libraries/Payments/Providers/CashBill.md
+              - HotPay: Libraries/Payments/Providers/HotPay.md
+              - PayNow: Libraries/Payments/Providers/PayNow.md
+              - PayU: Libraries/Payments/Providers/PayU.md
+              - Przelewy24: Libraries/Payments/Providers/Przelewy24.md
+              - Revolut: Libraries/Payments/Providers/Revolut.md
+              - Stripe: Libraries/Payments/Providers/Stripe.md
+              - Tpay: Libraries/Payments/Providers/Tpay.md
+      - Querying: Libraries/Querying/index.md
+  - Contributing: contributing.md
+  - Changelog: Libraries/Readme.md
+
 # Configuration
 theme:
   name: material
@@ -82,7 +118,8 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/tailored-apps/SharedComponents
-      # Extensions
+
+# Extensions
 markdown_extensions:
   - abbr
   - admonition
@@ -99,8 +136,8 @@ markdown_extensions:
   - pymdownx.caret
   - pymdownx.details
   - pymdownx.emoji:
-      emoji_generator: !!python/name:materialx.emoji.to_svg
-      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
