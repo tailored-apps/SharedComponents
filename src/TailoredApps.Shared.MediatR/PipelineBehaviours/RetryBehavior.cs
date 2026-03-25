@@ -11,18 +11,21 @@ using TailoredApps.Shared.MediatR.Interfaces.Messages;
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours
 {
     /// <summary>
-    /// Pipeline behavior MediatR implementujący retry z opcjonalnym exponential backoff i circuit breakerem.
+    /// MediatR pipeline behavior that implements automatic retry with optional exponential backoff
+    /// and a circuit breaker to prevent cascading failures.
     /// </summary>
-    /// <typeparam name="TRequest">Typ żądania MediatR.</typeparam>
-    /// <typeparam name="TResponse">Typ odpowiedzi.</typeparam>
+    /// <typeparam name="TRequest">The type of the MediatR request.</typeparam>
+    /// <typeparam name="TResponse">The type of the response.</typeparam>
     public class RetryBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
     {
         private readonly IEnumerable<IRetryableRequest<TRequest, TResponse>> _retryHandlers;
         private readonly ILogger<RetryBehavior<TRequest, TResponse>> _logger;
 
-        /// <summary>Inicjalizuje instancję <see cref="RetryBehavior{TRequest, TResponse}"/>.</summary>
-        /// <param name="retryHandlers">Kolekcja konfiguracji retry.</param>
-        /// <param name="logger">Logger.</param>
+        /// <summary>
+        /// Initializes a new instance of <see cref="RetryBehavior{TRequest, TResponse}"/>.
+        /// </summary>
+        /// <param name="retryHandlers">The collection of retry configuration handlers registered for this request/response pair.</param>
+        /// <param name="logger">The logger instance used for diagnostic output.</param>
         public RetryBehavior(IEnumerable<IRetryableRequest<TRequest, TResponse>> retryHandlers, ILogger<RetryBehavior<TRequest, TResponse>> logger)
         {
             _retryHandlers = retryHandlers;

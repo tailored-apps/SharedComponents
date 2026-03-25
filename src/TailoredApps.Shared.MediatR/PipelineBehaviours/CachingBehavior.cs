@@ -9,10 +9,13 @@ using TailoredApps.Shared.MediatR.Interfaces.Caching;
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours
 {
     /// <summary>
-    /// MediatR Caching Pipeline Behavior
+    /// MediatR pipeline behavior that provides response caching. Before invoking the next handler,
+    /// it checks whether a cached response already exists for the request. If found, the cached value
+    /// is returned immediately; otherwise the handler is executed and the result is stored in the cache
+    /// according to the active <see cref="ICachePolicy{TRequest,TResponse}"/>.
     /// </summary>
-    /// <typeparam name="TRequest"></typeparam>
-    /// <typeparam name="TResponse"></typeparam>
+    /// <typeparam name="TRequest">The type of the MediatR request.</typeparam>
+    /// <typeparam name="TResponse">The type of the response.</typeparam>
     public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
     {
         private readonly IEnumerable<ICachePolicy<TRequest, TResponse>> _cachePolicies;

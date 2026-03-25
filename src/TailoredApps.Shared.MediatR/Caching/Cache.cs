@@ -8,13 +8,18 @@ using TailoredApps.Shared.MediatR.Interfaces.Caching;
 
 namespace TailoredApps.Shared.MediatR.Caching
 {
-    /// <summary>Implementacja <see cref="ICache"/> oparta na <see cref="IDistributedCache"/> z serializacją Newtonsoft.Json.</summary>
+    /// <summary>
+    /// Implementation of <see cref="ICache"/> backed by <see cref="IDistributedCache"/>.
+    /// Serializes and deserializes cached objects using Newtonsoft.Json.
+    /// </summary>
     public class Cache : ICache
     {
         private readonly IDistributedCache distributedCache;
 
-        /// <summary>Inicjalizuje instancję <see cref="Cache"/>.</summary>
-        /// <param name="distributedCache">Implementacja distributed cache.</param>
+        /// <summary>
+        /// Initializes a new instance of <see cref="Cache"/>.
+        /// </summary>
+        /// <param name="distributedCache">The underlying distributed cache implementation.</param>
         public Cache(IDistributedCache distributedCache)
         {
             this.distributedCache = distributedCache;

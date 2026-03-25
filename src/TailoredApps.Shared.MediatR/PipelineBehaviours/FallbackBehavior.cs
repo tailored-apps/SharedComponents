@@ -11,20 +11,23 @@ using TailoredApps.Shared.MediatR.Interfaces.Handlers;
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours
 {
     /// <summary>
-    /// Pipeline behavior MediatR implementujący fallback — gdy główny handler rzuci wyjątkiem,
-    /// wywołuje zarejestrowany <see cref="IFallbackHandler{TRequest, TResponse}"/>.
+    /// MediatR pipeline behavior that implements a fallback strategy. When the primary handler throws
+    /// an exception, the registered <see cref="IFallbackHandler{TRequest, TResponse}"/> is invoked
+    /// to provide an alternative response.
     /// </summary>
-    /// <typeparam name="TRequest">Typ żądania MediatR.</typeparam>
-    /// <typeparam name="TResponse">Typ odpowiedzi.</typeparam>
+    /// <typeparam name="TRequest">The type of the MediatR request.</typeparam>
+    /// <typeparam name="TResponse">The type of the response.</typeparam>
     public class FallbackBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
         where TRequest : IRequest<TResponse>
     {
         private readonly IEnumerable<IFallbackHandler<TRequest, TResponse>> _fallbackHandlers;
         private readonly ILogger<FallbackBehavior<TRequest, TResponse>> _logger;
 
-        /// <summary>Inicjalizuje instancję <see cref="FallbackBehavior{TRequest, TResponse}"/>.</summary>
-        /// <param name="fallbackHandlers">Kolekcja fallback handlerów.</param>
-        /// <param name="logger">Logger.</param>
+        /// <summary>
+        /// Initializes a new instance of <see cref="FallbackBehavior{TRequest, TResponse}"/>.
+        /// </summary>
+        /// <param name="fallbackHandlers">The collection of fallback handlers registered for this request/response pair.</param>
+        /// <param name="logger">The logger instance used for diagnostic output.</param>
         public FallbackBehavior(IEnumerable<IFallbackHandler<TRequest, TResponse>> fallbackHandlers, ILogger<FallbackBehavior<TRequest, TResponse>> logger)
         {
             _fallbackHandlers = fallbackHandlers;
