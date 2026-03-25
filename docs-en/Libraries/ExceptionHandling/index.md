@@ -5,16 +5,16 @@
 
 ---
 
-## Opis
+## Description
 
-Biblioteka standaryzuje obsługę wyjątków w aplikacjach ASP.NET Core Web API. Rozwiązuje problem niespójnych odpowiedzi błędów — zamiast nieobrobionych stack traces lub przypadkowych formatów JSON, każdy błąd jest konwertowany na ujednoliconą strukturę `ExceptionOrValidationError`.
+This library standardizes exception handling in ASP.NET Core Web API applications. It solves the problem of inconsistent error responses — instead of raw stack traces or random JSON formats, every error is converted to a unified `ExceptionOrValidationError` structure.
 
-Dostarcza dwa mechanizmy:
+Provides two mechanisms:
 
-- **Middleware** (`ConfigureExceptionHandler`) — globalny handler przechwytujący wyjątki dla całej aplikacji
-- **Action Filter** (`HandleExceptionAttribute`) — dekoracyjne podejście na poziomie kontrolera/akcji
+- **Middleware** (`ConfigureExceptionHandler`) — global handler intercepting exceptions for the entire application
+- **Action Filter** (`HandleExceptionAttribute`) — decorative approach at controller/action level
 
-Możesz zdefiniować własny `IExceptionHandlingProvider`, który mapuje konkretne typy wyjątków na kody HTTP i komunikaty błędów.
+You can define your own `IExceptionHandlingProvider` that maps specific exception types to HTTP codes and error messages.
 
 ---
 

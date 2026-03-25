@@ -5,14 +5,14 @@
 
 ---
 
-## Opis
+## Description
 
-Implementacja `IEmailProvider` wysyłająca wiadomości e-mail przez Microsoft 365 z wykorzystaniem protokołu IMAP i uwierzytelniania OAuth2 (client credentials flow). Biblioteka uwierzytelnia się w Azure AD jako confidential client application — obsługuje zarówno client secret, jak i certyfikat.
+An `IEmailProvider` implementation that reads email from Microsoft 365 using IMAP with OAuth2 authentication (client credentials flow). The library authenticates with Azure AD as a confidential client application — supporting both client secret and certificate authentication.
 
-Dzięki temu możesz odbierać wiadomości ze skrzynki Office 365 bez przechowywania hasła użytkownika. Biblioteka automatycznie obsługuje pobieranie i cache'owanie tokenów dostępu przez Microsoft Identity.
+This allows you to receive messages from an Office 365 mailbox without storing a user password. The library automatically handles token acquisition and caching via Microsoft Identity.
 
-!!! warning "SendMail — niezaimplementowane"
-    Metoda `SendMail` rzuca `NotImplementedException`. Ta biblioteka obsługuje **tylko odbiór** wiadomości przez IMAP. Do wysyłki używaj `SmtpEmailProvider` lub integracji przez Microsoft Graph.
+!!! warning "SendMail — not implemented"
+    The `SendMail` method throws `NotImplementedException`. This library supports **reading only** via IMAP. For sending, use `SmtpEmailProvider` or Microsoft Graph integration.
 
 ---
 

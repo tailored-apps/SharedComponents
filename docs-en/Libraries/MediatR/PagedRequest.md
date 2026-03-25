@@ -5,11 +5,11 @@
 
 ---
 
-## Opis
+## Description
 
-Biblioteka dostarcza bazową klasę `PagedAndSortedRequest<TResponse, TQuery, TModel>` dla requestów MediatR, które wymagają paginacji i sortowania. Standaryzuje parametry stronicowania (`Page`, `Count`) i sortowania (`SortField`, `SortDir`) we wszystkich zapytaniach listowych aplikacji.
+This library provides a base `PagedAndSortedRequest<TResponse, TQuery, TModel>` class for MediatR requests that require pagination and sorting. It standardizes paging (`Page`, `Count`) and sorting (`SortField`, `SortDir`) parameters across all list queries in the application.
 
-Klasa jest ściśle zintegrowana z biblioteką `TailoredApps.Shared.Querying` — wymaga, aby `TQuery` dziedziczyło po `QueryBase`, a `TResponse` implementowało `IPagedResult<TModel>`.
+The class is tightly integrated with `TailoredApps.Shared.Querying` — requires `TQuery` to inherit from `QueryBase` and `TResponse` to implement `IPagedResult<TModel>`.
 
 ---
 

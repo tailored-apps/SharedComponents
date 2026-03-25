@@ -5,11 +5,11 @@
 
 ---
 
-## Opis
+## Description
 
-Biblioteka rozwiązuje jeden z fundamentalnych problemów testowalności aplikacji .NET — bezpośrednie użycie `System.DateTime.Now` w kodzie produkcyjnym, które uniemożliwia pisanie deterministycznych testów jednostkowych.
+This library solves one of the fundamental testability problems in .NET — direct use of `System.DateTime.Now` in production code, which prevents writing deterministic unit tests.
 
-`TailoredApps.Shared.DateTime` dostarcza interfejs `IDateTimeProvider` i jego domyślną implementację `DateTimeProvider`. Zamiast wywoływać `DateTime.Now` wprost, wstrzykujesz `IDateTimeProvider` przez DI i wywołujesz `provider.Now`. W testach wymieniasz implementację na mock zwracający dowolny punkt w czasie — dzięki temu testy są powtarzalne i niezależne od zegara systemowego.
+`TailoredApps.Shared.DateTime` provides the `IDateTimeProvider` interface and its default implementation `DateTimeProvider`. Instead of calling `DateTime.Now` directly, you inject `IDateTimeProvider` via DI and call `provider.Now`. In tests you swap the implementation for a mock that returns any point in time — making tests repeatable and independent of the system clock.
 
 ---
 

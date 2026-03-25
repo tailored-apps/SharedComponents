@@ -5,13 +5,13 @@
 
 ---
 
-## Opis
+## Description
 
-Biblioteka dostarcza kompletną abstrakcję do wysyłania wiadomości e-mail w aplikacjach .NET. Opiera się na interfejsie `IEmailProvider`, który możesz wymieniać w zależności od środowiska — w produkcji używasz `SmtpEmailProvider` (wysyłka przez SMTP), w lokalnym środowisku deweloperskim `EmailServiceToConsoleWriter` (wypisuje do konsoli bez wysyłki).
+This library provides a complete abstraction for sending email messages in .NET applications. It is built around the `IEmailProvider` interface, which can be swapped depending on the environment — in production use `SmtpEmailProvider` (sends via SMTP), in local development use `EmailServiceToConsoleWriter` (prints to console without actual delivery).
 
-Biblioteka zawiera też system budowania treści emaili oparty na szablonach (`IMailMessageBuilder`), który obsługuje proste podstawianie tokenów (`DefaultMessageBuilder`) lub szablony ładowane z pliku z placeholderami `{{token}}` (`TokenReplacingMailMessageBuilder`).
+The library also includes a template-based email body building system (`IMailMessageBuilder`), supporting simple token substitution (`DefaultMessageBuilder`) or file-system templates with `{{token}}` placeholders (`TokenReplacingMailMessageBuilder`).
 
-Wbudowane zabezpieczenie przed przypadkowym spamem w środowiskach nieprodukcyjnych: kiedy `IsProd = false`, wszystkie emaile trafiają na adres `CatchAll` zamiast do prawdziwych odbiorców.
+Built-in safeguard against accidental spam in non-production environments: when `IsProd = false`, all emails are redirected to the `CatchAll` address instead of real recipients.
 
 ---
 

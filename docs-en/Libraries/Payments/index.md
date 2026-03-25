@@ -5,18 +5,18 @@
 
 ---
 
-## Opis
+## Description
 
-Biblioteka dostarcza zunifikowaną abstrakcję do integracji z bramkami płatności w aplikacjach .NET. Zamiast pisać osobną logikę dla każdego operatora płatności, programujesz do wspólnego interfejsu `IPaymentService`, który automatycznie kieruje żądania do właściwego providera na podstawie klucza (`"Stripe"`, `"PayU"`, `"CashBill"` itd.).
+This library provides a unified abstraction for payment gateway integration in .NET applications. Instead of writing separate logic for each payment operator, you program against the common `IPaymentService` interface, which automatically routes requests to the correct provider based on its key (`"Stripe"`, `"PayU"`, `"CashBill"`, etc.).
 
-Kluczowe elementy architektury:
+Key architectural elements:
 
-- **`IPaymentProvider`** — kontrakt dla każdego providera (kanały, inicjowanie płatności, status, webhook)
-- **`IWebhookPaymentProvider`** — rozszerzenie dla providerów obsługujących webhooks z weryfikacją podpisu
-- **`IPaymentService`** — fasada agregująca wszystkich zarejestrowanych providerów
-- **`PaymentOptionsBuilder`** — fluent API do rejestracji providerów w DI
+- **`IPaymentProvider`** — contract for each provider (channels, payment initiation, status, webhook)
+- **`IWebhookPaymentProvider`** — extension for providers supporting webhooks with signature verification
+- **`IPaymentService`** — facade aggregating all registered providers
+- **`PaymentOptionsBuilder`** — fluent API for registering providers in DI
 
-Biblioteka `TailoredApps.Shared.Payments` to samo serce — konkretne implementacje providerów są w osobnych pakietach `TailoredApps.Shared.Payments.Provider.*`.
+`TailoredApps.Shared.Payments` is the core — concrete provider implementations are in separate `TailoredApps.Shared.Payments.Provider.*` packages.
 
 ---
 

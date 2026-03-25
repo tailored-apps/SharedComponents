@@ -5,11 +5,11 @@
 
 ---
 
-## Opis
+## Description
 
-Biblioteka integruje klasyfikację obrazów przez **ML.NET** z pipeline MediatR. Dostarcza gotowe komendy (`ClassifyImage`, `TrainImageClassificationModel`) i ich handlery, dzięki czemu klasyfikacja obrazów staje się pełnoprawnym elementem architektury CQRS.
+This library integrates **ML.NET** image classification with the MediatR pipeline. It provides ready-made commands (`ClassifyImage`, `TrainImageClassificationModel`) and their handlers, making image classification a first-class citizen in CQRS architecture.
 
-Pod spodem działa `ImageClassificationService` oparty na ML.NET z poolem silników predykcji (`PredictionEnginePool`) dla wydajnej współbieżnej inferencji. Biblioteka obsługuje też trening modelu z poziomu aplikacji — możesz wytrenować nowy model podając zestaw oznaczonych obrazów.
+Under the hood, `ImageClassificationService` uses ML.NET with a `PredictionEnginePool` for efficient concurrent inference. The library also supports in-app model training — you can train a new model by providing a labeled image dataset.
 
 ---
 

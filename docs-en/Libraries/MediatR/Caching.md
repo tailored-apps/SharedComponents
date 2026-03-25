@@ -5,11 +5,11 @@
 
 ---
 
-## Opis
+## Description
 
-Lekki pakiet definiujący `ICachableRequest<TResponse>` — marker interface dla requestów MediatR, których wyniki mają być cache'owane. Request implementujący ten interfejs dostarcza metodę `GetCacheKey()`, która generuje unikalny klucz cache dla danej instancji zapytania.
+A lightweight package defining `ICachableRequest<TResponse>` — a marker interface for MediatR requests whose results should be cached. A request implementing this interface provides a `GetCacheKey()` method that generates a unique cache key for that particular query instance.
 
-Jest to alternatywne podejście do cache'owania w porównaniu z `ICachePolicy<TRequest, TResponse>` z pakietu `TailoredApps.Shared.MediatR` — prostsze, gdy logika klucza cache jest prosta i może żyć w samym requeście.
+This is an alternative caching approach compared to `ICachePolicy<TRequest, TResponse>` from `TailoredApps.Shared.MediatR` — simpler when cache key logic is straightforward and can live in the request itself.
 
 ---
 

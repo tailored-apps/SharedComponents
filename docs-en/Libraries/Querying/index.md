@@ -5,15 +5,15 @@
 
 ---
 
-## Opis
+## Description
 
-Biblioteka dostarcza zestaw bazowych klas i interfejsów do budowania stronicowanych i sortowanych zapytań w aplikacjach .NET. Standaryzuje strukturę zapytań listowych w całej aplikacji — zamiast przekazywać `page`, `pageSize`, `sortField` jako oddzielne parametry w każdym miejscu, masz jeden spójny kontrakt.
+This library provides a set of base classes and interfaces for building paged and sorted queries in .NET applications. It standardizes the structure of list queries across the entire application — instead of passing `page`, `pageSize`, `sortField` as separate parameters everywhere, you have one consistent contract.
 
-Kluczowe typy:
-- **`QueryBase`** — abstrakcyjna klasa bazowa dla obiektów filtru zapytań
-- **`PagedAndSortedQuery<TQuery>`** — klasa bazowa łącząca filtrowanie, paginację i sortowanie
-- **`IPagedResult<T>`** — kontrakt wynikowy ze stronicowaniem: kolekcja + łączna liczba
-- **`SortDirection`** — enum `Asc`/`Desc`/`Undefined`
+Key types:
+- **`QueryBase`** — abstract base class for query filter objects
+- **`PagedAndSortedQuery<TQuery>`** — base class combining filtering, pagination, and sorting
+- **`IPagedResult<T>`** — result contract with pagination: collection + total count
+- **`SortDirection`** — `Asc`/`Desc`/`Undefined` enum
 
 ---
 
