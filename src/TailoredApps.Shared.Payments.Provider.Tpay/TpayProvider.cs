@@ -195,7 +195,7 @@ public class TpayServiceCaller : ITpayServiceCaller
 }
 
 /// <summary>Implementacja <see cref="IPaymentProvider"/> dla Tpay.</summary>
-public class TpayProvider : IPaymentProvider
+public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
 {
     private readonly ITpayServiceCaller caller;
 
@@ -243,6 +243,41 @@ public class TpayProvider : IPaymentProvider
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
+    // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    {
+        var body      = request.Body ?? string.Empty;
+        var signature = request.Headers.TryGetValue("X-Signature", out var s) ? s.ToString() : string.Empty;
+
+        var payload = new TransactionStatusChangePayload
+        {
+            Payload         = body,
+            QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                { "X-Signature", signature },
+            },
+        };
+
+        var response = await TransactionStatusChange(payload);
+
+        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
+        {
+            var msg = response.ResponseObject?.ToString() ?? string.Empty;
+            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                return PaymentWebhookResult.Fail(msg);
+        }
+
+        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+            return PaymentWebhookResult.Ignore("Non-actionable event");
+
+        return PaymentWebhookResult.Ok(response);
+    }
+
     /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
@@ -287,6 +322,9 @@ public static class TpayProviderExtensions
         services.ConfigureOptions<TpayConfigureOptions>();
         services.AddHttpClient("Tpay");
         services.AddTransient<ITpayServiceCaller, TpayServiceCaller>();
+        services.AddTransient<TpayProvider>();
+        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<TpayProvider>());
+        services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<TpayProvider>());
     }
 }
 

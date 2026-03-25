@@ -147,7 +147,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
 }
 
 /// <summary>Implementacja <see cref="IPaymentProvider"/> dla PayNow (mBank).</summary>
-public class PayNowProvider : IPaymentProvider
+public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
 {
     private readonly IPayNowServiceCaller caller;
 
@@ -194,6 +194,41 @@ public class PayNowProvider : IPaymentProvider
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
+    // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    {
+        var body      = request.Body ?? string.Empty;
+        var signature = request.Headers.TryGetValue("Signature", out var s) ? s.ToString() : string.Empty;
+
+        var payload = new TransactionStatusChangePayload
+        {
+            Payload         = body,
+            QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                { "Signature", signature },
+            },
+        };
+
+        var response = await TransactionStatusChange(payload);
+
+        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
+        {
+            var msg = response.ResponseObject?.ToString() ?? string.Empty;
+            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                return PaymentWebhookResult.Fail(msg);
+        }
+
+        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+            return PaymentWebhookResult.Ignore("Non-actionable event");
+
+        return PaymentWebhookResult.Ok(response);
+    }
+
     /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
@@ -233,6 +268,9 @@ public static class PayNowProviderExtensions
         services.ConfigureOptions<PayNowConfigureOptions>();
         services.AddHttpClient("PayNow");
         services.AddTransient<IPayNowServiceCaller, PayNowServiceCaller>();
+        services.AddTransient<PayNowProvider>();
+        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<PayNowProvider>());
+        services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<PayNowProvider>());
     }
 }
 

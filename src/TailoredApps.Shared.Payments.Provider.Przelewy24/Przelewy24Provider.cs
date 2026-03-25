@@ -204,7 +204,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 /// <summary>Implementacja <see cref="IPaymentProvider"/> dla Przelewy24.</summary>
-public class Przelewy24Provider : IPaymentProvider
+public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
 {
     private readonly IPrzelewy24ServiceCaller caller;
     private readonly Przelewy24ServiceOptions options;
@@ -255,6 +255,37 @@ public class Przelewy24Provider : IPaymentProvider
     public Task<PaymentResponse> GetStatus(string paymentId)
         => Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = PaymentStatusEnum.Processing });
 
+    // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    {
+        var body = request.Body ?? string.Empty;
+
+        var payload = new TransactionStatusChangePayload
+        {
+            Payload         = body,
+            QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>(),
+        };
+
+        var response = await TransactionStatusChange(payload);
+
+        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
+        {
+            var msg = response.ResponseObject?.ToString() ?? string.Empty;
+            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                return PaymentWebhookResult.Fail(msg);
+        }
+
+        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+            return PaymentWebhookResult.Ignore("Non-actionable event");
+
+        return PaymentWebhookResult.Ok(response);
+    }
+
     /// <inheritdoc/>
     public async Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
@@ -300,6 +331,9 @@ public static class Przelewy24ProviderExtensions
         services.ConfigureOptions<Przelewy24ConfigureOptions>();
         services.AddHttpClient("Przelewy24");
         services.AddTransient<IPrzelewy24ServiceCaller, Przelewy24ServiceCaller>();
+        services.AddTransient<Przelewy24Provider>();
+        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<Przelewy24Provider>());
+        services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<Przelewy24Provider>());
     }
 }
 

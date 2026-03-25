@@ -100,7 +100,7 @@ public class HotPayServiceCaller : IHotPayServiceCaller
 }
 
 /// <summary>Implementacja <see cref="IPaymentProvider"/> dla HotPay.</summary>
-public class HotPayProvider : IPaymentProvider
+public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
 {
     private readonly IHotPayServiceCaller caller;
 
@@ -146,6 +146,45 @@ public class HotPayProvider : IPaymentProvider
     public Task<PaymentResponse> GetStatus(string paymentId)
         => Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = PaymentStatusEnum.Processing });
 
+    // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    {
+        var hash        = request.Query.TryGetValue("HASH",         out var h) ? h.ToString() : string.Empty;
+        var kwota       = request.Query.TryGetValue("KWOTA",        out var k) ? k.ToString() : string.Empty;
+        var idPlatnosci = request.Query.TryGetValue("ID_PLATNOSCI", out var i) ? i.ToString() : string.Empty;
+        var status      = request.Query.TryGetValue("STATUS",       out var s) ? s.ToString() : string.Empty;
+
+        var payload = new TransactionStatusChangePayload
+        {
+            QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                { "HASH",         hash        },
+                { "KWOTA",        kwota       },
+                { "ID_PLATNOSCI", idPlatnosci },
+                { "STATUS",       status      },
+            },
+        };
+
+        var response = await TransactionStatusChange(payload);
+
+        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
+        {
+            var msg = response.ResponseObject?.ToString() ?? string.Empty;
+            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                return PaymentWebhookResult.Fail(msg);
+        }
+
+        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+            return PaymentWebhookResult.Ignore("Non-actionable event");
+
+        return PaymentWebhookResult.Ok(response);
+    }
+
     /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
@@ -173,6 +212,9 @@ public static class HotPayProviderExtensions
         services.ConfigureOptions<HotPayConfigureOptions>();
         services.AddHttpClient("HotPay");
         services.AddTransient<IHotPayServiceCaller, HotPayServiceCaller>();
+        services.AddTransient<HotPayProvider>();
+        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<HotPayProvider>());
+        services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<HotPayProvider>());
     }
 }
 
