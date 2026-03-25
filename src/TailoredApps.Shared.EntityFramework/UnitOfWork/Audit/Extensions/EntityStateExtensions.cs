@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using System;
+using Microsoft.EntityFrameworkCore;
 using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
 
 namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions

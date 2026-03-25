@@ -1,4 +1,4 @@
-﻿namespace TailoredApps.Shared.DateTime
+namespace TailoredApps.Shared.DateTime
 {
     /// <summary>
     /// Simple implementation used for <see cref="IDateTimeProvider"/> 

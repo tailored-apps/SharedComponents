@@ -1,9 +1,9 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours
 {

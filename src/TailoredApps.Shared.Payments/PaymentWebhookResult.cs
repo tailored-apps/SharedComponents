@@ -1,3 +1,4 @@
+#nullable enable
 namespace TailoredApps.Shared.Payments
 {
     /// <summary>

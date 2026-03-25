@@ -1,7 +1,7 @@
-using Microsoft.Extensions.ML;
-using Microsoft.ML.Data;
 using System;
 using System.Linq;
+using Microsoft.Extensions.ML;
+using Microsoft.ML.Data;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
 
 namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
@@ -26,7 +26,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         public PredictionEnginePoolAdapter(PredictionEnginePool<TData, TPrediction> predictionEngine)
         {
             predictionEnginePool = predictionEngine;
-            
+
         }
 
         /// <summary>

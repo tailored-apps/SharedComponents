@@ -59,7 +59,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         /// </summary>
         /// <param name="modelFilePath">The file path of the model zip archive to update.</param>
         /// <param name="labels">An array of label strings to embed in the archive.</param>
-        public  void AddLabels(string modelFilePath, string[] labels)
+        public void AddLabels(string modelFilePath, string[] labels)
         {
             using (FileStream fs = new FileStream(modelFilePath, FileMode.Open))
             {
@@ -72,7 +72,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
                         using (StreamWriter sw = new StreamWriter(readmeStream))
                         {
                             readmeStream = null;
-                            sw.WriteLine(string.Join("|",labels));
+                            sw.WriteLine(string.Join("|", labels));
                         }
                     }
                     finally
@@ -142,7 +142,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
                 if (zipArchiveEntry != null)
                 {
                     using StreamReader streamReader = new StreamReader(zipArchiveEntry.Open());
-                    return streamReader.ReadLine().Split('|').Select(z=>z.Trim()).Where(z=>z.Length>0).ToArray();
+                    return streamReader.ReadLine().Split('|').Select(z => z.Trim()).Where(z => z.Length > 0).ToArray();
                 }
             }
             catch (Exception)

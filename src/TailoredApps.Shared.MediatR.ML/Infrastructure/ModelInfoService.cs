@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Options;
 using System.IO;
+using Microsoft.Extensions.Options;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
 
@@ -8,7 +8,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
     /// <summary>
     /// Provides metadata about the currently configured ML model by reading from the model file and configuration.
     /// </summary>
-    public class ModelInfoService : IModelInfoService 
+    public class ModelInfoService : IModelInfoService
     {
         private readonly IModelHelper modelHelper;
         private readonly IOptions<ImageClassificationOptions> options;

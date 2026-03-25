@@ -1,7 +1,7 @@
-﻿
+
+using System.Collections.Generic;
 using AutoMoqCore;
 using Moq;
-using System.Collections.Generic;
 using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
 using TailoredApps.Shared.EntityFramework.Tests.UnitOfWork.Audit.Utils;
 using TailoredApps.Shared.EntityFramework.UnitOfWork.Audit;

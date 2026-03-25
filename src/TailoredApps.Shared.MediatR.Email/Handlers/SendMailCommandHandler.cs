@@ -42,7 +42,7 @@ namespace TailoredApps.Shared.MediatR.Email.Handlers
 
             var body = mailMessageBuilder.Build(request.Template, request.TemplateVariables, request.Templates);
             var messageId = await emailService.SendMail(request.Recipent, request.Subject, body, request.Attachments);
-            return new SendMailResponse() { MessageId= messageId };
+            return new SendMailResponse() { MessageId = messageId };
 
 
         }

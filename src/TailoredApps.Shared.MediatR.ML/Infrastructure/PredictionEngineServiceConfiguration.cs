@@ -1,6 +1,6 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.ML;
-using System;
 using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
 
 namespace TailoredApps.Shared.MediatR.ML.Infrastructure
@@ -31,9 +31,9 @@ namespace TailoredApps.Shared.MediatR.ML.Infrastructure
         /// <param name="builder">An action that configures the <see cref="PredictionEnginePoolBuilder{D, R}"/>.</param>
         public void RegisterMachineLearningModel<D, R>(Action<PredictionEnginePoolBuilder<D, R>> builder) where D : class where R : class, new()
         {
-            
+
             var b = services.AddPredictionEnginePool<D, R>().AddAdapter();
-            
+
             builder.Invoke(b);
         }
     }

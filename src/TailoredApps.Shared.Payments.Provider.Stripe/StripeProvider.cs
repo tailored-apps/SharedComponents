@@ -1,9 +1,9 @@
+using System;
+using System.Collections.Generic;
 using global::Stripe;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
 using TailoredApps.Shared.Payments;
 
 namespace TailoredApps.Shared.Payments.Provider.Stripe;
@@ -24,11 +24,14 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
 
     private static readonly string StripeProviderKey = "Stripe";
 
-    public string Key         => StripeProviderKey;
-    public string Name        => StripeProviderKey;
+    /// <inheritdoc/>
+    public string Key => StripeProviderKey;
+    /// <inheritdoc/>
+    public string Name => StripeProviderKey;
     /// <inheritdoc/>
     public string Description => "Globalny operator płatności kartą, BLIK i Przelewy24.";
-    public string Url         => "https://stripe.com";
+    /// <inheritdoc/>
+    public string Url => "https://stripe.com";
 
     /// <inheritdoc/>
     /// <remarks>
@@ -71,8 +74,8 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
         return new PaymentResponse
         {
             PaymentUniqueId = session.Id,
-            RedirectUrl     = session.Url,
-            PaymentStatus   = PaymentStatusEnum.Created,
+            RedirectUrl = session.Url,
+            PaymentStatus = PaymentStatusEnum.Created,
         };
     }
 
@@ -87,8 +90,8 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
         return new PaymentResponse
         {
             PaymentUniqueId = session.Id,
-            RedirectUrl     = session.Url,
-            PaymentStatus   = MapSessionStatus(session),
+            RedirectUrl = session.Url,
+            PaymentStatus = MapSessionStatus(session),
         };
     }
 
@@ -104,7 +107,7 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// </remarks>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
-        var rawBody       = payload.Payload?.ToString() ?? string.Empty;
+        var rawBody = payload.Payload?.ToString() ?? string.Empty;
         var stripeSignature = payload.QueryParameters.TryGetValue("Stripe-Signature", out var sig)
             ? sig.ToString()
             : string.Empty;
@@ -119,8 +122,8 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
             // Nieprawidłowy podpis — zwracamy Rejected i nie przetwarzamy zdarzenia.
             return Task.FromResult(new PaymentResponse
             {
-                PaymentStatus   = PaymentStatusEnum.Rejected,
-                ResponseObject  = $"Webhook signature verification failed: {ex.Message}",
+                PaymentStatus = PaymentStatusEnum.Rejected,
+                ResponseObject = $"Webhook signature verification failed: {ex.Message}",
             });
         }
 
@@ -131,24 +134,24 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
             "checkout.session.expired" =>
                 new PaymentResponse
                 {
-                    PaymentStatus  = PaymentStatusEnum.Rejected,
+                    PaymentStatus = PaymentStatusEnum.Rejected,
                     ResponseObject = "OK",
                 },
             "payment_intent.succeeded" =>
                 new PaymentResponse
                 {
-                    PaymentStatus  = PaymentStatusEnum.Finished,
+                    PaymentStatus = PaymentStatusEnum.Finished,
                     ResponseObject = "OK",
                 },
             "payment_intent.payment_failed" =>
                 new PaymentResponse
                 {
-                    PaymentStatus  = PaymentStatusEnum.Rejected,
+                    PaymentStatus = PaymentStatusEnum.Rejected,
                     ResponseObject = "OK",
                 },
             _ => new PaymentResponse
             {
-                PaymentStatus  = PaymentStatusEnum.Processing,
+                PaymentStatus = PaymentStatusEnum.Processing,
                 ResponseObject = "OK",
             },
         };
@@ -170,15 +173,15 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <param name="request">Unified HTTP webhook request.</param>
     public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
-        var rawBody   = request.Body ?? string.Empty;
+        var rawBody = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("Stripe-Signature", out var sig)
             ? sig.ToString()
             : string.Empty;
 
         var payload = new TransactionStatusChangePayload
         {
-            Payload          = rawBody,
-            QueryParameters  = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            Payload = rawBody,
+            QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
             {
                 { "Stripe-Signature", signature },
             },
@@ -208,16 +211,16 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     private static PaymentResponse HandleSessionCompleted(Event stripeEvent)
     {
         var session = stripeEvent.Data.Object as global::Stripe.Checkout.Session;
-        var status  = session?.PaymentStatus == "paid"
+        var status = session?.PaymentStatus == "paid"
             ? PaymentStatusEnum.Finished
             : PaymentStatusEnum.Processing;
 
         return new PaymentResponse
         {
             PaymentUniqueId = session?.Id,
-            RedirectUrl     = session?.Url,
-            PaymentStatus   = status,
-            ResponseObject  = "OK",
+            RedirectUrl = session?.Url,
+            PaymentStatus = status,
+            ResponseObject = "OK",
         };
     }
 
@@ -225,9 +228,9 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
         session.Status switch
         {
             "complete" when session.PaymentStatus == "paid" => PaymentStatusEnum.Finished,
-            "complete"  => PaymentStatusEnum.Processing,
-            "expired"   => PaymentStatusEnum.Rejected,
-            _           => PaymentStatusEnum.Created,   // "open"
+            "complete" => PaymentStatusEnum.Processing,
+            "expired" => PaymentStatusEnum.Rejected,
+            _ => PaymentStatusEnum.Created,   // "open"
         };
 }
 
@@ -279,9 +282,9 @@ public class StripeConfigureOptions : IConfigureOptions<StripeServiceOptions>
 
         if (section is null) return;
 
-        options.SecretKey     = section.SecretKey;
+        options.SecretKey = section.SecretKey;
         options.WebhookSecret = section.WebhookSecret;
-        options.SuccessUrl    = section.SuccessUrl;
-        options.CancelUrl     = section.CancelUrl;
+        options.SuccessUrl = section.SuccessUrl;
+        options.CancelUrl = section.CancelUrl;
     }
 }

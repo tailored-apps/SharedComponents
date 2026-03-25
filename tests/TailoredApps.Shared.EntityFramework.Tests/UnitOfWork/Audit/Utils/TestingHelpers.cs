@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
 using TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes;
 

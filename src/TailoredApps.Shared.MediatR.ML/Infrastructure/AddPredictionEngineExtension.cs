@@ -1,6 +1,6 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.ML;
-using System;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
 using TailoredApps.Shared.MediatR.ML.Infrastructure;
 using static TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions;
@@ -47,7 +47,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 
             services.ConfigureOptions<ImageClassificationConfigureOptions>();
             var serviceConfig = new PredictionEngineServiceConfiguration(services);
-            
+
             configuration.Invoke(serviceConfig);
             services.AddScoped<IImageClassificationService, ImageClassificationService>();
             services.AddScoped<IModelInfoService, ModelInfoService>();

@@ -19,27 +19,27 @@ public class HotPayServiceOptions
     /// <summary>ServiceUrl.</summary>
     public string ServiceUrl { get; set; } = "https://platnosci.hotpay.pl";
     /// <summary>ReturnUrl.</summary>
-    public string ReturnUrl  { get; set; } = string.Empty;
+    public string ReturnUrl { get; set; } = string.Empty;
     /// <summary>NotifyUrl.</summary>
-    public string NotifyUrl  { get; set; } = string.Empty;
+    public string NotifyUrl { get; set; } = string.Empty;
 }
 
 file class HotPayRequest
 {
-    [JsonPropertyName("SEKRET")]                  public string Secret      { get; set; } = string.Empty;
-    [JsonPropertyName("KWOTA")]                   public string Amount      { get; set; } = string.Empty;
-    [JsonPropertyName("NAZWA_USLUGI")]            public string ServiceName { get; set; } = string.Empty;
-    [JsonPropertyName("IDENTYFIKATOR_PLATNOSCI")] public string PaymentId   { get; set; } = string.Empty;
-    [JsonPropertyName("ADRES_WWW")]               public string ReturnUrl   { get; set; } = string.Empty;
-    [JsonPropertyName("EMAIL")]                   public string? Email      { get; set; }
-    [JsonPropertyName("HASH")]                    public string Hash        { get; set; } = string.Empty;
+    [JsonPropertyName("SEKRET")] public string Secret { get; set; } = string.Empty;
+    [JsonPropertyName("KWOTA")] public string Amount { get; set; } = string.Empty;
+    [JsonPropertyName("NAZWA_USLUGI")] public string ServiceName { get; set; } = string.Empty;
+    [JsonPropertyName("IDENTYFIKATOR_PLATNOSCI")] public string PaymentId { get; set; } = string.Empty;
+    [JsonPropertyName("ADRES_WWW")] public string ReturnUrl { get; set; } = string.Empty;
+    [JsonPropertyName("EMAIL")] public string? Email { get; set; }
+    [JsonPropertyName("HASH")] public string Hash { get; set; } = string.Empty;
 }
 
 file class HotPayResponse
 {
-    [JsonPropertyName("STATUS")]        public string? Status      { get; set; }
+    [JsonPropertyName("STATUS")] public string? Status { get; set; }
     [JsonPropertyName("PRZEKIERUJ_DO")] public string? RedirectUrl { get; set; }
-    [JsonPropertyName("ID_PLATNOSCI")]  public string? PaymentId   { get; set; }
+    [JsonPropertyName("ID_PLATNOSCI")] public string? PaymentId { get; set; }
 }
 
 /// <summary>Abstrakcja nad HotPay API.</summary>
@@ -67,33 +67,33 @@ public class HotPayServiceCaller : IHotPayServiceCaller
     /// <inheritdoc/>
     public async Task<(string? paymentId, string? redirectUrl)> InitPaymentAsync(PaymentRequest request, string paymentId)
     {
-        var amount   = request.Amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+        var amount = request.Amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
         var hashData = $"{options.SecretHash};{amount};{request.Title ?? "Order"};{paymentId};{options.ReturnUrl}";
-        var hash     = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(hashData))).ToLowerInvariant();
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(hashData))).ToLowerInvariant();
 
         var body = new HotPayRequest
         {
-            Secret      = options.SecretHash,
-            Amount      = amount,
+            Secret = options.SecretHash,
+            Amount = amount,
             ServiceName = request.Title ?? request.Description ?? "Order",
-            PaymentId   = paymentId,
-            ReturnUrl   = options.ReturnUrl,
-            Email       = request.Email,
-            Hash        = hash,
+            PaymentId = paymentId,
+            ReturnUrl = options.ReturnUrl,
+            Email = request.Email,
+            Hash = hash,
         };
 
-        using var client   = httpClientFactory.CreateClient("HotPay");
-        var content  = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        using var client = httpClientFactory.CreateClient("HotPay");
+        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync(options.ServiceUrl, content);
-        var json     = await response.Content.ReadAsStringAsync();
-        var result   = JsonSerializer.Deserialize<HotPayResponse>(json);
+        var json = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<HotPayResponse>(json);
         return (result?.PaymentId ?? paymentId, result?.RedirectUrl);
     }
 
     /// <inheritdoc/>
     public bool VerifyNotification(string hash, string kwota, string idPlatnosci, string status)
     {
-        var data     = $"{options.SecretHash};{kwota};{idPlatnosci};{status}";
+        var data = $"{options.SecretHash};{kwota};{idPlatnosci};{status}";
         var computed = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))).ToLowerInvariant();
         return string.Equals(computed, hash, StringComparison.OrdinalIgnoreCase);
     }
@@ -107,11 +107,14 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <summary>Inicjalizuje instancję providera.</summary>
     public HotPayProvider(IHotPayServiceCaller caller) => this.caller = caller;
 
-    public string Key         => "HotPay";
-    public string Name        => "HotPay";
+    /// <inheritdoc/>
+    public string Key => "HotPay";
+    /// <inheritdoc/>
+    public string Name => "HotPay";
     /// <inheritdoc/>
     public string Description => "Operator płatności HotPay — BLIK, karty, przelewy.";
-    public string Url         => "https://hotpay.pl";
+    /// <inheritdoc/>
+    public string Url => "https://hotpay.pl";
 
     /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
@@ -137,8 +140,8 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
         return new PaymentResponse
         {
             PaymentUniqueId = resultId,
-            RedirectUrl     = redirectUrl,
-            PaymentStatus   = PaymentStatusEnum.Created,
+            RedirectUrl = redirectUrl,
+            PaymentStatus = PaymentStatusEnum.Created,
         };
     }
 
@@ -151,10 +154,10 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <inheritdoc/>
     public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
-        var hash        = request.Query.TryGetValue("HASH",         out var h) ? h.ToString() : string.Empty;
-        var kwota       = request.Query.TryGetValue("KWOTA",        out var k) ? k.ToString() : string.Empty;
+        var hash = request.Query.TryGetValue("HASH", out var h) ? h.ToString() : string.Empty;
+        var kwota = request.Query.TryGetValue("KWOTA", out var k) ? k.ToString() : string.Empty;
         var idPlatnosci = request.Query.TryGetValue("ID_PLATNOSCI", out var i) ? i.ToString() : string.Empty;
-        var status      = request.Query.TryGetValue("STATUS",       out var s) ? s.ToString() : string.Empty;
+        var status = request.Query.TryGetValue("STATUS", out var s) ? s.ToString() : string.Empty;
 
         var payload = new TransactionStatusChangePayload
         {
@@ -173,9 +176,9 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
         {
             var msg = response.ResponseObject?.ToString() ?? string.Empty;
             if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
                 return PaymentWebhookResult.Fail(msg);
         }
 
@@ -189,10 +192,10 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var qs = payload.QueryParameters;
-        var hash        = qs.TryGetValue("HASH",          out var h) ? h.ToString() : string.Empty;
-        var kwota       = qs.TryGetValue("KWOTA",         out var k) ? k.ToString() : string.Empty;
-        var idPlatnosci = qs.TryGetValue("ID_PLATNOSCI",  out var i) ? i.ToString() : string.Empty;
-        var status      = qs.TryGetValue("STATUS",        out var s) ? s.ToString() : string.Empty;
+        var hash = qs.TryGetValue("HASH", out var h) ? h.ToString() : string.Empty;
+        var kwota = qs.TryGetValue("KWOTA", out var k) ? k.ToString() : string.Empty;
+        var idPlatnosci = qs.TryGetValue("ID_PLATNOSCI", out var i) ? i.ToString() : string.Empty;
+        var status = qs.TryGetValue("STATUS", out var s) ? s.ToString() : string.Empty;
 
         if (!caller.VerifyNotification(hash, kwota, idPlatnosci, status))
             return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid hash" });
@@ -230,7 +233,7 @@ public class HotPayConfigureOptions : IConfigureOptions<HotPayServiceOptions>
         if (s is null) return;
         options.SecretHash = s.SecretHash;
         options.ServiceUrl = s.ServiceUrl;
-        options.ReturnUrl  = s.ReturnUrl;
-        options.NotifyUrl  = s.NotifyUrl;
+        options.ReturnUrl = s.ReturnUrl;
+        options.NotifyUrl = s.NotifyUrl;
     }
 }

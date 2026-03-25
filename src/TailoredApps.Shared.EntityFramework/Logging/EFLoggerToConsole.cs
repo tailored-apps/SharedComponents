@@ -1,6 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace TailoredApps.Shared.EntityFramework.Logging
 {

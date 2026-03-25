@@ -45,42 +45,43 @@ public class PayUServiceOptions
 file class PayUTokenResponse
 {
     [JsonPropertyName("access_token")] public string AccessToken { get; set; } = string.Empty;
-    [JsonPropertyName("token_type")]   public string TokenType   { get; set; } = string.Empty;
-    [JsonPropertyName("expires_in")]   public int    ExpiresIn   { get; set; }
+    [JsonPropertyName("token_type")] public string TokenType { get; set; } = string.Empty;
+    [JsonPropertyName("expires_in")] public int ExpiresIn { get; set; }
 }
 
 file class PayUOrderRequest
 {
-    [JsonPropertyName("notifyUrl")]    public string  NotifyUrl    { get; set; } = string.Empty;
-    [JsonPropertyName("continueUrl")]  public string  ContinueUrl  { get; set; } = string.Empty;
-    [JsonPropertyName("customerIp")]   public string  CustomerIp   { get; set; } = "127.0.0.1";
-    [JsonPropertyName("merchantPosId")]public string  MerchantPosId { get; set; } = string.Empty;
-    [JsonPropertyName("description")]  public string  Description  { get; set; } = string.Empty;
-    [JsonPropertyName("currencyCode")] public string  CurrencyCode { get; set; } = string.Empty;
-    [JsonPropertyName("totalAmount")]  public string  TotalAmount  { get; set; } = string.Empty;
-    [JsonPropertyName("buyer")]        public PayUBuyer? Buyer     { get; set; }
-    [JsonPropertyName("products")]     public List<PayUProduct> Products { get; set; } = [];
+    [JsonPropertyName("notifyUrl")] public string NotifyUrl { get; set; } = string.Empty;
+    [JsonPropertyName("continueUrl")] public string ContinueUrl { get; set; } = string.Empty;
+    [JsonPropertyName("customerIp")] public string CustomerIp { get; set; } = "127.0.0.1";
+    [JsonPropertyName("merchantPosId")] public string MerchantPosId { get; set; } = string.Empty;
+    [JsonPropertyName("description")] public string Description { get; set; } = string.Empty;
+    [JsonPropertyName("currencyCode")] public string CurrencyCode { get; set; } = string.Empty;
+    [JsonPropertyName("totalAmount")] public string TotalAmount { get; set; } = string.Empty;
+    [JsonPropertyName("buyer")] public PayUBuyer? Buyer { get; set; }
+    [JsonPropertyName("products")] public List<PayUProduct> Products { get; set; } = [];
 }
 
 file class PayUBuyer
 {
-    [JsonPropertyName("email")]     public string Email     { get; set; } = string.Empty;
+    [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
     [JsonPropertyName("firstName")] public string FirstName { get; set; } = string.Empty;
-    [JsonPropertyName("lastName")]  public string LastName  { get; set; } = string.Empty;
+    [JsonPropertyName("lastName")] public string LastName { get; set; } = string.Empty;
 }
 
 file class PayUProduct
 {
-    [JsonPropertyName("name")]      public string Name      { get; set; } = string.Empty;
+    /// <inheritdoc/>
+    [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
     [JsonPropertyName("unitPrice")] public string UnitPrice { get; set; } = string.Empty;
-    [JsonPropertyName("quantity")]  public string Quantity   { get; set; } = "1";
+    [JsonPropertyName("quantity")] public string Quantity { get; set; } = "1";
 }
 
 file class PayUOrderResponse
 {
-    [JsonPropertyName("status")]    public PayUStatus? Status   { get; set; }
-    [JsonPropertyName("orderId")]   public string?     OrderId  { get; set; }
-    [JsonPropertyName("redirectUri")] public string?   RedirectUri { get; set; }
+    [JsonPropertyName("status")] public PayUStatus? Status { get; set; }
+    [JsonPropertyName("orderId")] public string? OrderId { get; set; }
+    [JsonPropertyName("redirectUri")] public string? RedirectUri { get; set; }
 }
 
 file class PayUStatus
@@ -96,7 +97,7 @@ file class PayUStatusResponse
 file class PayUOrderDetail
 {
     [JsonPropertyName("orderId")] public string? OrderId { get; set; }
-    [JsonPropertyName("status")]  public string? Status  { get; set; }
+    [JsonPropertyName("status")] public string? Status { get; set; }
 }
 
 // ─── Interface ────────────────────────────────────────────────────────────────
@@ -157,24 +158,24 @@ public class PayUServiceCaller : IPayUServiceCaller
         var amount = ((long)(request.Amount * 100)).ToString();
         var body = new PayUOrderRequest
         {
-            NotifyUrl     = options.NotifyUrl,
-            ContinueUrl   = options.ContinueUrl,
+            NotifyUrl = options.NotifyUrl,
+            ContinueUrl = options.ContinueUrl,
             MerchantPosId = options.PosId,
-            Description   = request.Title ?? request.Description ?? "Order",
-            CurrencyCode  = request.Currency.ToUpperInvariant(),
-            TotalAmount   = amount,
-            Buyer         = new PayUBuyer { Email = request.Email ?? string.Empty, FirstName = request.FirstName ?? string.Empty, LastName = request.Surname ?? string.Empty },
-            Products      = [new PayUProduct { Name = request.Title ?? "Product", UnitPrice = amount }],
+            Description = request.Title ?? request.Description ?? "Order",
+            CurrencyCode = request.Currency.ToUpperInvariant(),
+            TotalAmount = amount,
+            Buyer = new PayUBuyer { Email = request.Email ?? string.Empty, FirstName = request.FirstName ?? string.Empty, LastName = request.Surname ?? string.Empty },
+            Products = [new PayUProduct { Name = request.Title ?? "Product", UnitPrice = amount }],
         };
 
-        var content  = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/api/v2_1/orders", content);
-        var json     = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync();
 
         if (response.StatusCode == System.Net.HttpStatusCode.Found || response.StatusCode == System.Net.HttpStatusCode.Redirect)
         {
             var location = response.Headers.Location?.ToString();
-            var result   = JsonSerializer.Deserialize<PayUOrderResponse>(json);
+            var result = JsonSerializer.Deserialize<PayUOrderResponse>(json);
             return (result?.OrderId, location ?? result?.RedirectUri, null);
         }
 
@@ -194,17 +195,17 @@ public class PayUServiceCaller : IPayUServiceCaller
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await client.GetAsync($"{options.ServiceUrl}/api/v2_1/orders/{orderId}");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
-        var json   = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<PayUStatusResponse>(json);
         var status = result?.Orders?.FirstOrDefault()?.Status;
         return status switch
         {
-            "COMPLETED"                => PaymentStatusEnum.Finished,
+            "COMPLETED" => PaymentStatusEnum.Finished,
             "WAITING_FOR_CONFIRMATION" => PaymentStatusEnum.Processing,
-            "PENDING"                  => PaymentStatusEnum.Processing,
-            "CANCELED"                 => PaymentStatusEnum.Rejected,
-            "REJECTED"                 => PaymentStatusEnum.Rejected,
-            _                          => PaymentStatusEnum.Created,
+            "PENDING" => PaymentStatusEnum.Processing,
+            "CANCELED" => PaymentStatusEnum.Rejected,
+            "REJECTED" => PaymentStatusEnum.Rejected,
+            _ => PaymentStatusEnum.Created,
         };
     }
 
@@ -287,15 +288,15 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
         return new PaymentResponse
         {
             PaymentUniqueId = orderId,
-            RedirectUrl     = redirectUri,
-            PaymentStatus   = PaymentStatusEnum.Created,
+            RedirectUrl = redirectUri,
+            PaymentStatus = PaymentStatusEnum.Created,
         };
     }
 
     /// <inheritdoc/>
     public async Task<PaymentResponse> GetStatus(string paymentId)
     {
-        var token  = await caller.GetAccessTokenAsync();
+        var token = await caller.GetAccessTokenAsync();
         var status = await caller.GetOrderStatusAsync(token, paymentId);
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
@@ -305,12 +306,12 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <inheritdoc/>
     public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
-        var body      = request.Body ?? string.Empty;
+        var body = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("OpenPayU-Signature", out var s) ? s.ToString() : string.Empty;
 
         var payload = new TransactionStatusChangePayload
         {
-            Payload         = body,
+            Payload = body,
             QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
             {
                 { "OpenPayU-Signature", signature },
@@ -323,9 +324,9 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
         {
             var msg = response.ResponseObject?.ToString() ?? string.Empty;
             if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
                 return PaymentWebhookResult.Fail(msg);
         }
 
@@ -339,7 +340,7 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
-        var sig  = payload.QueryParameters.TryGetValue("OpenPayU-Signature", out var s) ? s.ToString() : string.Empty;
+        var sig = payload.QueryParameters.TryGetValue("OpenPayU-Signature", out var s) ? s.ToString() : string.Empty;
 
         if (!caller.VerifySignature(body, sig))
             return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
@@ -352,9 +353,9 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
                 status = st.GetString() switch
                 {
                     "COMPLETED" => PaymentStatusEnum.Finished,
-                    "CANCELED"  => PaymentStatusEnum.Rejected,
-                    "REJECTED"  => PaymentStatusEnum.Rejected,
-                    _           => PaymentStatusEnum.Processing,
+                    "CANCELED" => PaymentStatusEnum.Rejected,
+                    "REJECTED" => PaymentStatusEnum.Rejected,
+                    _ => PaymentStatusEnum.Processing,
                 };
         }
         catch { /* ignore */ }
@@ -393,12 +394,12 @@ public class PayUConfigureOptions : IConfigureOptions<PayUServiceOptions>
     {
         var s = configuration.GetSection(PayUServiceOptions.ConfigurationKey).Get<PayUServiceOptions>();
         if (s is null) return;
-        options.ClientId     = s.ClientId;
+        options.ClientId = s.ClientId;
         options.ClientSecret = s.ClientSecret;
-        options.PosId        = s.PosId;
+        options.PosId = s.PosId;
         options.SignatureKey = s.SignatureKey;
-        options.ServiceUrl   = s.ServiceUrl;
-        options.NotifyUrl    = s.NotifyUrl;
-        options.ContinueUrl  = s.ContinueUrl;
+        options.ServiceUrl = s.ServiceUrl;
+        options.NotifyUrl = s.NotifyUrl;
+        options.ContinueUrl = s.ContinueUrl;
     }
 }

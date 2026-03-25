@@ -1,4 +1,3 @@
-﻿using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +6,7 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using TailoredApps.Shared.Payments.Provider.CashBill.Models;
 
 namespace TailoredApps.Shared.Payments.Provider.CashBill
@@ -128,7 +128,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             Payment payment = await cashbillCaller.MakeFormRequest<Payment>(new Uri(mainUrl, $"payment/{shopId}").ToString(), "POST", requestContent);
             returnUrl = new Uri($"{returnUrl}/{payment.Id}");
 
-            ///return url
+            // return url
             var signReturn = Hash(payment.Id + returnUrl + negativeReturnUrl + secretPhrase);
             var requestReturnBrowserContent = new FormUrlEncodedContent(new[]
             {
@@ -172,6 +172,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         }
 
 
+        /// <summary>Well-known CashBill payment status string constants.</summary>
         public static class PaymentStatusConst
         {
             /// <summary>

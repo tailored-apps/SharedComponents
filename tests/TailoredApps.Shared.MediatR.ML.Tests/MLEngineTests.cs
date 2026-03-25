@@ -1,12 +1,12 @@
-﻿using MediatR;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.ML;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using MediatR;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.ML;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands;
 using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
@@ -36,14 +36,14 @@ namespace TailoredApps.Shared.MediatR.ML.Tests
                      {
                          services.RegisterMachineLearningModel<InMemoryImageData, ImagePredictionScore>(builder =>
                          {
-                            // builder.FromFile(modelName);
+                             // builder.FromFile(modelName);
                          });
                      });
                  }).Build();
             var mediatoR = hostCreateModel.Services.GetService<IMediator>();
             Assert.NotNull(mediatoR);
 
-            var response =await mediatoR.Send(new TrainImageClassificationModel { Source= "D:\\WORK\\SharedComponents\\tests\\TailoredApps.Shared.MediatR.ML.Tests\\TestData\\ImageClassification\\LearningSets", ModelDestFolderPath=modelName });
+            var response = await mediatoR.Send(new TrainImageClassificationModel { Source = "D:\\WORK\\SharedComponents\\tests\\TailoredApps.Shared.MediatR.ML.Tests\\TestData\\ImageClassification\\LearningSets", ModelDestFolderPath = modelName });
             Assert.NotNull(response);
 
             var hostVerify = Host.CreateDefaultBuilder()
@@ -59,7 +59,7 @@ namespace TailoredApps.Shared.MediatR.ML.Tests
                      {
                          services.RegisterMachineLearningModel<InMemoryImageData, ImagePredictionScore>(builder =>
                          {
-                            builder.FromFile(modelName);
+                             builder.FromFile(modelName);
                          });
                      });
                  }).Build();
@@ -67,7 +67,7 @@ namespace TailoredApps.Shared.MediatR.ML.Tests
             var mediatorVerify = hostVerify.Services.GetService<IMediator>();
             Assert.NotNull(mediatorVerify);
             var testFileRed = File.OpenRead("D:\\WORK\\SharedComponents\\tests\\TailoredApps.Shared.MediatR.ML.Tests\\TestData\\ImageClassification\\TestImages\\testred.png");
-            var responseClassification = await mediatorVerify.Send(new ClassifyImage { FileByteArray = ReadFully(testFileRed), FileName= "testred.png" });
+            var responseClassification = await mediatorVerify.Send(new ClassifyImage { FileByteArray = ReadFully(testFileRed), FileName = "testred.png" });
             Assert.NotNull(responseClassification);
 
         }

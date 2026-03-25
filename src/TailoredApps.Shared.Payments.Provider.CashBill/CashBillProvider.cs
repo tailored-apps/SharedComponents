@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using TailoredApps.Shared.Payments;
 using TailoredApps.Shared.Payments.Provider.CashBill.Models;
 using static TailoredApps.Shared.Payments.Provider.CashBill.CashbillServiceCaller;
@@ -20,17 +20,22 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
     public class CashBillProvider : IPaymentProvider, IWebhookPaymentProvider
     {
         private readonly ICashbillServiceCaller cashbillService;
+        /// <inheritdoc/>
         public CashBillProvider(ICashbillServiceCaller cashbillService)
         {
             this.cashbillService = cashbillService;
         }
         private static string CashBillProviderKey = "Cashbill";
+        /// <inheritdoc/>
         public string Key => CashBillProviderKey;
 
+        /// <inheritdoc/>
         public string Name => CashBillProviderKey;
 
+        /// <inheritdoc/>
         public string Description => "Polski operator płatności jednorazowych.";
 
+        /// <inheritdoc/>
         public string Url => "https://cashbill.pl";
 
         /// <summary>
@@ -165,16 +170,16 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         /// <param name="request">Unified HTTP webhook request containing query parameters.</param>
         public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
         {
-            var cmd           = request.Query.TryGetValue("cmd",  out var c) ? c.ToString() : string.Empty;
+            var cmd = request.Query.TryGetValue("cmd", out var c) ? c.ToString() : string.Empty;
             var transactionId = request.Query.TryGetValue("args", out var a) ? a.ToString() : string.Empty;
-            var sign          = request.Query.TryGetValue("sign", out var s) ? s.ToString() : string.Empty;
+            var sign = request.Query.TryGetValue("sign", out var s) ? s.ToString() : string.Empty;
 
             if (string.IsNullOrEmpty(transactionId))
                 return PaymentWebhookResult.Fail("Missing transactionId (args) in query string.");
 
             // Verify MD5 signature: MD5(cmd + args + shopSecretPhrase)
-            var notification  = new TransactionStatusChanged { Command = cmd, TransactionId = transactionId, Sign = sign };
-            var expectedSign  = await cashbillService.GetSignForNotificationService(notification);
+            var notification = new TransactionStatusChanged { Command = cmd, TransactionId = transactionId, Sign = sign };
+            var expectedSign = await cashbillService.GetSignForNotificationService(notification);
             if (!string.Equals(expectedSign, sign, StringComparison.OrdinalIgnoreCase))
                 return PaymentWebhookResult.Fail($"Invalid signature. expected={expectedSign} got={sign}");
 

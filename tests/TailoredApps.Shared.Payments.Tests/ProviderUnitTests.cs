@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -24,21 +25,21 @@ file static class Req
         new()
         {
             PaymentProvider = "Test",
-            PaymentChannel  = "card",
-            PaymentModel    = PaymentModel.OneTime,
-            Title           = "Test order",
-            Currency        = currency,
-            Amount          = amount,
-            Email           = "test@example.com",
-            FirstName       = "Jan",
-            Surname         = "Kowalski",
+            PaymentChannel = "card",
+            PaymentModel = PaymentModel.OneTime,
+            Title = "Test order",
+            Currency = currency,
+            Amount = amount,
+            Email = "test@example.com",
+            FirstName = "Jan",
+            Surname = "Kowalski",
         };
 
     public static TransactionStatusChangePayload Webhook(string body, Dictionary<string, StringValues>? qs = null) =>
         new()
         {
-            ProviderId      = "test",
-            Payload         = body,
+            ProviderId = "test",
+            Payload = body,
             QueryParameters = qs ?? new Dictionary<string, StringValues>(),
         };
 }
@@ -299,8 +300,8 @@ public class Przelewy24ProviderTests
         {
             MerchantId = 12345,
             ServiceUrl = "https://sandbox.przelewy24.pl",
-            NotifyUrl  = "https://example.com/notify",
-            ReturnUrl  = "https://example.com/return",
+            NotifyUrl = "https://example.com/notify",
+            ReturnUrl = "https://example.com/return",
         });
 
     private static Przelewy24Provider Build(IPrzelewy24ServiceCaller caller) => new(caller, DefaultOptions());

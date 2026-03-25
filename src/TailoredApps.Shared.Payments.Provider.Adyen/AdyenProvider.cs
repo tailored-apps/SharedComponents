@@ -57,25 +57,25 @@ public class AdyenServiceOptions
 
 file class AdyenAmount
 {
-    [JsonPropertyName("value")]    public long   Value    { get; set; }
+    [JsonPropertyName("value")] public long Value { get; set; }
     [JsonPropertyName("currency")] public string Currency { get; set; } = string.Empty;
 }
 
 file class AdyenSessionRequest
 {
-    [JsonPropertyName("merchantAccount")] public string      MerchantAccount { get; set; } = string.Empty;
-    [JsonPropertyName("amount")]          public AdyenAmount Amount          { get; set; } = new();
-    [JsonPropertyName("reference")]       public string      Reference       { get; set; } = string.Empty;
-    [JsonPropertyName("returnUrl")]       public string      ReturnUrl       { get; set; } = string.Empty;
-    [JsonPropertyName("shopperEmail")]    public string?     ShopperEmail    { get; set; }
-    [JsonPropertyName("countryCode")]     public string?     CountryCode     { get; set; }
+    [JsonPropertyName("merchantAccount")] public string MerchantAccount { get; set; } = string.Empty;
+    [JsonPropertyName("amount")] public AdyenAmount Amount { get; set; } = new();
+    [JsonPropertyName("reference")] public string Reference { get; set; } = string.Empty;
+    [JsonPropertyName("returnUrl")] public string ReturnUrl { get; set; } = string.Empty;
+    [JsonPropertyName("shopperEmail")] public string? ShopperEmail { get; set; }
+    [JsonPropertyName("countryCode")] public string? CountryCode { get; set; }
 }
 
 file class AdyenSessionResponse
 {
-    [JsonPropertyName("id")]          public string? Id          { get; set; }
+    [JsonPropertyName("id")] public string? Id { get; set; }
     [JsonPropertyName("sessionData")] public string? SessionData { get; set; }
-    [JsonPropertyName("url")]         public string? Url         { get; set; }
+    [JsonPropertyName("url")] public string? Url { get; set; }
 }
 
 file class AdyenStatusResponse
@@ -135,15 +135,15 @@ public class AdyenServiceCaller : IAdyenServiceCaller
         var body = new AdyenSessionRequest
         {
             MerchantAccount = options.MerchantAccount,
-            Amount          = new AdyenAmount { Value = (long)(request.Amount * 100), Currency = request.Currency.ToUpperInvariant() },
-            Reference       = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
-            ReturnUrl       = options.ReturnUrl,
-            ShopperEmail    = request.Email,
-            CountryCode     = request.Country ?? "PL",
+            Amount = new AdyenAmount { Value = (long)(request.Amount * 100), Currency = request.Currency.ToUpperInvariant() },
+            Reference = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
+            ReturnUrl = options.ReturnUrl,
+            ShopperEmail = request.Email,
+            CountryCode = request.Country ?? "PL",
         };
-        var content  = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{BaseUrl}/sessions", content);
-        var json     = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
             return (null, null, json);
@@ -158,16 +158,16 @@ public class AdyenServiceCaller : IAdyenServiceCaller
         using var client = CreateClient();
         var response = await client.GetAsync($"{BaseUrl}/payments/{paymentId}/details");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
-        var json   = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<AdyenStatusResponse>(json);
         return result?.ResultCode switch
         {
             "Authorised" => PaymentStatusEnum.Finished,
-            "Refused"    => PaymentStatusEnum.Rejected,
-            "Cancelled"  => PaymentStatusEnum.Rejected,
-            "Pending"    => PaymentStatusEnum.Processing,
-            "Received"   => PaymentStatusEnum.Processing,
-            _            => PaymentStatusEnum.Created,
+            "Refused" => PaymentStatusEnum.Rejected,
+            "Cancelled" => PaymentStatusEnum.Rejected,
+            "Pending" => PaymentStatusEnum.Processing,
+            "Received" => PaymentStatusEnum.Processing,
+            _ => PaymentStatusEnum.Created,
         };
     }
 
@@ -176,9 +176,9 @@ public class AdyenServiceCaller : IAdyenServiceCaller
     {
         try
         {
-            var keyBytes  = Convert.FromHexString(options.NotificationHmacKey);
+            var keyBytes = Convert.FromHexString(options.NotificationHmacKey);
             var dataBytes = Encoding.UTF8.GetBytes(payload);
-            var computed  = Convert.ToBase64String(HMACSHA256.HashData(keyBytes, dataBytes));
+            var computed = Convert.ToBase64String(HMACSHA256.HashData(keyBytes, dataBytes));
             return string.Equals(computed, hmacSignature, StringComparison.Ordinal);
         }
         catch { return false; }
@@ -243,8 +243,8 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
         return new PaymentResponse
         {
             PaymentUniqueId = sessionId,
-            RedirectUrl     = checkoutUrl,
-            PaymentStatus   = PaymentStatusEnum.Created,
+            RedirectUrl = checkoutUrl,
+            PaymentStatus = PaymentStatusEnum.Created,
         };
     }
 
@@ -265,7 +265,7 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
 
         var payload = new TransactionStatusChangePayload
         {
-            Payload         = body,
+            Payload = body,
             QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
             {
                 { "HmacSignature", hmac },
@@ -278,9 +278,9 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
         {
             var msg = response.ResponseObject?.ToString() ?? string.Empty;
             if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
                 return PaymentWebhookResult.Fail(msg);
         }
 
@@ -302,7 +302,7 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
         var status = PaymentStatusEnum.Processing;
         try
         {
-            var doc  = JsonDocument.Parse(body);
+            var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
 
             // Adyen sends notifications wrapped in notificationItems array
@@ -315,16 +315,16 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
             }
 
             var eventCode = item.TryGetProperty("eventCode", out var ev) ? ev.GetString() : null;
-            var success   = item.TryGetProperty("success",   out var s)  ? s.GetString()  : "true";
+            var success = item.TryGetProperty("success", out var s) ? s.GetString() : "true";
             var succeeded = !string.Equals(success, "false", StringComparison.OrdinalIgnoreCase);
 
             status = eventCode switch
             {
-                "AUTHORISATION"        => succeeded ? PaymentStatusEnum.Finished   : PaymentStatusEnum.Rejected,
-                "CANCELLATION"         => PaymentStatusEnum.Rejected,
-                "REFUND"               => succeeded ? PaymentStatusEnum.Finished   : PaymentStatusEnum.Rejected,
+                "AUTHORISATION" => succeeded ? PaymentStatusEnum.Finished : PaymentStatusEnum.Rejected,
+                "CANCELLATION" => PaymentStatusEnum.Rejected,
+                "REFUND" => succeeded ? PaymentStatusEnum.Finished : PaymentStatusEnum.Rejected,
                 "AUTHORISATION_FAILED" => PaymentStatusEnum.Rejected,
-                _                      => PaymentStatusEnum.Processing,
+                _ => PaymentStatusEnum.Processing,
             };
         }
         catch { /* ignore */ }
@@ -363,11 +363,11 @@ public class AdyenConfigureOptions : IConfigureOptions<AdyenServiceOptions>
     {
         var s = configuration.GetSection(AdyenServiceOptions.ConfigurationKey).Get<AdyenServiceOptions>();
         if (s is null) return;
-        options.ApiKey              = s.ApiKey;
-        options.MerchantAccount     = s.MerchantAccount;
-        options.ClientKey           = s.ClientKey;
-        options.ReturnUrl           = s.ReturnUrl;
+        options.ApiKey = s.ApiKey;
+        options.MerchantAccount = s.MerchantAccount;
+        options.ClientKey = s.ClientKey;
+        options.ReturnUrl = s.ReturnUrl;
         options.NotificationHmacKey = s.NotificationHmacKey;
-        options.IsTest              = s.IsTest;
+        options.IsTest = s.IsTest;
     }
 }

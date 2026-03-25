@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Extensions.Options;
 
 namespace TailoredApps.Shared.Email.MailMessageBuilder
 {

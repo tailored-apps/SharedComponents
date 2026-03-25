@@ -1,16 +1,16 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using TailoredApps.Shared.Email.Office365;
-using System.Threading.Tasks;
 using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using TailoredApps.Shared.Email.Office365;
+using Xunit;
 
 namespace TailoredApps.Shared.Email.Tests
 {
     public class OutlookTest
     {
-        [Fact(Skip ="setup config before test")]
+        [Fact(Skip = "setup config before test")]
         public async Task GetEmailTestFromOutlook()
         {
             var build = Host.CreateDefaultBuilder()

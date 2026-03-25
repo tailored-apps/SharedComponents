@@ -1,7 +1,7 @@
+using System.Reflection;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Scrutor;
-using System.Reflection;
 using TailoredApps.Shared.MediatR.Interfaces.Caching;
 using TailoredApps.Shared.MediatR.Interfaces.DI;
 using TailoredApps.Shared.MediatR.Interfaces.Handlers;

@@ -16,29 +16,29 @@ public class RevolutServiceOptions
     /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:Revolut";
     /// <summary>ApiKey.</summary>
-    public string ApiKey        { get; set; } = string.Empty;
+    public string ApiKey { get; set; } = string.Empty;
     /// <summary>ApiUrl.</summary>
-    public string ApiUrl        { get; set; } = "https://merchant.revolut.com/api";
+    public string ApiUrl { get; set; } = "https://merchant.revolut.com/api";
     /// <summary>ReturnUrl.</summary>
-    public string ReturnUrl     { get; set; } = string.Empty;
+    public string ReturnUrl { get; set; } = string.Empty;
     /// <summary>WebhookSecret.</summary>
     public string WebhookSecret { get; set; } = string.Empty;
 }
 
 file class RevolutOrderRequest
 {
-    [JsonPropertyName("amount")]                   public long    Amount      { get; set; }
-    [JsonPropertyName("currency")]                 public string  Currency    { get; set; } = string.Empty;
-    [JsonPropertyName("description")]              public string? Description { get; set; }
-    [JsonPropertyName("merchant_order_ext_ref")]   public string? ExternalRef { get; set; }
-    [JsonPropertyName("email")]                    public string? Email       { get; set; }
+    [JsonPropertyName("amount")] public long Amount { get; set; }
+    [JsonPropertyName("currency")] public string Currency { get; set; } = string.Empty;
+    [JsonPropertyName("description")] public string? Description { get; set; }
+    [JsonPropertyName("merchant_order_ext_ref")] public string? ExternalRef { get; set; }
+    [JsonPropertyName("email")] public string? Email { get; set; }
 }
 
 file class RevolutOrderResponse
 {
-    [JsonPropertyName("id")]           public string? Id          { get; set; }
+    [JsonPropertyName("id")] public string? Id { get; set; }
     [JsonPropertyName("checkout_url")] public string? CheckoutUrl { get; set; }
-    [JsonPropertyName("state")]        public string? State       { get; set; }
+    [JsonPropertyName("state")] public string? State { get; set; }
 }
 
 /// <summary>Abstrakcja nad Revolut Merchant API.</summary>
@@ -79,16 +79,16 @@ public class RevolutServiceCaller : IRevolutServiceCaller
         using var client = CreateClient();
         var body = new RevolutOrderRequest
         {
-            Amount      = (long)(request.Amount * 100),
-            Currency    = request.Currency.ToUpperInvariant(),
+            Amount = (long)(request.Amount * 100),
+            Currency = request.Currency.ToUpperInvariant(),
             Description = request.Title ?? request.Description,
             ExternalRef = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
-            Email       = request.Email,
+            Email = request.Email,
         };
-        var content  = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ApiUrl}/1.0/orders", content);
-        var json     = await response.Content.ReadAsStringAsync();
-        var result   = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
+        var json = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
         return (result?.Id, result?.CheckoutUrl);
     }
 
@@ -98,7 +98,7 @@ public class RevolutServiceCaller : IRevolutServiceCaller
         using var client = CreateClient();
         var response = await client.GetAsync($"{options.ApiUrl}/1.0/orders/{orderId}");
         if (!response.IsSuccessStatusCode) return (null, orderId);
-        var json   = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
         return (result?.State, result?.Id);
     }
@@ -111,10 +111,10 @@ public class RevolutServiceCaller : IRevolutServiceCaller
     public bool VerifyWebhookSignature(string payload, string timestamp, string signature)
     {
         var signedPayload = $"v1:{timestamp}.{payload}";
-        var keyBytes      = Encoding.UTF8.GetBytes(options.WebhookSecret);
-        var dataBytes     = Encoding.UTF8.GetBytes(signedPayload);
-        var computed      = Convert.ToHexString(HMACSHA256.HashData(keyBytes, dataBytes)).ToLowerInvariant();
-        var receivedHex   = signature.StartsWith("v1=") ? signature.Substring(3) : signature;
+        var keyBytes = Encoding.UTF8.GetBytes(options.WebhookSecret);
+        var dataBytes = Encoding.UTF8.GetBytes(signedPayload);
+        var computed = Convert.ToHexString(HMACSHA256.HashData(keyBytes, dataBytes)).ToLowerInvariant();
+        var receivedHex = signature.StartsWith("v1=") ? signature.Substring(3) : signature;
         return string.Equals(computed, receivedHex, StringComparison.OrdinalIgnoreCase);
     }
 }
@@ -127,11 +127,14 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <summary>Inicjalizuje instancję providera.</summary>
     public RevolutProvider(IRevolutServiceCaller caller) => this.caller = caller;
 
-    public string Key         => "Revolut";
-    public string Name        => "Revolut";
+    /// <inheritdoc/>
+    public string Key => "Revolut";
+    /// <inheritdoc/>
+    public string Name => "Revolut";
     /// <inheritdoc/>
     public string Description => "Globalny operator płatności Revolut — karty, Revolut Pay.";
-    public string Url         => "https://revolut.com/business";
+    /// <inheritdoc/>
+    public string Url => "https://revolut.com/business";
 
     /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
@@ -153,8 +156,8 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
         return new PaymentResponse
         {
             PaymentUniqueId = id,
-            RedirectUrl     = checkoutUrl,
-            PaymentStatus   = PaymentStatusEnum.Created,
+            RedirectUrl = checkoutUrl,
+            PaymentStatus = PaymentStatusEnum.Created,
         };
     }
 
@@ -164,13 +167,13 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
         var (state, _) = await caller.GetOrderAsync(paymentId);
         var status = state switch
         {
-            "completed"  => PaymentStatusEnum.Finished,
+            "completed" => PaymentStatusEnum.Finished,
             "processing" => PaymentStatusEnum.Processing,
-            "pending"    => PaymentStatusEnum.Processing,
+            "pending" => PaymentStatusEnum.Processing,
             "authorised" => PaymentStatusEnum.Processing,
-            "failed"     => PaymentStatusEnum.Rejected,
-            "cancelled"  => PaymentStatusEnum.Rejected,
-            _            => PaymentStatusEnum.Created,
+            "failed" => PaymentStatusEnum.Rejected,
+            "cancelled" => PaymentStatusEnum.Rejected,
+            _ => PaymentStatusEnum.Created,
         };
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
@@ -180,13 +183,13 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <inheritdoc/>
     public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
-        var body      = request.Body ?? string.Empty;
+        var body = request.Body ?? string.Empty;
         var timestamp = request.Headers.TryGetValue("Revolut-Request-Timestamp", out var t) ? t.ToString() : string.Empty;
-        var signature = request.Headers.TryGetValue("Revolut-Signature",         out var s) ? s.ToString() : string.Empty;
+        var signature = request.Headers.TryGetValue("Revolut-Signature", out var s) ? s.ToString() : string.Empty;
 
         var payload = new TransactionStatusChangePayload
         {
-            Payload         = body,
+            Payload = body,
             QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
             {
                 { "Revolut-Request-Timestamp", timestamp },
@@ -200,9 +203,9 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
         {
             var msg = response.ResponseObject?.ToString() ?? string.Empty;
             if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
                 return PaymentWebhookResult.Fail(msg);
         }
 
@@ -215,7 +218,7 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
-        var body      = payload.Payload?.ToString() ?? string.Empty;
+        var body = payload.Payload?.ToString() ?? string.Empty;
         var timestamp = payload.QueryParameters.TryGetValue("Revolut-Request-Timestamp", out var t) ? t.ToString() : string.Empty;
         var signature = payload.QueryParameters.TryGetValue("Revolut-Signature", out var s) ? s.ToString() : string.Empty;
 
@@ -229,12 +232,12 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
             if (doc.RootElement.TryGetProperty("event", out var ev))
                 status = ev.GetString() switch
                 {
-                    "ORDER_COMPLETED"         => PaymentStatusEnum.Finished,
-                    "ORDER_AUTHORISED"        => PaymentStatusEnum.Processing,
-                    "ORDER_CANCELLED"         => PaymentStatusEnum.Rejected,
-                    "ORDER_PAYMENT_DECLINED"  => PaymentStatusEnum.Rejected,
-                    "PAYMENT_DECLINED"        => PaymentStatusEnum.Rejected,
-                    _                         => PaymentStatusEnum.Processing,
+                    "ORDER_COMPLETED" => PaymentStatusEnum.Finished,
+                    "ORDER_AUTHORISED" => PaymentStatusEnum.Processing,
+                    "ORDER_CANCELLED" => PaymentStatusEnum.Rejected,
+                    "ORDER_PAYMENT_DECLINED" => PaymentStatusEnum.Rejected,
+                    "PAYMENT_DECLINED" => PaymentStatusEnum.Rejected,
+                    _ => PaymentStatusEnum.Processing,
                 };
         }
         catch { /* ignore */ }
@@ -269,9 +272,9 @@ public class RevolutConfigureOptions : IConfigureOptions<RevolutServiceOptions>
     {
         var s = configuration.GetSection(RevolutServiceOptions.ConfigurationKey).Get<RevolutServiceOptions>();
         if (s is null) return;
-        options.ApiKey        = s.ApiKey;
-        options.ApiUrl        = s.ApiUrl;
-        options.ReturnUrl     = s.ReturnUrl;
+        options.ApiKey = s.ApiKey;
+        options.ApiUrl = s.ApiUrl;
+        options.ReturnUrl = s.ReturnUrl;
         options.WebhookSecret = s.WebhookSecret;
     }
 }

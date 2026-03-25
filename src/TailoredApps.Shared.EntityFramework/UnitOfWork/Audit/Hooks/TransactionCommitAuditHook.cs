@@ -1,4 +1,4 @@
-﻿using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
+using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
 using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
 
 namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks

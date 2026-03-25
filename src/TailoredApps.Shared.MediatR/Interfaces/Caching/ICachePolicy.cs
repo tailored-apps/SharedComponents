@@ -1,6 +1,6 @@
-using MediatR;
 using System;
 using System.Linq;
+using MediatR;
 
 namespace TailoredApps.Shared.MediatR.Interfaces.Caching
 {

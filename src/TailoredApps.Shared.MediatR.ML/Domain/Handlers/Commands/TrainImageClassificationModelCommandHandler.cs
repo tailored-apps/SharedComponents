@@ -47,7 +47,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
             var response = new TrainImageClassificationModelResponse();
 
             IEnumerable<ImageData> images = LoadImagesFromDirectory(request.Source);
-            var modelInfo = classificationService.Train(images, request.Source,request.ModelDestFolderPath);
+            var modelInfo = classificationService.Train(images, request.Source, request.ModelDestFolderPath);
             var version = modelHelper.AddVersion(request.ModelDestFolderPath);
             modelHelper.AddLabels(request.ModelDestFolderPath, modelInfo.labels);
             response.ModelPath = request.ModelDestFolderPath;

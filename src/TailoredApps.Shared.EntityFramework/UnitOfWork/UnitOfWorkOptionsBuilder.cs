@@ -1,6 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
 
 namespace TailoredApps.Shared.EntityFramework.UnitOfWork

@@ -1,9 +1,9 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
+using Microsoft.Extensions.Logging;
 using TailoredApps.Shared.MediatR.Interfaces.Caching;
 
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours

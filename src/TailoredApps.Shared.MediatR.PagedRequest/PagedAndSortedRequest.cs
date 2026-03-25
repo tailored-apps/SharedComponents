@@ -1,5 +1,5 @@
-using MediatR;
 using System;
+using MediatR;
 using TailoredApps.Shared.Querying;
 
 namespace TailoredApps.Shared.MediatR.PagedRequest

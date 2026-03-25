@@ -1,10 +1,10 @@
-using Microsoft.ML;
-using Microsoft.ML.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using Microsoft.ML;
+using Microsoft.ML.Data;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
@@ -56,7 +56,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         {
             var imageData = new InMemoryImageData(image, null, fileName);
             ImagePredictionScore prediction = predictionEnginePool.Predict(imageData);
-           // ModelInfo modelInfo = GetModelInfo();
+            // ModelInfo modelInfo = GetModelInfo();
 
             ImagePrediction imagePrediction = new ImagePrediction()
             {
@@ -113,7 +113,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             var elapsed = watch.ElapsedMilliseconds / 1000;
             var res = EvaluateModel(mlContext, testDataView, trainedModel);
             mlContext.Model.Save(trainedModel, trainDataView.Schema, modelDestFolderPath);
-            return (res.info,res.labels);
+            return (res.info, res.labels);
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         /// <param name="testDataView">The data view containing the test dataset.</param>
         /// <param name="trainDataView">The trained transformer to evaluate.</param>
         /// <returns>A tuple of discovered class labels and a formatted metrics info string.</returns>
-        private (string[] labels, string info)  EvaluateModel(MLContext mlContext, IDataView testDataView, ITransformer trainDataView)
+        private (string[] labels, string info) EvaluateModel(MLContext mlContext, IDataView testDataView, ITransformer trainDataView)
         {
             var watch = Stopwatch.StartNew();
             var predictionDataView = trainDataView.Transform(testDataView);
@@ -141,9 +141,9 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         /// <param name="name">A label or name prefix for the metrics output.</param>
         /// <param name="metrics">The <see cref="MulticlassClassificationMetrics"/> to format.</param>
         /// <returns>A string containing macro/micro accuracy, log loss, and per-class log loss values.</returns>
-        private string  PrintMultiClassClassificationMetrics(string name, MulticlassClassificationMetrics metrics)
+        private string PrintMultiClassClassificationMetrics(string name, MulticlassClassificationMetrics metrics)
         {
-            
+
             var builder = new StringBuilder();
 
             builder.AppendLine($"accuracy macro {metrics.MacroAccuracy:0.####}, the closer to 1 better");

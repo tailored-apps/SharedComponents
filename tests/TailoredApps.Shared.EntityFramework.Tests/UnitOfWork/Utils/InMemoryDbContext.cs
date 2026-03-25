@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace TailoredApps.Shared.EntityFramework.Tests.UnitOfWork.Utils
 {

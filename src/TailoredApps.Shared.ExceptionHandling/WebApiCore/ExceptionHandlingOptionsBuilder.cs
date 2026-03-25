@@ -1,5 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
 
 namespace TailoredApps.Shared.ExceptionHandling.WebApiCore
