@@ -1,4 +1,4 @@
-﻿using Microsoft.ML;
+using Microsoft.ML;
 using Microsoft.ML.Data;
 using System;
 using System.Collections.Generic;
@@ -12,17 +12,30 @@ using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
 
 namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 {
+    /// <summary>
+    /// Provides image classification and model training functionality using ML.NET.
+    /// </summary>
     public class ImageClassificationService : IImageClassificationService
 
     {
         private readonly IPredictionEnginePoolAdapter<InMemoryImageData, ImagePredictionScore> predictionEnginePool;
         private readonly IModelInfoService modelInfoService;
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="ImageClassificationService"/>.
+        /// </summary>
+        /// <param name="predictionEnginePool">The prediction engine pool adapter used to run predictions.</param>
+        /// <param name="modelInfoService">The service that provides metadata about the loaded model.</param>
         public ImageClassificationService(IPredictionEnginePoolAdapter<InMemoryImageData, ImagePredictionScore> predictionEnginePool, IModelInfoService modelInfoService)
         {
             this.predictionEnginePool = predictionEnginePool;
             this.modelInfoService = modelInfoService;
         }
 
+        /// <summary>
+        /// Retrieves metadata about the currently loaded ML model.
+        /// </summary>
+        /// <returns>A <see cref="ModelInfo"/> object containing the model's name, checksum, version, and labels.</returns>
         public ModelInfo GetModelInfo()
         {
             return new ModelInfo(
@@ -33,6 +46,12 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             );
         }
 
+        /// <summary>
+        /// Runs an image classification prediction on the provided image bytes.
+        /// </summary>
+        /// <param name="image">The raw byte content of the image to classify.</param>
+        /// <param name="fileName">The original file name of the image, used for identification in the result.</param>
+        /// <returns>An <see cref="ImagePrediction"/> containing the predicted label and score.</returns>
         public ImagePrediction Predict(byte[] image, string fileName)
         {
             var imageData = new InMemoryImageData(image, null, fileName);
@@ -55,6 +74,15 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 
         }
 
+        /// <summary>
+        /// Trains an image classification model using the provided image dataset and saves it to disk.
+        /// </summary>
+        /// <param name="images">The collection of labelled image data used for training.</param>
+        /// <param name="trainingSetFolder">The folder path containing the raw training image files.</param>
+        /// <param name="modelDestFolderPath">The destination file path where the trained model will be saved.</param>
+        /// <returns>
+        /// A tuple containing an evaluation info string and an array of class label names discovered during training.
+        /// </returns>
         public (string info, string[] labels) Train(IEnumerable<ImageData> images, string trainingSetFolder, string modelDestFolderPath)
         {
             var mlContext = new MLContext(seed: 1);
@@ -87,6 +115,14 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             mlContext.Model.Save(trainedModel, trainDataView.Schema, modelDestFolderPath);
             return (res.info,res.labels);
         }
+
+        /// <summary>
+        /// Evaluates the trained model against the test data view and returns evaluation metrics and labels.
+        /// </summary>
+        /// <param name="mlContext">The ML.NET context used for evaluation.</param>
+        /// <param name="testDataView">The data view containing the test dataset.</param>
+        /// <param name="trainDataView">The trained transformer to evaluate.</param>
+        /// <returns>A tuple of discovered class labels and a formatted metrics info string.</returns>
         private (string[] labels, string info)  EvaluateModel(MLContext mlContext, IDataView testDataView, ITransformer trainDataView)
         {
             var watch = Stopwatch.StartNew();
@@ -99,6 +135,12 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             return (labels, PrintMultiClassClassificationMetrics("TF DNN:", metrics));
         }
 
+        /// <summary>
+        /// Formats multiclass classification metrics into a human-readable string.
+        /// </summary>
+        /// <param name="name">A label or name prefix for the metrics output.</param>
+        /// <param name="metrics">The <see cref="MulticlassClassificationMetrics"/> to format.</param>
+        /// <returns>A string containing macro/micro accuracy, log loss, and per-class log loss values.</returns>
         private string  PrintMultiClassClassificationMetrics(string name, MulticlassClassificationMetrics metrics)
         {
             
@@ -117,6 +159,11 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             return builder.ToString();
         }
 
+        /// <summary>
+        /// Extracts class label names from the Score column's slot name annotations in the data view schema.
+        /// </summary>
+        /// <param name="schema">The <see cref="DataViewSchema"/> to read label annotations from.</param>
+        /// <returns>An array of label name strings.</returns>
         public string[] GetLabels(DataViewSchema schema)
         {
             var labelBuffer = new VBuffer<ReadOnlyMemory<char>>();
