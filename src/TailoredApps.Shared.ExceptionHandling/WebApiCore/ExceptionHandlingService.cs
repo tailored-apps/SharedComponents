@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
 using TailoredApps.Shared.ExceptionHandling.Model;
 

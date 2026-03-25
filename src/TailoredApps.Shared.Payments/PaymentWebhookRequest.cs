@@ -1,5 +1,6 @@
-using Microsoft.Extensions.Primitives;
+#nullable enable
 using System.Collections.Generic;
+using Microsoft.Extensions.Primitives;
 
 namespace TailoredApps.Shared.Payments
 {

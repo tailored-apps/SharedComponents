@@ -1,17 +1,30 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 
 namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Validation
 {
+    /// <summary>
+    /// Provides extension methods for validating image byte arrays.
+    /// </summary>
     public static class ImageValidationExtension
     {
+        /// <summary>
+        /// Determines whether the given byte array represents a valid image (JPEG or PNG).
+        /// </summary>
+        /// <param name="image">The byte array to validate.</param>
+        /// <returns><c>true</c> if the image is a valid JPEG or PNG; otherwise, <c>false</c>.</returns>
         public static bool IsValidImage(this byte[] image)
         {
             var imageFormat = GetImageFormat(image);
             return imageFormat == ImageFormat.jpeg || imageFormat == ImageFormat.png;
         }
 
+        /// <summary>
+        /// Detects the image format of the given byte array by inspecting its file header signature.
+        /// </summary>
+        /// <param name="bytes">The byte array to inspect.</param>
+        /// <returns>The detected <see cref="ImageFormat"/>, or <see cref="ImageFormat.unknown"/> if unrecognised.</returns>
         private static ImageFormat GetImageFormat(byte[] bytes)
         {
             // see http://www.mikekunz.com/image_file_header.html
@@ -48,13 +61,22 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Validation
             return ImageFormat.unknown;
         }
 
+        /// <summary>
+        /// Represents the supported image file formats identified by header byte signatures.
+        /// </summary>
         public enum ImageFormat
         {
+            /// <summary>Format could not be determined.</summary>
             unknown,
+            /// <summary>Windows Bitmap (BMP) format.</summary>
             bmp,
+            /// <summary>JPEG / JFIF format.</summary>
             jpeg,
+            /// <summary>Graphics Interchange Format (GIF).</summary>
             gif,
+            /// <summary>Tagged Image File Format (TIFF).</summary>
             tiff,
+            /// <summary>Portable Network Graphics (PNG) format.</summary>
             png
         }
     }

@@ -1,4 +1,10 @@
-﻿using MailKit;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Mail;
+using System.Threading.Tasks;
+using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit.Security;
@@ -8,16 +14,14 @@ using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 using Microsoft.Identity.Web;
 using MimeKit;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Mail;
-using System.Threading.Tasks;
 using TailoredApps.Shared.Email.Models;
 
 namespace TailoredApps.Shared.Email.Office365
 {
+    /// <summary>
+    /// Email provider implementation for Office 365 using IMAP with OAuth2 (client-credentials flow).
+    /// Authenticates against Azure AD as a confidential client application.
+    /// </summary>
     public class Office365EmailProvider : IEmailProvider
     {
         private readonly IOptions<AuthenticationConfig> options;
@@ -26,6 +30,11 @@ namespace TailoredApps.Shared.Email.Office365
 
             };
         private readonly IConfidentialClientApplication confidentialClientApplication;
+        /// <summary>
+        /// Initializes a new instance of <see cref="Office365EmailProvider"/> and builds
+        /// the confidential client application using either a client secret or a certificate.
+        /// </summary>
+        /// <param name="options">The Office 365 authentication configuration options.</param>
         public Office365EmailProvider(IOptions<AuthenticationConfig> options)
         {
             this.options = options;
@@ -85,6 +94,18 @@ namespace TailoredApps.Shared.Email.Office365
             else
                 throw new Exception("You must choose between using client secret or certificate. Please update appsettings.json file.");
         }
+        /// <summary>
+        /// Retrieves e-mail messages from the configured Office 365 mailbox using IMAP with OAuth2.
+        /// </summary>
+        /// <param name="folderName">
+        /// The name of the IMAP sub-folder to search in. Defaults to the inbox when empty.
+        /// </param>
+        /// <param name="sender">Optional filter: only messages whose From address contains this value are returned.</param>
+        /// <param name="recipent">Optional filter: only messages whose To address contains this value are returned.</param>
+        /// <param name="fromLast">
+        /// Optional time-span filter: only messages delivered within the last <paramref name="fromLast"/> are returned.
+        /// </param>
+        /// <returns>A collection of <see cref="Models.MailMessage"/> objects matching the specified criteria.</returns>
         public async Task<ICollection<Models.MailMessage>> GetMail(string folderName = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
         {
             var response = new List<Models.MailMessage>();
@@ -163,13 +184,24 @@ namespace TailoredApps.Shared.Email.Office365
             return result;
         }
 
+        /// <summary>Sends an e-mail message via Office 365.</summary>
+        /// <param name="recipnet">The recipient e-mail address.</param>
+        /// <param name="topic">The subject of the message.</param>
+        /// <param name="messageBody">The body content of the message.</param>
+        /// <param name="attachments">A dictionary of attachment file names mapped to their byte content.</param>
+        /// <returns>A string result or identifier for the sent message.</returns>
         public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
         {
             throw new NotImplementedException();
         }
     }
+    /// <summary>Extension methods for registering the Office 365 email provider with the DI container.</summary>
     public static class Office365EmailProviderExtensions
     {
+        /// <summary>
+        /// Registers <see cref="Office365EmailProvider"/> and its configuration options with the service collection.
+        /// </summary>
+        /// <param name="services">The <see cref="IServiceCollection"/> to add the services to.</param>
         public static void RegisterOffice365Provider(this IServiceCollection services)
         {
             services.AddOptions<AuthenticationConfig>();
@@ -178,14 +210,24 @@ namespace TailoredApps.Shared.Email.Office365
         }
     }
 
+    /// <summary>
+    /// Configures <see cref="AuthenticationConfig"/> options by binding values from the application configuration.
+    /// </summary>
     public class Office365EmailConfigureOptions : IConfigureOptions<AuthenticationConfig>
     {
         private readonly IConfiguration configuration;
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="Office365EmailConfigureOptions"/>.
+        /// </summary>
+        /// <param name="configuration">The application configuration used to read Office 365 settings.</param>
         public Office365EmailConfigureOptions(IConfiguration configuration)
         {
             this.configuration = configuration;
         }
 
+        /// <summary>Populates <paramref name="options"/> with values from the application configuration section.</summary>
+        /// <param name="options">The <see cref="AuthenticationConfig"/> instance to configure.</param>
         public void Configure(AuthenticationConfig options)
         {
             var section = configuration.GetSection(AuthenticationConfig.ConfigurationKey).Get<AuthenticationConfig>();

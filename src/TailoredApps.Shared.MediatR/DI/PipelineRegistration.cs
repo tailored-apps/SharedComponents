@@ -1,7 +1,7 @@
+using System.Reflection;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Scrutor;
-using System.Reflection;
 using TailoredApps.Shared.MediatR.Interfaces.Caching;
 using TailoredApps.Shared.MediatR.Interfaces.DI;
 using TailoredApps.Shared.MediatR.Interfaces.Handlers;
@@ -10,13 +10,19 @@ using TailoredApps.Shared.MediatR.PipelineBehaviours;
 
 namespace TailoredApps.Shared.MediatR.DI
 {
-    /// <summary>Implementacja <see cref="IPipelineRegistration"/> rejestrująca pipeline behaviors MediatR w DI.</summary>
+    /// <summary>
+    /// Default implementation of <see cref="IPipelineRegistration"/> that registers all standard
+    /// MediatR pipeline behaviors (Logging, Validation, Caching, Fallback, Retry) into the
+    /// dependency injection container.
+    /// </summary>
     public class PipelineRegistration : IPipelineRegistration
     {
         private readonly IServiceCollection serviceCollection;
 
-        /// <summary>Inicjalizuje instancję <see cref="PipelineRegistration"/>.</summary>
-        /// <param name="serviceCollection">Kolekcja usług DI.</param>
+        /// <summary>
+        /// Initializes a new instance of <see cref="PipelineRegistration"/>.
+        /// </summary>
+        /// <param name="serviceCollection">The DI service collection to register behaviors into.</param>
         public PipelineRegistration(IServiceCollection serviceCollection)
         {
             this.serviceCollection = serviceCollection;

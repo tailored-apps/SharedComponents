@@ -1,5 +1,5 @@
-using MediatR;
 using System.Collections.Generic;
+using MediatR;
 using TailoredApps.Shared.MediatR.Email.Responses;
 
 namespace TailoredApps.Shared.MediatR.Email.Messages.Commands

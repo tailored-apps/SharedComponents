@@ -52,34 +52,34 @@ public class MultiProviderPaymentTest
     [Fact]
     public async Task AllProviders_AreRegistered()
     {
-        var host      = BuildHost();
-        var service   = host.Services.GetRequiredService<IPaymentService>();
+        var host = BuildHost();
+        var service = host.Services.GetRequiredService<IPaymentService>();
         var providers = await service.GetProviders();
-        var ids       = providers.Select(p => p.Id).ToList();
+        var ids = providers.Select(p => p.Id).ToList();
 
-        Assert.Contains("Adyen",      ids);
-        Assert.Contains("PayU",       ids);
+        Assert.Contains("Adyen", ids);
+        Assert.Contains("PayU", ids);
         Assert.Contains("Przelewy24", ids);
-        Assert.Contains("Tpay",       ids);
-        Assert.Contains("HotPay",     ids);
-        Assert.Contains("PayNow",     ids);
-        Assert.Contains("Revolut",    ids);
+        Assert.Contains("Tpay", ids);
+        Assert.Contains("HotPay", ids);
+        Assert.Contains("PayNow", ids);
+        Assert.Contains("Revolut", ids);
     }
 
     // ─── GetChannels ──────────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData("Adyen",      "PLN")]
-    [InlineData("PayU",       "PLN")]
+    [InlineData("Adyen", "PLN")]
+    [InlineData("PayU", "PLN")]
     [InlineData("Przelewy24", "PLN")]
-    [InlineData("Tpay",       "PLN")]
-    [InlineData("HotPay",     "PLN")]
-    [InlineData("PayNow",     "PLN")]
-    [InlineData("Revolut",    "PLN")]
+    [InlineData("Tpay", "PLN")]
+    [InlineData("HotPay", "PLN")]
+    [InlineData("PayNow", "PLN")]
+    [InlineData("Revolut", "PLN")]
     public async Task GetChannels_PLN_ReturnsNonEmptyList(string providerKey, string currency)
     {
-        var host     = BuildHost();
-        var service  = host.Services.GetRequiredService<IPaymentService>();
+        var host = BuildHost();
+        var service = host.Services.GetRequiredService<IPaymentService>();
         var channels = await service.GetChannels(providerKey, currency);
         Assert.NotEmpty(channels);
     }
@@ -87,8 +87,8 @@ public class MultiProviderPaymentTest
     [Fact]
     public async Task Adyen_GetChannels_EUR_ContainsIdeal()
     {
-        var host     = BuildHost();
-        var service  = host.Services.GetRequiredService<IPaymentService>();
+        var host = BuildHost();
+        var service = host.Services.GetRequiredService<IPaymentService>();
         var channels = await service.GetChannels("Adyen", "EUR");
         Assert.Contains(channels, c => c.Id == "ideal");
     }
@@ -96,8 +96,8 @@ public class MultiProviderPaymentTest
     [Fact]
     public async Task PayU_GetChannels_PLN_ContainsBlik()
     {
-        var host     = BuildHost();
-        var service  = host.Services.GetRequiredService<IPaymentService>();
+        var host = BuildHost();
+        var service = host.Services.GetRequiredService<IPaymentService>();
         var channels = await service.GetChannels("PayU", "PLN");
         Assert.Contains(channels, c => c.Id == "blik");
     }
@@ -105,8 +105,8 @@ public class MultiProviderPaymentTest
     [Fact]
     public async Task Revolut_GetChannels_ContainsRevolutPay()
     {
-        var host     = BuildHost();
-        var service  = host.Services.GetRequiredService<IPaymentService>();
+        var host = BuildHost();
+        var service = host.Services.GetRequiredService<IPaymentService>();
         var channels = await service.GetChannels("Revolut", "PLN");
         Assert.Contains(channels, c => c.Id == "revolut_pay");
     }
@@ -114,8 +114,8 @@ public class MultiProviderPaymentTest
     [Fact]
     public async Task PayNow_GetChannels_ContainsBlikAndCard()
     {
-        var host     = BuildHost();
-        var service  = host.Services.GetRequiredService<IPaymentService>();
+        var host = BuildHost();
+        var service = host.Services.GetRequiredService<IPaymentService>();
         var channels = await service.GetChannels("PayNow", "PLN");
         Assert.Contains(channels, c => c.Id == "BLIK");
         Assert.Contains(channels, c => c.Id == "CARD");
@@ -124,8 +124,8 @@ public class MultiProviderPaymentTest
     [Fact]
     public async Task Przelewy24_GetChannels_ContainsOnlineTransfer()
     {
-        var host     = BuildHost();
-        var service  = host.Services.GetRequiredService<IPaymentService>();
+        var host = BuildHost();
+        var service = host.Services.GetRequiredService<IPaymentService>();
         var channels = await service.GetChannels("Przelewy24", "PLN");
         Assert.Contains(channels, c => c.Id == "online_transfer");
     }
@@ -133,19 +133,19 @@ public class MultiProviderPaymentTest
     // ─── Provider info ────────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData("Adyen",      "Adyen")]
-    [InlineData("PayU",       "PayU")]
+    [InlineData("Adyen", "Adyen")]
+    [InlineData("PayU", "PayU")]
     [InlineData("Przelewy24", "Przelewy24")]
-    [InlineData("Tpay",       "Tpay")]
-    [InlineData("HotPay",     "HotPay")]
-    [InlineData("PayNow",     "PayNow")]
-    [InlineData("Revolut",    "Revolut")]
+    [InlineData("Tpay", "Tpay")]
+    [InlineData("HotPay", "HotPay")]
+    [InlineData("PayNow", "PayNow")]
+    [InlineData("Revolut", "Revolut")]
     public async Task Provider_HasCorrectName(string providerKey, string expectedName)
     {
-        var host      = BuildHost();
-        var service   = host.Services.GetRequiredService<IPaymentService>();
+        var host = BuildHost();
+        var service = host.Services.GetRequiredService<IPaymentService>();
         var providers = await service.GetProviders();
-        var provider  = providers.Single(p => p.Id == providerKey);
+        var provider = providers.Single(p => p.Id == providerKey);
         Assert.Equal(expectedName, provider.Name);
     }
 
@@ -160,13 +160,13 @@ public class MultiProviderPaymentTest
     [InlineData("Adyen")]
     public async Task TransactionStatusChange_InvalidSignature_ReturnsRejected(string providerKey)
     {
-        var host    = BuildHost();
+        var host = BuildHost();
         var service = host.Services.GetRequiredService<IPaymentService>();
 
         var result = await service.TransactionStatusChange(providerKey, new TransactionStatusChangePayload
         {
             ProviderId = providerKey,
-            Payload    = """{"status":"CONFIRMED","orderId":"test_123"}""",
+            Payload = """{"status":"CONFIRMED","orderId":"test_123"}""",
             QueryParameters = new Dictionary<string, StringValues>
             {
                 { "OpenPayU-Signature",        new StringValues("sender=checkout;signature=invalid;algorithm=MD5;content=DOCUMENT") },
@@ -184,13 +184,13 @@ public class MultiProviderPaymentTest
     [Fact]
     public async Task HotPay_TransactionStatusChange_InvalidHash_ReturnsRejected()
     {
-        var host    = BuildHost();
+        var host = BuildHost();
         var service = host.Services.GetRequiredService<IPaymentService>();
 
         var result = await service.TransactionStatusChange("HotPay", new TransactionStatusChangePayload
         {
             ProviderId = "HotPay",
-            Payload    = string.Empty,
+            Payload = string.Empty,
             QueryParameters = new Dictionary<string, StringValues>
             {
                 { "HASH",         new StringValues("invalidhash") },
@@ -208,18 +208,18 @@ public class MultiProviderPaymentTest
     [Fact]
     public async Task HotPay_GetStatus_ReturnsProcessing()
     {
-        var host    = BuildHost();
+        var host = BuildHost();
         var service = host.Services.GetRequiredService<IPaymentService>();
-        var result  = await service.GetStatus("HotPay", "test-payment-id");
+        var result = await service.GetStatus("HotPay", "test-payment-id");
         Assert.Equal(PaymentStatusEnum.Processing, result.PaymentStatus);
     }
 
     [Fact]
     public async Task Przelewy24_GetStatus_ReturnsProcessing()
     {
-        var host    = BuildHost();
+        var host = BuildHost();
         var service = host.Services.GetRequiredService<IPaymentService>();
-        var result  = await service.GetStatus("Przelewy24", "test-session-id");
+        var result = await service.GetStatus("Przelewy24", "test-session-id");
         Assert.Equal(PaymentStatusEnum.Processing, result.PaymentStatus);
     }
 
@@ -228,17 +228,17 @@ public class MultiProviderPaymentTest
     [Fact(Skip = "Integration — requires real PayU sandbox credentials in appsettings.json")]
     public async Task PayU_RequestPayment_CreatesOrder()
     {
-        var host    = BuildHost();
+        var host = BuildHost();
         var service = host.Services.GetRequiredService<IPaymentService>();
-        var result  = await service.RegisterPayment(new PaymentRequest
+        var result = await service.RegisterPayment(new PaymentRequest
         {
             PaymentProvider = "PayU",
-            PaymentChannel  = "c",
-            PaymentModel    = PaymentModel.OneTime,
-            Title           = "Test order",
-            Currency        = "PLN",
-            Amount          = 1.00m,
-            Email           = "test@example.com",
+            PaymentChannel = "c",
+            PaymentModel = PaymentModel.OneTime,
+            Title = "Test order",
+            Currency = "PLN",
+            Amount = 1.00m,
+            Email = "test@example.com",
         });
         Assert.Equal(PaymentStatusEnum.Created, result.PaymentStatus);
         Assert.NotEmpty(result.RedirectUrl!);
@@ -247,17 +247,17 @@ public class MultiProviderPaymentTest
     [Fact(Skip = "Integration — requires real Revolut sandbox credentials in appsettings.json")]
     public async Task Revolut_RequestPayment_CreatesOrder()
     {
-        var host    = BuildHost();
+        var host = BuildHost();
         var service = host.Services.GetRequiredService<IPaymentService>();
-        var result  = await service.RegisterPayment(new PaymentRequest
+        var result = await service.RegisterPayment(new PaymentRequest
         {
             PaymentProvider = "Revolut",
-            PaymentChannel  = "card",
-            PaymentModel    = PaymentModel.OneTime,
-            Title           = "Test order",
-            Currency        = "PLN",
-            Amount          = 1.00m,
-            Email           = "test@example.com",
+            PaymentChannel = "card",
+            PaymentModel = PaymentModel.OneTime,
+            Title = "Test order",
+            Currency = "PLN",
+            Amount = 1.00m,
+            Email = "test@example.com",
         });
         Assert.Equal(PaymentStatusEnum.Created, result.PaymentStatus);
     }

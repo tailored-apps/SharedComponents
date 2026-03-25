@@ -45,7 +45,7 @@ public class StripePaymentTest
     [Fact]
     public async Task CanRequestPaymentProviders_IncludesStripe()
     {
-        var host           = BuildHost();
+        var host = BuildHost();
         var paymentService = host.Services.GetRequiredService<IPaymentService>();
 
         var providers = await paymentService.GetProviders();
@@ -56,7 +56,7 @@ public class StripePaymentTest
     [Fact]
     public async Task GetChannels_Stripe_PLN_ReturnsBlikP24Card()
     {
-        var host           = BuildHost();
+        var host = BuildHost();
         var paymentService = host.Services.GetRequiredService<IPaymentService>();
 
         var channels = await paymentService.GetChannels("Stripe", "PLN");
@@ -69,7 +69,7 @@ public class StripePaymentTest
     [Fact]
     public async Task GetChannels_Stripe_EUR_ReturnsCardAndSepa()
     {
-        var host           = BuildHost();
+        var host = BuildHost();
         var paymentService = host.Services.GetRequiredService<IPaymentService>();
 
         var channels = await paymentService.GetChannels("Stripe", "EUR");
@@ -81,7 +81,7 @@ public class StripePaymentTest
     [Fact]
     public async Task GetChannels_Stripe_USD_ReturnsOnlyCard()
     {
-        var host           = BuildHost();
+        var host = BuildHost();
         var paymentService = host.Services.GetRequiredService<IPaymentService>();
 
         var channels = await paymentService.GetChannels("Stripe", "USD");
@@ -95,13 +95,13 @@ public class StripePaymentTest
     [Fact]
     public async Task TransactionStatusChange_InvalidSignature_ReturnsRejected()
     {
-        var host           = BuildHost();
+        var host = BuildHost();
         var paymentService = host.Services.GetRequiredService<IPaymentService>();
 
         var result = await paymentService.TransactionStatusChange("Stripe", new TransactionStatusChangePayload
         {
             ProviderId = "Stripe",
-            Payload    = """{"id":"evt_test","type":"checkout.session.completed"}""",
+            Payload = """{"id":"evt_test","type":"checkout.session.completed"}""",
             QueryParameters = new Dictionary<string, StringValues>
             {
                 { "Stripe-Signature", new StringValues("t=1,v1=invalidsignature") },
@@ -120,26 +120,26 @@ public class StripePaymentTest
     [Fact(Skip = "Integration test — requires STRIPE_SECRET_KEY=sk_test_... in env or appsettings.json")]
     public async Task RegisterPayment_Stripe_CreatesCheckoutSession()
     {
-        var host           = BuildHost();
+        var host = BuildHost();
         var paymentService = host.Services.GetRequiredService<IPaymentService>();
 
         var providers = await paymentService.GetProviders();
-        var channels  = await paymentService.GetChannels("Stripe", "PLN");
+        var channels = await paymentService.GetChannels("Stripe", "PLN");
 
         var payment = await paymentService.RegisterPayment(new PaymentRequest
         {
             PaymentProvider = "Stripe",
-            PaymentChannel  = "card",
-            PaymentModel    = PaymentModel.OneTime,
-            Title           = "Testowa płatność",
-            Description     = "Integracyjny test Stripe Checkout",
-            Currency        = "PLN",
-            Amount          = 9.99m,
-            Email           = "test@example.com",
-            FirstName       = "Jan",
-            Surname         = "Testowy",
-            AdditionalData  = "test-integration",
-            Referer         = "xunit",
+            PaymentChannel = "card",
+            PaymentModel = PaymentModel.OneTime,
+            Title = "Testowa płatność",
+            Description = "Integracyjny test Stripe Checkout",
+            Currency = "PLN",
+            Amount = 9.99m,
+            Email = "test@example.com",
+            FirstName = "Jan",
+            Surname = "Testowy",
+            AdditionalData = "test-integration",
+            Referer = "xunit",
         });
 
         Assert.NotNull(payment);
@@ -156,19 +156,19 @@ public class StripePaymentTest
     [Fact(Skip = "Integration test — requires STRIPE_SECRET_KEY=sk_test_... in env or appsettings.json")]
     public async Task GetStatus_Stripe_CreatedSession_ReturnsCreated()
     {
-        var host           = BuildHost();
+        var host = BuildHost();
         var paymentService = host.Services.GetRequiredService<IPaymentService>();
 
         // Utwórz sesję
         var payment = await paymentService.RegisterPayment(new PaymentRequest
         {
             PaymentProvider = "Stripe",
-            PaymentChannel  = "card",
-            PaymentModel    = PaymentModel.OneTime,
-            Title           = "Status test",
-            Currency        = "PLN",
-            Amount          = 1.00m,
-            Email           = "status@example.com",
+            PaymentChannel = "card",
+            PaymentModel = PaymentModel.OneTime,
+            Title = "Status test",
+            Currency = "PLN",
+            Amount = 1.00m,
+            Email = "status@example.com",
         });
 
         // Sprawdź status

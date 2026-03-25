@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using Microsoft.Identity.Web;
 using System;
 using System.Globalization;
+using Microsoft.Identity.Web;
 
 namespace TailoredApps.Shared.Email.Office365
 {
@@ -12,12 +12,13 @@ namespace TailoredApps.Shared.Email.Office365
     /// </summary>
     public class AuthenticationConfig
     {
+        /// <summary>The configuration key used to bind this section from application settings.</summary>
         public static string ConfigurationKey => "Mail:Providers:Office365";
         /// <summary>
         /// instance of Azure AD, for example public Azure or a Sovereign cloud (Azure China, Germany, US government, etc ...)
         /// </summary>
         public string Instance { get; set; } = "https://login.microsoftonline.com/{0}";
-       
+
         /// <summary>
         /// Graph API endpoint, could be public Azure (default) or a Sovereign cloud (US government, etc ...)
         /// </summary>
@@ -35,13 +36,13 @@ namespace TailoredApps.Shared.Email.Office365
         /// Guid used by the application to uniquely identify itself to Azure AD
         /// </summary>
         public string ClientId { get; set; }
-     
+
         /// <summary>
         /// MailBox
         /// </summary>
         public string MailBox { get; set; }
 
-        
+
 
         /// <summary>
         /// URL of the authority
@@ -74,7 +75,7 @@ namespace TailoredApps.Shared.Email.Office365
         /// <remarks> 
         public CertificateDescription Certificate { get; set; }
 
-        
+
     }
 
 

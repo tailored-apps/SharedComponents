@@ -64,9 +64,9 @@ public class CashBillSignVerificationTests
 
         var request = new TransactionStatusChanged
         {
-            Command       = cmd,
+            Command = cmd,
             TransactionId = transactionId,
-            Sign          = expectedSign,
+            Sign = expectedSign,
         };
 
         var computedSign = await caller.GetSignForNotificationService(request);
@@ -87,12 +87,12 @@ public class CashBillSignVerificationTests
         var input = cmd + transactionId + "1c5dd47b1dd0e11ffc3e2b1595c3dd67"; // test secret
         using var sha1 = System.Security.Cryptography.SHA1.Create();
         var sha1Bytes = sha1.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-        var sha1Hash  = BitConverter.ToString(sha1Bytes).Replace("-", "").ToLower();
+        var sha1Hash = BitConverter.ToString(sha1Bytes).Replace("-", "").ToLower();
 
         // Oblicz MD5 (poprawna implementacja)
         using var md5 = System.Security.Cryptography.MD5.Create();
         var md5Bytes = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-        var md5Hash  = BitConverter.ToString(md5Bytes).Replace("-", "").ToLower();
+        var md5Hash = BitConverter.ToString(md5Bytes).Replace("-", "").ToLower();
 
         // SHA1 NIE pasuje do tego co CashBill wysyła
         Assert.NotEqual(cashBillSign, sha1Hash);

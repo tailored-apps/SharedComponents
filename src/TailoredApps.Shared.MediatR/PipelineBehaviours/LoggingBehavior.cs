@@ -1,23 +1,26 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours
 {
     /// <summary>
-    /// Pipeline behavior MediatR logujący czas wykonania żądania oraz ewentualne wyjątki.
+    /// MediatR pipeline behavior that logs the execution time of every request and captures any
+    /// exceptions that occur during handler processing.
     /// </summary>
-    /// <typeparam name="TRequest">Typ żądania MediatR.</typeparam>
-    /// <typeparam name="TResponse">Typ odpowiedzi.</typeparam>
+    /// <typeparam name="TRequest">The type of the MediatR request.</typeparam>
+    /// <typeparam name="TResponse">The type of the response.</typeparam>
     public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
     {
         private readonly ILogger logger;
 
-        /// <summary>Inicjalizuje instancję <see cref="LoggingBehavior{TRequest, TResponse}"/>.</summary>
-        /// <param name="logger">Logger dla żądania.</param>
+        /// <summary>
+        /// Initializes a new instance of <see cref="LoggingBehavior{TRequest, TResponse}"/>.
+        /// </summary>
+        /// <param name="logger">The logger instance scoped to the request type.</param>
         public LoggingBehavior(ILogger<TRequest> logger)
         {
             this.logger = logger;

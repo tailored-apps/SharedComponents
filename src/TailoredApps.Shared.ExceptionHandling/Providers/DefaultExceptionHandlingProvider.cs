@@ -1,8 +1,8 @@
-using FluentValidation;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
 using TailoredApps.Shared.ExceptionHandling.Model;
 

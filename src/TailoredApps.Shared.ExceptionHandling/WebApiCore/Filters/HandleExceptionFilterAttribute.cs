@@ -1,6 +1,6 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.Reflection;
 using TailoredApps.Shared.ExceptionHandling.HttpResult;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
 using TailoredApps.Shared.ExceptionHandling.WebApiCore.Attributes;

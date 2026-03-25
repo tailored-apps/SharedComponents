@@ -16,30 +16,31 @@ public class PayNowServiceOptions
     /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:PayNow";
     /// <summary>ApiKey.</summary>
-    public string ApiKey       { get; set; } = string.Empty;
+    public string ApiKey { get; set; } = string.Empty;
     /// <summary>SignatureKey.</summary>
     public string SignatureKey { get; set; } = string.Empty;
     /// <summary>Base URL of the PayNow API endpoint.</summary>
-    public string ServiceUrl   { get; set; } = "https://api.paynow.pl";
+    public string ServiceUrl { get; set; } = "https://api.paynow.pl";
 
     /// <summary>Alias for ServiceUrl — backwards compatibility.</summary>
     [Obsolete("Use ServiceUrl instead.")]
     public string ApiUrl { get => ServiceUrl; set => ServiceUrl = value; }
     /// <summary>ReturnUrl.</summary>
-    public string ReturnUrl    { get; set; } = string.Empty;
+    public string ReturnUrl { get; set; } = string.Empty;
     /// <summary>ContinueUrl.</summary>
-    public string ContinueUrl  { get; set; } = string.Empty;
+    public string ContinueUrl { get; set; } = string.Empty;
 }
 
 file class PayNowPaymentRequest
 {
-    [JsonPropertyName("amount")]      public long   Amount      { get; set; }
-    [JsonPropertyName("currency")]    public string Currency    { get; set; } = "PLN";
-    [JsonPropertyName("externalId")]  public string ExternalId  { get; set; } = string.Empty;
+    [JsonPropertyName("amount")] public long Amount { get; set; }
+    [JsonPropertyName("currency")] public string Currency { get; set; } = "PLN";
+    [JsonPropertyName("externalId")] public string ExternalId { get; set; } = string.Empty;
+    /// <inheritdoc/>
     [JsonPropertyName("description")] public string Description { get; set; } = string.Empty;
-    [JsonPropertyName("buyer")]       public PayNowBuyer? Buyer { get; set; }
+    [JsonPropertyName("buyer")] public PayNowBuyer? Buyer { get; set; }
     [JsonPropertyName("continueUrl")] public string? ContinueUrl { get; set; }
-    [JsonPropertyName("returnUrl")]   public string? ReturnUrl   { get; set; }
+    [JsonPropertyName("returnUrl")] public string? ReturnUrl { get; set; }
 }
 
 file class PayNowBuyer
@@ -49,8 +50,8 @@ file class PayNowBuyer
 
 file class PayNowPaymentResponse
 {
-    [JsonPropertyName("paymentId")]   public string? PaymentId   { get; set; }
-    [JsonPropertyName("status")]      public string? Status      { get; set; }
+    [JsonPropertyName("paymentId")] public string? PaymentId { get; set; }
+    [JsonPropertyName("status")] public string? Status { get; set; }
     [JsonPropertyName("redirectUrl")] public string? RedirectUrl { get; set; }
 }
 
@@ -99,19 +100,19 @@ public class PayNowServiceCaller : IPayNowServiceCaller
 
         var body = new PayNowPaymentRequest
         {
-            Amount      = (long)(request.Amount * 100),
-            Currency    = request.Currency.ToUpperInvariant(),
-            ExternalId  = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
+            Amount = (long)(request.Amount * 100),
+            Currency = request.Currency.ToUpperInvariant(),
+            ExternalId = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
             Description = request.Title ?? request.Description ?? "Order",
-            Buyer       = new PayNowBuyer { Email = request.Email ?? string.Empty },
+            Buyer = new PayNowBuyer { Email = request.Email ?? string.Empty },
             ContinueUrl = options.ContinueUrl,
-            ReturnUrl   = options.ReturnUrl,
+            ReturnUrl = options.ReturnUrl,
         };
 
-        var content  = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/v2/payments", content);
-        var json     = await response.Content.ReadAsStringAsync();
-        var result   = JsonSerializer.Deserialize<PayNowPaymentResponse>(json);
+        var json = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<PayNowPaymentResponse>(json);
         return (result?.PaymentId, result?.RedirectUrl);
     }
 
@@ -121,27 +122,27 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         using var client = CreateClient();
         var response = await client.GetAsync($"{options.ServiceUrl}/v2/payments/{paymentId}/status");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
-        var json   = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync();
         var status = JsonSerializer.Deserialize<PayNowStatusResponse>(json)?.Status;
         return status switch
         {
-            "CONFIRMED"  => PaymentStatusEnum.Finished,
-            "PENDING"    => PaymentStatusEnum.Processing,
+            "CONFIRMED" => PaymentStatusEnum.Finished,
+            "PENDING" => PaymentStatusEnum.Processing,
             "PROCESSING" => PaymentStatusEnum.Processing,
-            "NEW"        => PaymentStatusEnum.Created,
-            "ERROR"      => PaymentStatusEnum.Rejected,
-            "REJECTED"   => PaymentStatusEnum.Rejected,
-            "ABANDONED"  => PaymentStatusEnum.Rejected,
-            _            => PaymentStatusEnum.Created,
+            "NEW" => PaymentStatusEnum.Created,
+            "ERROR" => PaymentStatusEnum.Rejected,
+            "REJECTED" => PaymentStatusEnum.Rejected,
+            "ABANDONED" => PaymentStatusEnum.Rejected,
+            _ => PaymentStatusEnum.Created,
         };
     }
 
     /// <inheritdoc/>
     public bool VerifySignature(string body, string signature)
     {
-        var keyBytes  = Encoding.UTF8.GetBytes(options.SignatureKey);
+        var keyBytes = Encoding.UTF8.GetBytes(options.SignatureKey);
         var dataBytes = Encoding.UTF8.GetBytes(body);
-        var computed  = Convert.ToBase64String(HMACSHA256.HashData(keyBytes, dataBytes));
+        var computed = Convert.ToBase64String(HMACSHA256.HashData(keyBytes, dataBytes));
         return string.Equals(computed, signature, StringComparison.Ordinal);
     }
 }
@@ -154,11 +155,14 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <summary>Inicjalizuje instancję providera.</summary>
     public PayNowProvider(IPayNowServiceCaller caller) => this.caller = caller;
 
-    public string Key         => "PayNow";
-    public string Name        => "PayNow";
+    /// <inheritdoc/>
+    public string Key => "PayNow";
+    /// <inheritdoc/>
+    public string Name => "PayNow";
     /// <inheritdoc/>
     public string Description => "Operator płatności PayNow (mBank) — BLIK, karty, przelewy.";
-    public string Url         => "https://paynow.pl";
+    /// <inheritdoc/>
+    public string Url => "https://paynow.pl";
 
     /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
@@ -182,8 +186,8 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
         return new PaymentResponse
         {
             PaymentUniqueId = paymentId,
-            RedirectUrl     = redirectUrl,
-            PaymentStatus   = PaymentStatusEnum.Created,
+            RedirectUrl = redirectUrl,
+            PaymentStatus = PaymentStatusEnum.Created,
         };
     }
 
@@ -199,12 +203,12 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <inheritdoc/>
     public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
-        var body      = request.Body ?? string.Empty;
+        var body = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("Signature", out var s) ? s.ToString() : string.Empty;
 
         var payload = new TransactionStatusChangePayload
         {
-            Payload         = body,
+            Payload = body,
             QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
             {
                 { "Signature", signature },
@@ -217,9 +221,9 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
         {
             var msg = response.ResponseObject?.ToString() ?? string.Empty;
             if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
                 return PaymentWebhookResult.Fail(msg);
         }
 
@@ -233,7 +237,7 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
-        var sig  = payload.QueryParameters.TryGetValue("Signature", out var s) ? s.ToString() : string.Empty;
+        var sig = payload.QueryParameters.TryGetValue("Signature", out var s) ? s.ToString() : string.Empty;
 
         if (!caller.VerifySignature(body, sig))
             return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
@@ -245,11 +249,11 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
             if (doc.RootElement.TryGetProperty("status", out var st))
                 status = st.GetString() switch
                 {
-                    "CONFIRMED"  => PaymentStatusEnum.Finished,
-                    "ERROR"      => PaymentStatusEnum.Rejected,
-                    "REJECTED"   => PaymentStatusEnum.Rejected,
-                    "ABANDONED"  => PaymentStatusEnum.Rejected,
-                    _            => PaymentStatusEnum.Processing,
+                    "CONFIRMED" => PaymentStatusEnum.Finished,
+                    "ERROR" => PaymentStatusEnum.Rejected,
+                    "REJECTED" => PaymentStatusEnum.Rejected,
+                    "ABANDONED" => PaymentStatusEnum.Rejected,
+                    _ => PaymentStatusEnum.Processing,
                 };
         }
         catch { /* ignore */ }
@@ -269,7 +273,6 @@ public static class PayNowProviderExtensions
         services.AddHttpClient("PayNow");
         services.AddTransient<IPayNowServiceCaller, PayNowServiceCaller>();
         services.AddTransient<PayNowProvider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<PayNowProvider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<PayNowProvider>());
     }
 }
@@ -285,10 +288,10 @@ public class PayNowConfigureOptions : IConfigureOptions<PayNowServiceOptions>
     {
         var s = configuration.GetSection(PayNowServiceOptions.ConfigurationKey).Get<PayNowServiceOptions>();
         if (s is null) return;
-        options.ApiKey       = s.ApiKey;
+        options.ApiKey = s.ApiKey;
         options.SignatureKey = s.SignatureKey;
-        options.ServiceUrl       = s.ServiceUrl;
-        options.ReturnUrl    = s.ReturnUrl;
-        options.ContinueUrl  = s.ContinueUrl;
+        options.ServiceUrl = s.ServiceUrl;
+        options.ReturnUrl = s.ReturnUrl;
+        options.ContinueUrl = s.ContinueUrl;
     }
 }

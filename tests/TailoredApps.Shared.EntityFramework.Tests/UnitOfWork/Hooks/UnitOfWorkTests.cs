@@ -1,8 +1,8 @@
-﻿using AutoMoqCore;
-using Moq;
 using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
+using AutoMoqCore;
+using Moq;
 using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
 using TailoredApps.Shared.EntityFramework.Tests.UnitOfWork.Utils;
 using TailoredApps.Shared.EntityFramework.UnitOfWork;

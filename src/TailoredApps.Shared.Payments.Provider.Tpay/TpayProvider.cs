@@ -10,18 +10,19 @@ using Microsoft.Extensions.Options;
 
 namespace TailoredApps.Shared.Payments.Provider.Tpay;
 
+/// <summary>Configuration options for the Tpay payment provider. Bound from section <c>Payments:Providers:Tpay</c>.</summary>
 public class TpayServiceOptions
 {
     /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:Tpay";
     /// <summary>ClientId.</summary>
-    public string ClientId     { get; set; } = string.Empty;
+    public string ClientId { get; set; } = string.Empty;
     /// <summary>ClientSecret.</summary>
     public string ClientSecret { get; set; } = string.Empty;
     /// <summary>MerchantId.</summary>
-    public string MerchantId   { get; set; } = string.Empty;
+    public string MerchantId { get; set; } = string.Empty;
     /// <summary>Base URL of the Tpay API endpoint.</summary>
-    public string ServiceUrl   { get; set; } = "https://api.tpay.com";
+    public string ServiceUrl { get; set; } = "https://api.tpay.com";
 
     /// <summary>Alias for <see cref="ServiceUrl"/> — kept for backwards compatibility.</summary>
     [Obsolete("Use ServiceUrl instead.")]
@@ -31,9 +32,9 @@ public class TpayServiceOptions
         set => ServiceUrl = value;
     }
     /// <summary>ReturnUrl.</summary>
-    public string ReturnUrl    { get; set; } = string.Empty;
+    public string ReturnUrl { get; set; } = string.Empty;
     /// <summary>NotifyUrl.</summary>
-    public string NotifyUrl    { get; set; } = string.Empty;
+    public string NotifyUrl { get; set; } = string.Empty;
     /// <summary>SecurityCode.</summary>
     public string SecurityCode { get; set; } = string.Empty;
 }
@@ -45,50 +46,52 @@ file class TpayTokenResponse
 
 file class TpayTransactionRequest
 {
-    [JsonPropertyName("amount")]            public decimal Amount        { get; set; }
-    [JsonPropertyName("description")]       public string  Description   { get; set; } = string.Empty;
+    [JsonPropertyName("amount")] public decimal Amount { get; set; }
+    [JsonPropertyName("description")] public string Description { get; set; } = string.Empty;
     [JsonPropertyName("hiddenDescription")] public string? HiddenDescription { get; set; }
-    [JsonPropertyName("lang")]              public string  Lang          { get; set; } = "pl";
-    [JsonPropertyName("pay")]               public TpayPay Pay           { get; set; } = new();
-    [JsonPropertyName("payer")]             public TpayPayer Payer       { get; set; } = new();
-    [JsonPropertyName("callbacks")]         public TpayCallbacks Callbacks { get; set; } = new();
+    [JsonPropertyName("lang")] public string Lang { get; set; } = "pl";
+    [JsonPropertyName("pay")] public TpayPay Pay { get; set; } = new();
+    [JsonPropertyName("payer")] public TpayPayer Payer { get; set; } = new();
+    [JsonPropertyName("callbacks")] public TpayCallbacks Callbacks { get; set; } = new();
 }
 
 file class TpayPay
 {
-    [JsonPropertyName("groupId")]  public int?    GroupId  { get; set; }
-    [JsonPropertyName("channel")]  public string? Channel  { get; set; }
+    [JsonPropertyName("groupId")] public int? GroupId { get; set; }
+    [JsonPropertyName("channel")] public string? Channel { get; set; }
 }
 
 file class TpayPayer
 {
     [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
-    [JsonPropertyName("name")]  public string Name  { get; set; } = string.Empty;
+    /// <inheritdoc/>
+    [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
 }
 
 file class TpayCallbacks
 {
-    [JsonPropertyName("payerUrls")]    public TpayPayerUrls PayerUrls       { get; set; } = new();
+    [JsonPropertyName("payerUrls")] public TpayPayerUrls PayerUrls { get; set; } = new();
     [JsonPropertyName("notification")] public TpayNotification Notification { get; set; } = new();
 }
 
 file class TpayPayerUrls
 {
     [JsonPropertyName("success")] public string Success { get; set; } = string.Empty;
-    [JsonPropertyName("error")]   public string Error   { get; set; } = string.Empty;
+    [JsonPropertyName("error")] public string Error { get; set; } = string.Empty;
 }
 
 file class TpayNotification
 {
-    [JsonPropertyName("url")]   public string Url   { get; set; } = string.Empty;
+    /// <inheritdoc/>
+    [JsonPropertyName("url")] public string Url { get; set; } = string.Empty;
     [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
 }
 
 file class TpayTransactionResponse
 {
-    [JsonPropertyName("transactionId")]         public string? TransactionId { get; set; }
-    [JsonPropertyName("transactionPaymentUrl")] public string? PaymentUrl    { get; set; }
-    [JsonPropertyName("title")]                 public string? Title         { get; set; }
+    [JsonPropertyName("transactionId")] public string? TransactionId { get; set; }
+    [JsonPropertyName("transactionPaymentUrl")] public string? PaymentUrl { get; set; }
+    [JsonPropertyName("title")] public string? Title { get; set; }
 }
 
 file class TpayStatusResponse
@@ -145,12 +148,12 @@ public class TpayServiceCaller : ITpayServiceCaller
 
         var body = new TpayTransactionRequest
         {
-            Amount      = request.Amount,
+            Amount = request.Amount,
             Description = request.Title ?? request.Description ?? "Order",
-            Payer       = new TpayPayer { Email = request.Email ?? string.Empty, Name = $"{request.FirstName} {request.Surname}".Trim() },
-            Callbacks   = new TpayCallbacks
+            Payer = new TpayPayer { Email = request.Email ?? string.Empty, Name = $"{request.FirstName} {request.Surname}".Trim() },
+            Callbacks = new TpayCallbacks
             {
-                PayerUrls    = new TpayPayerUrls { Success = options.ReturnUrl, Error = options.ReturnUrl },
+                PayerUrls = new TpayPayerUrls { Success = options.ReturnUrl, Error = options.ReturnUrl },
                 Notification = new TpayNotification { Url = options.NotifyUrl, Email = request.Email ?? string.Empty },
             },
         };
@@ -158,10 +161,10 @@ public class TpayServiceCaller : ITpayServiceCaller
         if (!string.IsNullOrWhiteSpace(request.PaymentChannel))
             body.Pay = new TpayPay { Channel = request.PaymentChannel };
 
-        var content  = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/transactions", content);
-        var json     = await response.Content.ReadAsStringAsync();
-        var tx       = JsonSerializer.Deserialize<TpayTransactionResponse>(json);
+        var json = await response.Content.ReadAsStringAsync();
+        var tx = JsonSerializer.Deserialize<TpayTransactionResponse>(json);
         return (tx?.TransactionId, tx?.PaymentUrl);
     }
 
@@ -172,23 +175,23 @@ public class TpayServiceCaller : ITpayServiceCaller
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await client.GetAsync($"{options.ServiceUrl}/transactions/{transactionId}");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
-        var json   = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync();
         var status = JsonSerializer.Deserialize<TpayStatusResponse>(json)?.Status;
         return status switch
         {
-            "correct"    => PaymentStatusEnum.Finished,
-            "pending"    => PaymentStatusEnum.Processing,
-            "error"      => PaymentStatusEnum.Rejected,
+            "correct" => PaymentStatusEnum.Finished,
+            "pending" => PaymentStatusEnum.Processing,
+            "error" => PaymentStatusEnum.Rejected,
             "chargeback" => PaymentStatusEnum.Rejected,
-            _            => PaymentStatusEnum.Created,
+            _ => PaymentStatusEnum.Created,
         };
     }
 
     /// <inheritdoc/>
     public bool VerifyNotification(string body, string signature)
     {
-        var input    = body + options.SecurityCode;
-        var hash     = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+        var input = body + options.SecurityCode;
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         var computed = Convert.ToHexString(hash).ToLowerInvariant();
         return string.Equals(computed, signature, StringComparison.OrdinalIgnoreCase);
     }
@@ -202,11 +205,14 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <summary>Inicjalizuje instancję providera.</summary>
     public TpayProvider(ITpayServiceCaller caller) => this.caller = caller;
 
-    public string Key         => "Tpay";
-    public string Name        => "Tpay";
+    /// <inheritdoc/>
+    public string Key => "Tpay";
+    /// <inheritdoc/>
+    public string Name => "Tpay";
     /// <inheritdoc/>
     public string Description => "Operator płatności Tpay — przelewy, BLIK, karty.";
-    public string Url         => "https://tpay.com";
+    /// <inheritdoc/>
+    public string Url => "https://tpay.com";
 
     /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
@@ -230,15 +236,15 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
         return new PaymentResponse
         {
             PaymentUniqueId = transactionId,
-            RedirectUrl     = paymentUrl,
-            PaymentStatus   = PaymentStatusEnum.Created,
+            RedirectUrl = paymentUrl,
+            PaymentStatus = PaymentStatusEnum.Created,
         };
     }
 
     /// <inheritdoc/>
     public async Task<PaymentResponse> GetStatus(string paymentId)
     {
-        var token  = await caller.GetAccessTokenAsync();
+        var token = await caller.GetAccessTokenAsync();
         var status = await caller.GetTransactionStatusAsync(token, paymentId);
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
@@ -248,12 +254,12 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <inheritdoc/>
     public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
-        var body      = request.Body ?? string.Empty;
+        var body = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("X-Signature", out var s) ? s.ToString() : string.Empty;
 
         var payload = new TransactionStatusChangePayload
         {
-            Payload         = body,
+            Payload = body,
             QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
             {
                 { "X-Signature", signature },
@@ -266,9 +272,9 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
         {
             var msg = response.ResponseObject?.ToString() ?? string.Empty;
             if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
                 return PaymentWebhookResult.Fail(msg);
         }
 
@@ -282,7 +288,7 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
-        var sig  = payload.QueryParameters.TryGetValue("X-Signature", out var s) ? s.ToString() : string.Empty;
+        var sig = payload.QueryParameters.TryGetValue("X-Signature", out var s) ? s.ToString() : string.Empty;
 
         if (!caller.VerifyNotification(body, sig))
             return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
@@ -296,14 +302,14 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
             if (root.TryGetProperty("status", out var st) || root.TryGetProperty("tr_status", out st))
                 status = st.GetString() switch
                 {
-                    "paid"       => PaymentStatusEnum.Finished,
-                    "correct"    => PaymentStatusEnum.Finished,
-                    "TRUE"       => PaymentStatusEnum.Finished,
-                    "pending"    => PaymentStatusEnum.Processing,
-                    "error"      => PaymentStatusEnum.Rejected,
+                    "paid" => PaymentStatusEnum.Finished,
+                    "correct" => PaymentStatusEnum.Finished,
+                    "TRUE" => PaymentStatusEnum.Finished,
+                    "pending" => PaymentStatusEnum.Processing,
+                    "error" => PaymentStatusEnum.Rejected,
                     "chargeback" => PaymentStatusEnum.Rejected,
-                    "FALSE"      => PaymentStatusEnum.Rejected,
-                    _            => PaymentStatusEnum.Processing,
+                    "FALSE" => PaymentStatusEnum.Rejected,
+                    _ => PaymentStatusEnum.Processing,
                 };
         }
         catch { /* ignore */ }
@@ -323,7 +329,6 @@ public static class TpayProviderExtensions
         services.AddHttpClient("Tpay");
         services.AddTransient<ITpayServiceCaller, TpayServiceCaller>();
         services.AddTransient<TpayProvider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<TpayProvider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<TpayProvider>());
     }
 }
@@ -339,12 +344,12 @@ public class TpayConfigureOptions : IConfigureOptions<TpayServiceOptions>
     {
         var s = configuration.GetSection(TpayServiceOptions.ConfigurationKey).Get<TpayServiceOptions>();
         if (s is null) return;
-        options.ClientId     = s.ClientId;
+        options.ClientId = s.ClientId;
         options.ClientSecret = s.ClientSecret;
-        options.MerchantId   = s.MerchantId;
-        options.ServiceUrl       = s.ServiceUrl;
-        options.ReturnUrl    = s.ReturnUrl;
-        options.NotifyUrl    = s.NotifyUrl;
+        options.MerchantId = s.MerchantId;
+        options.ServiceUrl = s.ServiceUrl;
+        options.ReturnUrl = s.ReturnUrl;
+        options.NotifyUrl = s.NotifyUrl;
         options.SecurityCode = s.SecurityCode;
     }
 }

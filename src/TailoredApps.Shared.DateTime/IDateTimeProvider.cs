@@ -1,4 +1,4 @@
-﻿namespace TailoredApps.Shared.DateTime
+namespace TailoredApps.Shared.DateTime
 {
     /// <summary>
     /// Simple interface for mocking <see cref="System.DateTime"/> used for unit testing and configuration in mocks time used in tests.

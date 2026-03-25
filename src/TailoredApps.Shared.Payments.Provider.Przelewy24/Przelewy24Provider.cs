@@ -17,35 +17,38 @@ public class Przelewy24ServiceOptions
 {
     /// <summary>Klucz sekcji konfiguracji.</summary>
     public static string ConfigurationKey => "Payments:Providers:Przelewy24";
-    public int    MerchantId { get; set; }
-    public int    PosId      { get; set; }
+    /// <summary>Przelewy24 merchant identifier assigned in the merchant panel.</summary>
+    public int MerchantId { get; set; }
+    /// <summary>Point-of-sale (POS) identifier. Usually equals <see cref="MerchantId"/> for basic accounts.</summary>
+    public int PosId { get; set; }
     /// <summary>ApiKey.</summary>
-    public string ApiKey     { get; set; } = string.Empty;
+    public string ApiKey { get; set; } = string.Empty;
     /// <summary>CrcKey.</summary>
-    public string CrcKey     { get; set; } = string.Empty;
+    public string CrcKey { get; set; } = string.Empty;
     /// <summary>ServiceUrl.</summary>
     public string ServiceUrl { get; set; } = "https://secure.przelewy24.pl";
     /// <summary>ReturnUrl.</summary>
-    public string ReturnUrl  { get; set; } = string.Empty;
+    public string ReturnUrl { get; set; } = string.Empty;
     /// <summary>NotifyUrl.</summary>
-    public string NotifyUrl  { get; set; } = string.Empty;
+    public string NotifyUrl { get; set; } = string.Empty;
 }
 
 // ─── Internal models ─────────────────────────────────────────────────────────
 
 file class P24RegisterRequest
 {
-    [JsonPropertyName("merchantId")]   public int    MerchantId   { get; set; }
-    [JsonPropertyName("posId")]        public int    PosId        { get; set; }
-    [JsonPropertyName("sessionId")]    public string SessionId    { get; set; } = string.Empty;
-    [JsonPropertyName("amount")]       public long   Amount       { get; set; }
-    [JsonPropertyName("currency")]     public string Currency     { get; set; } = string.Empty;
-    [JsonPropertyName("description")]  public string Description  { get; set; } = string.Empty;
-    [JsonPropertyName("email")]        public string Email        { get; set; } = string.Empty;
-    [JsonPropertyName("urlReturn")]    public string UrlReturn    { get; set; } = string.Empty;
-    [JsonPropertyName("urlStatus")]    public string UrlStatus    { get; set; } = string.Empty;
-    [JsonPropertyName("sign")]         public string Sign         { get; set; } = string.Empty;
-    [JsonPropertyName("encoding")]     public string Encoding     { get; set; } = "UTF-8";
+    [JsonPropertyName("merchantId")] public int MerchantId { get; set; }
+    [JsonPropertyName("posId")] public int PosId { get; set; }
+    [JsonPropertyName("sessionId")] public string SessionId { get; set; } = string.Empty;
+    [JsonPropertyName("amount")] public long Amount { get; set; }
+    [JsonPropertyName("currency")] public string Currency { get; set; } = string.Empty;
+    /// <inheritdoc/>
+    [JsonPropertyName("description")] public string Description { get; set; } = string.Empty;
+    [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
+    [JsonPropertyName("urlReturn")] public string UrlReturn { get; set; } = string.Empty;
+    [JsonPropertyName("urlStatus")] public string UrlStatus { get; set; } = string.Empty;
+    [JsonPropertyName("sign")] public string Sign { get; set; } = string.Empty;
+    [JsonPropertyName("encoding")] public string Encoding { get; set; } = "UTF-8";
 }
 
 file class P24RegisterResponse
@@ -60,13 +63,13 @@ file class P24RegisterData
 
 file class P24VerifyRequest
 {
-    [JsonPropertyName("merchantId")]  public int    MerchantId  { get; set; }
-    [JsonPropertyName("posId")]       public int    PosId       { get; set; }
-    [JsonPropertyName("sessionId")]   public string SessionId   { get; set; } = string.Empty;
-    [JsonPropertyName("amount")]      public long   Amount      { get; set; }
-    [JsonPropertyName("currency")]    public string Currency    { get; set; } = string.Empty;
-    [JsonPropertyName("orderId")]     public int    OrderId     { get; set; }
-    [JsonPropertyName("sign")]        public string Sign        { get; set; } = string.Empty;
+    [JsonPropertyName("merchantId")] public int MerchantId { get; set; }
+    [JsonPropertyName("posId")] public int PosId { get; set; }
+    [JsonPropertyName("sessionId")] public string SessionId { get; set; } = string.Empty;
+    [JsonPropertyName("amount")] public long Amount { get; set; }
+    [JsonPropertyName("currency")] public string Currency { get; set; } = string.Empty;
+    [JsonPropertyName("orderId")] public int OrderId { get; set; }
+    [JsonPropertyName("sign")] public string Sign { get; set; } = string.Empty;
 }
 
 // ─── Interface ────────────────────────────────────────────────────────────────
@@ -78,7 +81,12 @@ public interface IPrzelewy24ServiceCaller
     Task<(string? token, string? error)> RegisterTransactionAsync(PaymentRequest request, string sessionId);
     /// <summary>Wywołanie API.</summary>
     Task<PaymentStatusEnum> VerifyTransactionAsync(string sessionId, long amount, string currency, int orderId);
-    /// <summary>Oblicza podpis.</summary>
+    /// <summary>Computes the SHA-384 signature required by Przelewy24 for a transaction.</summary>
+    /// <param name="sessionId">Unique session identifier for the transaction.</param>
+    /// <param name="merchantId">Przelewy24 merchant identifier.</param>
+    /// <param name="amount">Transaction amount in the smallest currency unit (e.g. grosz for PLN).</param>
+    /// <param name="currency">ISO 4217 currency code (e.g. "PLN").</param>
+    /// <returns>Hex-encoded SHA-384 hash of the sign string.</returns>
     string ComputeSign(string sessionId, int merchantId, long amount, string currency);
     /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifyNotification(string body);
@@ -117,16 +125,16 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
 
         var body = new P24RegisterRequest
         {
-            MerchantId  = options.MerchantId,
-            PosId       = options.PosId,
-            SessionId   = sessionId,
-            Amount      = amount,
-            Currency    = request.Currency.ToUpperInvariant(),
+            MerchantId = options.MerchantId,
+            PosId = options.PosId,
+            SessionId = sessionId,
+            Amount = amount,
+            Currency = request.Currency.ToUpperInvariant(),
             Description = request.Title ?? request.Description ?? "Order",
-            Email       = request.Email ?? string.Empty,
-            UrlReturn   = options.ReturnUrl,
-            UrlStatus   = options.NotifyUrl,
-            Sign        = sign,
+            Email = request.Email ?? string.Empty,
+            UrlReturn = options.ReturnUrl,
+            UrlStatus = options.NotifyUrl,
+            Sign = sign,
         };
 
         var content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json");
@@ -144,18 +152,19 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
         var body = new P24VerifyRequest
         {
             MerchantId = options.MerchantId,
-            PosId      = options.PosId,
-            SessionId  = sessionId,
-            Amount     = amount,
-            Currency   = currency.ToUpperInvariant(),
-            OrderId    = orderId,
-            Sign       = sign,
+            PosId = options.PosId,
+            SessionId = sessionId,
+            Amount = amount,
+            Currency = currency.ToUpperInvariant(),
+            OrderId = orderId,
+            Sign = sign,
         };
         var content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json");
         var response = await client.PutAsync($"{options.ServiceUrl}/api/v1/transaction/verify", content);
         return response.IsSuccessStatusCode ? PaymentStatusEnum.Finished : PaymentStatusEnum.Rejected;
     }
 
+    /// <inheritdoc/>
     public string ComputeSign(string sessionId, int merchantId, long amount, string currency)
     {
         var json = JsonSerializer.Serialize(new { sessionId, merchantId, amount, currency, crc = options.CrcKey });
@@ -187,12 +196,12 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
 
             var json = JsonSerializer.Serialize(new
             {
-                sessionId  = sid.GetString(),
-                orderId    = oid.GetInt32(),
+                sessionId = sid.GetString(),
+                orderId = oid.GetInt32(),
                 merchantId = mid.GetInt32(),
-                amount     = amt.GetInt64(),
-                currency   = cur.GetString(),
-                crc        = options.CrcKey,
+                amount = amt.GetInt64(),
+                currency = cur.GetString(),
+                crc = options.CrcKey,
             });
             var expected = Convert.ToHexString(SHA384.HashData(System.Text.Encoding.UTF8.GetBytes(json))).ToLowerInvariant();
             return string.Equals(expected, receivedSign, StringComparison.OrdinalIgnoreCase);
@@ -212,15 +221,18 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
     /// <summary>Inicjalizuje instancję providera.</summary>
     public Przelewy24Provider(IPrzelewy24ServiceCaller caller, IOptions<Przelewy24ServiceOptions> options)
     {
-        this.caller  = caller;
+        this.caller = caller;
         this.options = options.Value;
     }
 
-    public string Key         => "Przelewy24";
-    public string Name        => "Przelewy24";
+    /// <inheritdoc/>
+    public string Key => "Przelewy24";
+    /// <inheritdoc/>
+    public string Name => "Przelewy24";
     /// <inheritdoc/>
     public string Description => "Operator płatności online Przelewy24 — przelewy, BLIK, karty.";
-    public string Url         => "https://przelewy24.pl";
+    /// <inheritdoc/>
+    public string Url => "https://przelewy24.pl";
 
     /// <inheritdoc/>
     public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
@@ -246,8 +258,8 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
         return new PaymentResponse
         {
             PaymentUniqueId = sessionId,
-            RedirectUrl     = $"{options.ServiceUrl}/trnRequest/{token}",
-            PaymentStatus   = PaymentStatusEnum.Created,
+            RedirectUrl = $"{options.ServiceUrl}/trnRequest/{token}",
+            PaymentStatus = PaymentStatusEnum.Created,
         };
     }
 
@@ -264,7 +276,7 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
 
         var payload = new TransactionStatusChangePayload
         {
-            Payload         = body,
+            Payload = body,
             QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>(),
         };
 
@@ -274,9 +286,9 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
         {
             var msg = response.ResponseObject?.ToString() ?? string.Empty;
             if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign",      StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac",      StringComparison.OrdinalIgnoreCase))
+                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
                 return PaymentWebhookResult.Fail(msg);
         }
 
@@ -295,13 +307,13 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
 
         try
         {
-            var doc  = JsonDocument.Parse(body);
+            var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
 
-            if (!root.TryGetProperty("sessionId",  out var sid)  ||
-                !root.TryGetProperty("amount",      out var amt)  ||
-                !root.TryGetProperty("currency",    out var cur)  ||
-                !root.TryGetProperty("orderId",     out var oid))
+            if (!root.TryGetProperty("sessionId", out var sid) ||
+                !root.TryGetProperty("amount", out var amt) ||
+                !root.TryGetProperty("currency", out var cur) ||
+                !root.TryGetProperty("orderId", out var oid))
                 return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Missing fields" };
 
             var status = await caller.VerifyTransactionAsync(
@@ -332,7 +344,6 @@ public static class Przelewy24ProviderExtensions
         services.AddHttpClient("Przelewy24");
         services.AddTransient<IPrzelewy24ServiceCaller, Przelewy24ServiceCaller>();
         services.AddTransient<Przelewy24Provider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<Przelewy24Provider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<Przelewy24Provider>());
     }
 }
@@ -349,11 +360,11 @@ public class Przelewy24ConfigureOptions : IConfigureOptions<Przelewy24ServiceOpt
         var s = configuration.GetSection(Przelewy24ServiceOptions.ConfigurationKey).Get<Przelewy24ServiceOptions>();
         if (s is null) return;
         options.MerchantId = s.MerchantId;
-        options.PosId      = s.PosId;
-        options.ApiKey     = s.ApiKey;
-        options.CrcKey     = s.CrcKey;
+        options.PosId = s.PosId;
+        options.ApiKey = s.ApiKey;
+        options.CrcKey = s.CrcKey;
         options.ServiceUrl = s.ServiceUrl;
-        options.ReturnUrl  = s.ReturnUrl;
-        options.NotifyUrl  = s.NotifyUrl;
+        options.ReturnUrl = s.ReturnUrl;
+        options.NotifyUrl = s.NotifyUrl;
     }
 }

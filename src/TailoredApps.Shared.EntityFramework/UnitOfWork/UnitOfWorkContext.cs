@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-
 using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
 
 namespace TailoredApps.Shared.EntityFramework.UnitOfWork

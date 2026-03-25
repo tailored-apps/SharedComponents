@@ -51,9 +51,9 @@ public class StripeServiceCaller : IStripeServiceCaller
                     Quantity = 1,
                 }
             ],
-            Mode         = "payment",
-            SuccessUrl   = options.SuccessUrl,
-            CancelUrl    = options.CancelUrl,
+            Mode = "payment",
+            SuccessUrl = options.SuccessUrl,
+            CancelUrl = options.CancelUrl,
             CustomerEmail = request.Email,
             Metadata = new Dictionary<string, string>
             {
@@ -120,6 +120,6 @@ public class StripeServiceCaller : IStripeServiceCaller
         {
             "PLN" => ["card", "blik", "p24"],
             "EUR" => ["card", "sepa_debit"],
-            _     => ["card"],
+            _ => ["card"],
         };
 }

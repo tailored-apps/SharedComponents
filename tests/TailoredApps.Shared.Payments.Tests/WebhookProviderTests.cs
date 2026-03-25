@@ -30,7 +30,7 @@ public class AdyenWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "HmacSignature", "hmac_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -49,7 +49,7 @@ public class AdyenWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "HmacSignature", "hmac_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -67,7 +67,7 @@ public class AdyenWebhookTests
 
         var result = await Build(mock.Object).HandleWebhookAsync(new PaymentWebhookRequest
         {
-            Body    = "{}",
+            Body = "{}",
             Headers = new Dictionary<string, StringValues> { { "HmacSignature", "bad" } },
         });
 
@@ -84,7 +84,7 @@ public class AdyenWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "HmacSignature", "hmac_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -185,7 +185,7 @@ public class PayNowWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -204,7 +204,7 @@ public class PayNowWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -222,7 +222,7 @@ public class PayNowWebhookTests
 
         var result = await Build(mock.Object).HandleWebhookAsync(new PaymentWebhookRequest
         {
-            Body    = """{"status":"CONFIRMED"}""",
+            Body = """{"status":"CONFIRMED"}""",
             Headers = new Dictionary<string, StringValues> { { "Signature", "bad" } },
         });
 
@@ -239,7 +239,7 @@ public class PayNowWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -264,7 +264,7 @@ public class PayUWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "OpenPayU-Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -283,7 +283,7 @@ public class PayUWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "OpenPayU-Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -301,7 +301,7 @@ public class PayUWebhookTests
 
         var result = await Build(mock.Object).HandleWebhookAsync(new PaymentWebhookRequest
         {
-            Body    = """{"order":{"status":"COMPLETED"}}""",
+            Body = """{"order":{"status":"COMPLETED"}}""",
             Headers = new Dictionary<string, StringValues> { { "OpenPayU-Signature", "bad" } },
         });
 
@@ -318,7 +318,7 @@ public class PayUWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "OpenPayU-Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -345,7 +345,7 @@ public class Przelewy24WebhookTests
             .ReturnsAsync(PaymentStatusEnum.Finished);
 
         var request = new PaymentWebhookRequest { Body = body };
-        var result  = await Build(mock.Object).HandleWebhookAsync(request);
+        var result = await Build(mock.Object).HandleWebhookAsync(request);
 
         Assert.True(result.Success);
         Assert.False(result.Ignored);
@@ -362,7 +362,7 @@ public class Przelewy24WebhookTests
             .ReturnsAsync(PaymentStatusEnum.Rejected);
 
         var request = new PaymentWebhookRequest { Body = body };
-        var result  = await Build(mock.Object).HandleWebhookAsync(request);
+        var result = await Build(mock.Object).HandleWebhookAsync(request);
 
         Assert.True(result.Success);
         Assert.False(result.Ignored);
@@ -398,7 +398,7 @@ public class RevolutWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues>
             {
                 { "Revolut-Request-Timestamp", "ts_123"    },
@@ -421,7 +421,7 @@ public class RevolutWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues>
             {
                 { "Revolut-Request-Timestamp", "ts_123"    },
@@ -443,7 +443,7 @@ public class RevolutWebhookTests
 
         var result = await Build(mock.Object).HandleWebhookAsync(new PaymentWebhookRequest
         {
-            Body    = """{"event":"ORDER_COMPLETED"}""",
+            Body = """{"event":"ORDER_COMPLETED"}""",
             Headers = new Dictionary<string, StringValues>
             {
                 { "Revolut-Request-Timestamp", "ts_123" },
@@ -464,7 +464,7 @@ public class RevolutWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues>
             {
                 { "Revolut-Request-Timestamp", "ts_123"    },
@@ -493,7 +493,7 @@ public class TpayWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "X-Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -512,7 +512,7 @@ public class TpayWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "X-Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
@@ -530,7 +530,7 @@ public class TpayWebhookTests
 
         var result = await Build(mock.Object).HandleWebhookAsync(new PaymentWebhookRequest
         {
-            Body    = """{"status":"paid"}""",
+            Body = """{"status":"paid"}""",
             Headers = new Dictionary<string, StringValues> { { "X-Signature", "bad" } },
         });
 
@@ -547,7 +547,7 @@ public class TpayWebhookTests
 
         var request = new PaymentWebhookRequest
         {
-            Body    = body,
+            Body = body,
             Headers = new Dictionary<string, StringValues> { { "X-Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);

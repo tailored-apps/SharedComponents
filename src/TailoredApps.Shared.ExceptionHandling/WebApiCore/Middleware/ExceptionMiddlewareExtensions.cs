@@ -1,7 +1,7 @@
+using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using System.Net;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
 
 namespace TailoredApps.Shared.ExceptionHandling.WebApiCore.Middleware
