@@ -1,0 +1,2638 @@
+{
+  "TailoredApps.Shared.Querying.dll": {
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Querying/PagedAndSortedQuery.cs": {
+      "TailoredApps.Shared.Querying.PagedAndSortedQuery`1": {
+        "System.Nullable`1<System.Int32> TailoredApps.Shared.Querying.PagedAndSortedQuery`1::get_Page()": {
+          "Lines": {
+            "10": 0
+          },
+          "Branches": []
+        },
+        "System.Nullable`1<System.Int32> TailoredApps.Shared.Querying.PagedAndSortedQuery`1::get_Count()": {
+          "Lines": {
+            "13": 0
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.Querying.PagedAndSortedQuery`1::get_IsPagingSpecified()": {
+          "Lines": {
+            "16": 0
+          },
+          "Branches": [
+            {
+              "Line": 16,
+              "Offset": 14,
+              "EndOffset": 16,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 16,
+              "Offset": 14,
+              "EndOffset": 31,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.String TailoredApps.Shared.Querying.PagedAndSortedQuery`1::get_SortField()": {
+          "Lines": {
+            "19": 0
+          },
+          "Branches": []
+        },
+        "System.Nullable`1<TailoredApps.Shared.Querying.SortDirection> TailoredApps.Shared.Querying.PagedAndSortedQuery`1::get_SortDir()": {
+          "Lines": {
+            "22": 0
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.Querying.PagedAndSortedQuery`1::get_IsSortingSpecified()": {
+          "Lines": {
+            "25": 0
+          },
+          "Branches": [
+            {
+              "Line": 25,
+              "Offset": 11,
+              "EndOffset": 13,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 25,
+              "Offset": 11,
+              "EndOffset": 28,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "TQuery TailoredApps.Shared.Querying.PagedAndSortedQuery`1::get_Filter()": {
+          "Lines": {
+            "28": 0
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.Querying.PagedAndSortedQuery`1::IsSortBy(System.String)": {
+          "Lines": {
+            "33": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Querying/QueryMap.cs": {
+      "TailoredApps.Shared.Querying.QueryMap`2": {
+        "System.Linq.Expressions.Expression`1<System.Func`2<TSource,System.Object>> TailoredApps.Shared.Querying.QueryMap`2::get_Source()": {
+          "Lines": {
+            "23": 0
+          },
+          "Branches": []
+        },
+        "System.Linq.Expressions.Expression`1<System.Func`2<TDestination,System.Object>> TailoredApps.Shared.Querying.QueryMap`2::get_Destination()": {
+          "Lines": {
+            "26": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.Querying.QueryMap`2::.ctor(System.Linq.Expressions.Expression`1<System.Func`2<TDestination,System.Object>>,System.Linq.Expressions.Expression`1<System.Func`2<TSource,System.Object>>)": {
+          "Lines": {
+            "16": 0,
+            "18": 0,
+            "19": 0,
+            "20": 0
+          },
+          "Branches": []
+        }
+      }
+    }
+  },
+  "TailoredApps.Shared.EntityFramework.dll": {
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/InMemoryDbConnection.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection": {
+        "System.Data.Common.DbTransaction TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::BeginDbTransaction(System.Data.IsolationLevel)": {
+          "Lines": {
+            "20": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::Close()": {
+          "Lines": {
+            "29": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::ChangeDatabase(System.String)": {
+          "Lines": {
+            "38": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::Open()": {
+          "Lines": {
+            "47": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::get_ConnectionString()": {
+          "Lines": {
+            "56": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::set_ConnectionString(System.String)": {
+          "Lines": {
+            "57": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::get_Database()": {
+          "Lines": {
+            "64": 0
+          },
+          "Branches": []
+        },
+        "System.Data.ConnectionState TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::get_State()": {
+          "Lines": {
+            "70": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::get_DataSource()": {
+          "Lines": {
+            "76": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::get_ServerVersion()": {
+          "Lines": {
+            "82": 0
+          },
+          "Branches": []
+        },
+        "System.Data.Common.DbCommand TailoredApps.Shared.EntityFramework.UnitOfWork.InMemoryDbConnection::CreateDbCommand()": {
+          "Lines": {
+            "90": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Transaction.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Transaction": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Transaction::Commit()": {
+          "Lines": {
+            "28": 0,
+            "29": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Transaction::Rollback()": {
+          "Lines": {
+            "36": 0,
+            "37": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Transaction::Dispose()": {
+          "Lines": {
+            "44": 0,
+            "45": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Transaction::.ctor(Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction)": {
+          "Lines": {
+            "18": 0,
+            "20": 0,
+            "21": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/UnitOfWork.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1": {
+        "T TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::get_DataProvider()": {
+          "Lines": {
+            "24": 0
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::get_HasOpenTransaction()": {
+          "Lines": {
+            "29": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::StartNewTransactionIfNeeded()": {
+          "Lines": {
+            "49": 4,
+            "51": 4,
+            "53": 4
+          },
+          "Branches": [
+            {
+              "Line": 49,
+              "Offset": 6,
+              "EndOffset": 8,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 4
+            },
+            {
+              "Line": 49,
+              "Offset": 6,
+              "EndOffset": 31,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 4
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::BeginTransactionManually()": {
+          "Lines": {
+            "58": 0,
+            "59": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::CommitTransaction()": {
+          "Lines": {
+            "64": 2,
+            "66": 2,
+            "68": 2,
+            "69": 2,
+            "70": 2,
+            "73": 2,
+            "74": 2
+          },
+          "Branches": [
+            {
+              "Line": 66,
+              "Offset": 13,
+              "EndOffset": 15,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 2
+            },
+            {
+              "Line": 66,
+              "Offset": 13,
+              "EndOffset": 44,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 2
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::CommitTransaction(System.Data.IsolationLevel)": {
+          "Lines": {
+            "79": 1,
+            "81": 1,
+            "82": 1
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::RollbackTransaction()": {
+          "Lines": {
+            "87": 2,
+            "88": 2,
+            "90": 2,
+            "91": 2,
+            "93": 0,
+            "94": 0,
+            "95": 0,
+            "96": 0
+          },
+          "Branches": [
+            {
+              "Line": 90,
+              "Offset": 28,
+              "EndOffset": 30,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 2
+            },
+            {
+              "Line": 90,
+              "Offset": 28,
+              "EndOffset": 31,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::RollbackTransaction(System.Data.IsolationLevel)": {
+          "Lines": {
+            "101": 1,
+            "103": 1,
+            "104": 1
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::SaveChanges()": {
+          "Lines": {
+            "109": 3,
+            "111": 3,
+            "113": 3,
+            "115": 3,
+            "117": 3
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::SetIsolationLevel(System.Data.IsolationLevel)": {
+          "Lines": {
+            "137": 0,
+            "138": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::OnStateChange(System.Object,System.Data.StateChangeEventArgs)": {
+          "Lines": {
+            "142": 0,
+            "144": 0,
+            "145": 0,
+            "147": 0,
+            "150": 0,
+            "151": 0,
+            "153": 0,
+            "154": 0,
+            "156": 0,
+            "157": 0,
+            "159": 0,
+            "161": 0,
+            "162": 0,
+            "164": 0
+          },
+          "Branches": [
+            {
+              "Line": 142,
+              "Offset": 7,
+              "EndOffset": 12,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 142,
+              "Offset": 19,
+              "EndOffset": 24,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 54,
+              "EndOffset": 56,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 62,
+              "EndOffset": 64,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 62,
+              "EndOffset": 74,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 54,
+              "EndOffset": 87,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 70,
+              "EndOffset": 100,
+              "Path": 1,
+              "Ordinal": 9,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 70,
+              "EndOffset": 113,
+              "Path": 0,
+              "Ordinal": 8,
+              "Hits": 0
+            },
+            {
+              "Line": 142,
+              "Offset": 7,
+              "EndOffset": 179,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 142,
+              "Offset": 19,
+              "EndOffset": 179,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::Dispose()": {
+          "Lines": {
+            "171": 0,
+            "172": 0,
+            "173": 0
+          },
+          "Branches": [
+            {
+              "Line": 171,
+              "Offset": 7,
+              "EndOffset": 9,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 171,
+              "Offset": 7,
+              "EndOffset": 12,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1::.ctor(TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkContext,T,TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IHooksManager)": {
+          "Lines": {
+            "37": 6,
+            "39": 6,
+            "40": 6,
+            "41": 6,
+            "42": 6,
+            "43": 6,
+            "44": 6,
+            "45": 6
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1/<SaveChangesAsync>d__17": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWork`1/<SaveChangesAsync>d__17::MoveNext()": {
+          "Lines": {
+            "123": 1,
+            "125": 1,
+            "127": 1,
+            "129": 1,
+            "131": 1,
+            "132": 1
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/UnitOfWorkContext.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkContext`1": {
+        "System.Data.Common.DbConnection TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkContext`1::GetDbConnection()": {
+          "Lines": {
+            "38": 0,
+            "39": 0,
+            "41": 0
+          },
+          "Branches": [
+            {
+              "Line": 38,
+              "Offset": 31,
+              "EndOffset": 33,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 38,
+              "Offset": 31,
+              "EndOffset": 39,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.ITransaction TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkContext`1::BeginTransaction()": {
+          "Lines": {
+            "50": 0,
+            "52": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.ITransaction TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkContext`1::BeginTransaction(System.Data.IsolationLevel)": {
+          "Lines": {
+            "62": 0,
+            "64": 0
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkContext`1::SaveChanges()": {
+          "Lines": {
+            "73": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkContext`1::DiscardChanges()": {
+          "Lines": {
+            "91": 0,
+            "93": 0,
+            "95": 0
+          },
+          "Branches": [
+            {
+              "Line": 91,
+              "Offset": 54,
+              "EndOffset": 34,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 91,
+              "Offset": 54,
+              "EndOffset": 56,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkContext`1::.ctor(T)": {
+          "Lines": {
+            "26": 0,
+            "28": 0,
+            "29": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkContext`1/<SaveChangesAsync>d__6": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkContext`1/<SaveChangesAsync>d__6::MoveNext()": {
+          "Lines": {
+            "83": 0,
+            "84": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/UnitOfWorkHooksManager.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkHooksManager": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkHooksManager::ExecutePreSaveChangesHooks()": {
+          "Lines": {
+            "17": 1
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkHooksManager::ExecutePostSaveChangesHooks()": {
+          "Lines": {
+            "20": 1
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkHooksManager::ExecuteTransactionRollbackHooks()": {
+          "Lines": {
+            "23": 1
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkHooksManager::ExecuteTransactionCommitHooks()": {
+          "Lines": {
+            "26": 1
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkHooksManager::ExecuteHooksOfType()": {
+          "Lines": {
+            "30": 32,
+            "31": 4,
+            "32": 4
+          },
+          "Branches": [
+            {
+              "Line": 30,
+              "Offset": 12,
+              "EndOffset": 14,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 4
+            },
+            {
+              "Line": 30,
+              "Offset": 12,
+              "EndOffset": 37,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 4
+            },
+            {
+              "Line": 30,
+              "Offset": 67,
+              "EndOffset": 50,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 4
+            },
+            {
+              "Line": 30,
+              "Offset": 67,
+              "EndOffset": 69,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 4
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkHooksManager::.ctor(System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IHook>)": {
+          "Lines": {
+            "11": 1,
+            "13": 1,
+            "14": 1
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/UnitOfWorkOptionsBuilder.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder": {
+        "Microsoft.Extensions.DependencyInjection.IServiceCollection TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::get_Services()": {
+          "Lines": {
+            "15": 8
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithTransactionCommitHook()": {
+          "Lines": {
+            "18": 1
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithTransactionCommitHook(System.Func`2<System.IServiceProvider,THook>)": {
+          "Lines": {
+            "21": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithTransactionRollbackHook()": {
+          "Lines": {
+            "24": 1
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithTransactionRollbackHook(System.Func`2<System.IServiceProvider,THook>)": {
+          "Lines": {
+            "27": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithPreSaveChangesHook()": {
+          "Lines": {
+            "30": 1
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithPreSaveChangesHook(System.Func`2<System.IServiceProvider,THook>)": {
+          "Lines": {
+            "33": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithPostSaveChangesHook()": {
+          "Lines": {
+            "36": 1
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithPostSaveChangesHook(System.Func`2<System.IServiceProvider,THook>)": {
+          "Lines": {
+            "39": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithHook()": {
+          "Lines": {
+            "43": 4,
+            "44": 4
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::WithHook(System.Func`2<System.IServiceProvider,THook>)": {
+          "Lines": {
+            "50": 0,
+            "51": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.UnitOfWorkOptionsBuilder::.ctor(Microsoft.Extensions.DependencyInjection.IServiceCollection)": {
+          "Lines": {
+            "10": 2,
+            "12": 2,
+            "13": 2
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.ServiceCollectionExtensions": {
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.ServiceCollectionExtensions::AddUnitOfWork(Microsoft.Extensions.DependencyInjection.IServiceCollection)": {
+          "Lines": {
+            "77": 2,
+            "78": 2,
+            "79": 2,
+            "80": 2,
+            "81": 2,
+            "82": 2,
+            "84": 2
+          },
+          "Branches": [
+            {
+              "Line": 77,
+              "Offset": 7,
+              "EndOffset": 9,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 77,
+              "Offset": 7,
+              "EndOffset": 34,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 2
+            },
+            {
+              "Line": 80,
+              "Offset": 61,
+              "EndOffset": 63,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 1
+            },
+            {
+              "Line": 80,
+              "Offset": 61,
+              "EndOffset": 86,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 2
+            },
+            {
+              "Line": 81,
+              "Offset": 99,
+              "EndOffset": 101,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 1
+            },
+            {
+              "Line": 81,
+              "Offset": 99,
+              "EndOffset": 124,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 2
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/UnitOfWorkAuditContext.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.UnitOfWorkAuditContext": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.UnitOfWorkAuditContext::CollectChanges()": {
+          "Lines": {
+            "27": 2,
+            "28": 2,
+            "29": 2
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.UnitOfWorkAuditContext::PostCollectChanges()": {
+          "Lines": {
+            "33": 12,
+            "34": 4,
+            "35": 2,
+            "36": 2
+          },
+          "Branches": [
+            {
+              "Line": 33,
+              "Offset": 36,
+              "EndOffset": 14,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 4
+            },
+            {
+              "Line": 33,
+              "Offset": 36,
+              "EndOffset": 38,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 2
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.UnitOfWorkAuditContext::DiscardChanges()": {
+          "Lines": {
+            "40": 3,
+            "41": 3,
+            "42": 3
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.UnitOfWorkAuditContext::AuditChanges()": {
+          "Lines": {
+            "46": 2,
+            "47": 1,
+            "49": 2,
+            "50": 2
+          },
+          "Branches": [
+            {
+              "Line": 46,
+              "Offset": 12,
+              "EndOffset": 14,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 46,
+              "Offset": 12,
+              "EndOffset": 72,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 2
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.UnitOfWorkAuditContext::InsertOrUpdate(TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IAuditEntityEntry)": {
+          "Lines": {
+            "54": 4,
+            "55": 4,
+            "57": 4,
+            "58": 0,
+            "60": 4,
+            "61": 0,
+            "63": 4,
+            "64": 4
+          },
+          "Branches": [
+            {
+              "Line": 57,
+              "Offset": 20,
+              "EndOffset": 22,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 57,
+              "Offset": 20,
+              "EndOffset": 28,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 4
+            },
+            {
+              "Line": 60,
+              "Offset": 40,
+              "EndOffset": 42,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 60,
+              "Offset": 40,
+              "EndOffset": 51,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 4
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.UnitOfWorkAuditContext::Update(System.String,TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IInternalEntityChange)": {
+          "Lines": {
+            "68": 0,
+            "69": 0,
+            "70": 0,
+            "72": 0,
+            "73": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.UnitOfWorkAuditContext::.ctor(TailoredApps.Shared.EntityFramework.Interfaces.Audit.IEntityChangesAuditor,TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IAuditChangesCollector)": {
+          "Lines": {
+            "16": 3,
+            "18": 3,
+            "19": 3,
+            "21": 3,
+            "22": 3,
+            "23": 3
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Hooks/PostSaveChangesAuditHook.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.PostSaveChangesAuditHook": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.PostSaveChangesAuditHook::Execute()": {
+          "Lines": {
+            "16": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.PostSaveChangesAuditHook::.ctor(TailoredApps.Shared.EntityFramework.Interfaces.Audit.IUnitOfWorkAuditContext)": {
+          "Lines": {
+            "10": 4,
+            "12": 4,
+            "13": 4
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Hooks/PreSaveChangesHook.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.PreSaveChangesAuditHook": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.PreSaveChangesAuditHook::Execute()": {
+          "Lines": {
+            "16": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.PreSaveChangesAuditHook::.ctor(TailoredApps.Shared.EntityFramework.Interfaces.Audit.IUnitOfWorkAuditContext)": {
+          "Lines": {
+            "10": 4,
+            "12": 4,
+            "13": 4
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Hooks/TransactionCommitAuditHook.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.TransactionCommitAuditHook": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.TransactionCommitAuditHook::Execute()": {
+          "Lines": {
+            "16": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.TransactionCommitAuditHook::.ctor(TailoredApps.Shared.EntityFramework.Interfaces.Audit.IUnitOfWorkAuditContext)": {
+          "Lines": {
+            "10": 4,
+            "12": 4,
+            "13": 4
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Hooks/TransactionRollbackAuditHook.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.TransactionRollbackAuditHook": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.TransactionRollbackAuditHook::Execute()": {
+          "Lines": {
+            "16": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Hooks.TransactionRollbackAuditHook::.ctor(TailoredApps.Shared.EntityFramework.Interfaces.Audit.IUnitOfWorkAuditContext)": {
+          "Lines": {
+            "10": 4,
+            "12": 4,
+            "13": 4
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Extensions/AuditEntityEntryExtensions.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions.AuditEntityEntryExtensions": {
+        "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IInternalEntityChange TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions.AuditEntityEntryExtensions::CreateInternalEntityChange(TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IAuditEntityEntry)": {
+          "Lines": {
+            "12": 8,
+            "13": 8,
+            "14": 8,
+            "15": 8,
+            "16": 8,
+            "17": 8,
+            "18": 8,
+            "20": 8
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions.AuditEntityEntryExtensions::.cctor()": {
+          "Lines": {
+            "8": 1
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Extensions/EntityStateExtensions.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions.EntityStateExtensions": {
+        "TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions.EntityStateExtensions::ToAuditEntityState(Microsoft.EntityFrameworkCore.EntityState)": {
+          "Lines": {
+            "23": 0,
+            "24": 0,
+            "25": 0,
+            "27": 0
+          },
+          "Branches": [
+            {
+              "Line": 23,
+              "Offset": 21,
+              "EndOffset": 23,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 23,
+              "Offset": 21,
+              "EndOffset": 134,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "Microsoft.EntityFrameworkCore.EntityState TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions.EntityStateExtensions::ToEfCoreEntityState(TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState)": {
+          "Lines": {
+            "40": 0,
+            "41": 0,
+            "42": 0,
+            "44": 0
+          },
+          "Branches": [
+            {
+              "Line": 40,
+              "Offset": 21,
+              "EndOffset": 23,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 40,
+              "Offset": 21,
+              "EndOffset": 134,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Exceptions/InvalidAuditConfigurationException.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Exceptions.InvalidAuditConfigurationException": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Exceptions.InvalidAuditConfigurationException::.ctor(System.String)": {
+          "Lines": {
+            "18": 0,
+            "20": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Configuration/AuditSettings.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Configuration.AuditSettings": {
+        "System.Collections.Generic.IEnumerable`1<System.Type> TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Configuration.AuditSettings::get_TypesToCollect()": {
+          "Lines": {
+            "10": 3
+          },
+          "Branches": []
+        },
+        "System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState> TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Configuration.AuditSettings::get_EntityStatesToCollect()": {
+          "Lines": {
+            "11": 3
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Configuration/UnitOfWorkOptionsBuilderExtensions.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Configuration.UnitOfWorkOptionsBuilderExtensions": {
+        "TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Configuration.UnitOfWorkOptionsBuilderExtensions::WithUnitOfWorkAudit(TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork.IUnitOfWorkOptionsBuilder,System.Action`1<TailoredApps.Shared.EntityFramework.Interfaces.Audit.IAuditSettings>)": {
+          "Lines": {
+            "39": 3,
+            "41": 1,
+            "42": 1,
+            "43": 1,
+            "45": 1,
+            "46": 1,
+            "47": 1,
+            "48": 1,
+            "50": 1,
+            "51": 1,
+            "52": 1,
+            "53": 1,
+            "55": 1
+          },
+          "Branches": [
+            {
+              "Line": 39,
+              "Offset": 1,
+              "EndOffset": 3,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 39,
+              "Offset": 1,
+              "EndOffset": 14,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 1
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Configuration.UnitOfWorkOptionsBuilderExtensions::ValidateSettings(TailoredApps.Shared.EntityFramework.Interfaces.Audit.IAuditSettings)": {
+          "Lines": {
+            "60": 1,
+            "61": 0,
+            "63": 1,
+            "64": 0,
+            "65": 1
+          },
+          "Branches": [
+            {
+              "Line": 60,
+              "Offset": 11,
+              "EndOffset": 13,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 60,
+              "Offset": 11,
+              "EndOffset": 24,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 1
+            },
+            {
+              "Line": 63,
+              "Offset": 35,
+              "EndOffset": 37,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 63,
+              "Offset": 35,
+              "EndOffset": 48,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 1
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Changes/AuditChangesCollector.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditChangesCollector`1": {
+        "System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IAuditEntityEntry> TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditChangesCollector`1::CollectChanges()": {
+          "Lines": {
+            "29": 0,
+            "31": 0,
+            "32": 0,
+            "34": 0,
+            "35": 0,
+            "36": 0,
+            "37": 0,
+            "38": 0
+          },
+          "Branches": [
+            {
+              "Line": 31,
+              "Offset": 52,
+              "EndOffset": 54,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 31,
+              "Offset": 52,
+              "EndOffset": 77,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 34,
+              "Offset": 131,
+              "EndOffset": 133,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 34,
+              "Offset": 131,
+              "EndOffset": 152,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 35,
+              "Offset": 32,
+              "EndOffset": 34,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 35,
+              "Offset": 32,
+              "EndOffset": 52,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditChangesCollector`1::.ctor(TDbContext,TailoredApps.Shared.EntityFramework.Interfaces.Audit.IAuditSettings)": {
+          "Lines": {
+            "21": 2,
+            "23": 2,
+            "24": 2,
+            "25": 2
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Changes/AuditEntityEntry.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry": {
+        "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IAuditEntityEntry TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry::Create(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry)": {
+          "Lines": {
+            "84": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry::get_EntityState()": {
+          "Lines": {
+            "87": 0
+          },
+          "Branches": []
+        },
+        "System.Object TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry::get_CurrentEntity()": {
+          "Lines": {
+            "90": 0
+          },
+          "Branches": []
+        },
+        "System.Object TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry::get_OriginalEntity()": {
+          "Lines": {
+            "93": 0
+          },
+          "Branches": []
+        },
+        "System.Type TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry::get_EntityType()": {
+          "Lines": {
+            "96": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry::GetPrimaryKeyStringIdentifier()": {
+          "Lines": {
+            "101": 0,
+            "102": 0,
+            "103": 0,
+            "105": 0
+          },
+          "Branches": []
+        },
+        "System.Collections.Generic.Dictionary`2<System.String,System.Object> TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry::GetPrimaryKeys()": {
+          "Lines": {
+            "111": 0,
+            "113": 0,
+            "115": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry::SetPrimaryKeys()": {
+          "Lines": {
+            "121": 0,
+            "123": 0,
+            "125": 0,
+            "127": 0,
+            "128": 0,
+            "130": 0
+          },
+          "Branches": [
+            {
+              "Line": 123,
+              "Offset": 99,
+              "EndOffset": 29,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 123,
+              "Offset": 99,
+              "EndOffset": 101,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.AuditEntityEntry::.ctor(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry)": {
+          "Lines": {
+            "69": 0,
+            "71": 0,
+            "72": 0,
+            "73": 0,
+            "74": 0,
+            "75": 0,
+            "76": 0
+          },
+          "Branches": [
+            {
+              "Line": 71,
+              "Offset": 9,
+              "EndOffset": 11,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 71,
+              "Offset": 9,
+              "EndOffset": 23,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Changes/EntityChangeUpdateContext.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityChangeUpdateContext": {
+        "System.Collections.Generic.IDictionary`2<System.String,TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IInternalEntityChange> TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityChangeUpdateContext::get_EntityChangesDictionary()": {
+          "Lines": {
+            "42": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityChangeUpdateContext::get_Identifier()": {
+          "Lines": {
+            "45": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IInternalEntityChange TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityChangeUpdateContext::get_CollectedEntityChange()": {
+          "Lines": {
+            "48": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IInternalEntityChange TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityChangeUpdateContext::get_ExistingEntityChange()": {
+          "Lines": {
+            "51": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityChangeUpdateContext::.ctor(System.Collections.Generic.IDictionary`2<System.String,TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IInternalEntityChange>,TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IInternalEntityChange,System.String)": {
+          "Lines": {
+            "28": 0,
+            "29": 0,
+            "31": 0,
+            "32": 0,
+            "33": 0,
+            "35": 0,
+            "36": 0,
+            "38": 0,
+            "39": 0
+          },
+          "Branches": [
+            {
+              "Line": 31,
+              "Offset": 9,
+              "EndOffset": 11,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 31,
+              "Offset": 9,
+              "EndOffset": 23,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 32,
+              "Offset": 31,
+              "EndOffset": 33,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 32,
+              "Offset": 31,
+              "EndOffset": 45,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 33,
+              "Offset": 53,
+              "EndOffset": 55,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 33,
+              "Offset": 53,
+              "EndOffset": 67,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            },
+            {
+              "Line": 35,
+              "Offset": 81,
+              "EndOffset": 83,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 0
+            },
+            {
+              "Line": 35,
+              "Offset": 81,
+              "EndOffset": 94,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Changes/EntityChangeUpdateOperationFactory.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityChangeUpdateOperationFactory": {
+        "System.Action`1<TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.IEntityChangeUpdateContext> TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityChangeUpdateOperationFactory::Create(TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityStateTransition)": {
+          "Lines": {
+            "79": 0,
+            "80": 0,
+            "82": 0
+          },
+          "Branches": [
+            {
+              "Line": 79,
+              "Offset": 13,
+              "EndOffset": 15,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 79,
+              "Offset": 13,
+              "EndOffset": 17,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityChangeUpdateOperationFactory::.cctor()": {
+          "Lines": {
+            "15": 0,
+            "16": 0,
+            "17": 0,
+            "18": 0,
+            "19": 0,
+            "20": 0,
+            "21": 0,
+            "22": 0,
+            "23": 0,
+            "24": 0,
+            "25": 0,
+            "26": 0,
+            "27": 0,
+            "28": 0,
+            "29": 0,
+            "30": 0,
+            "31": 0,
+            "32": 0,
+            "33": 0,
+            "34": 0,
+            "35": 0,
+            "36": 0,
+            "37": 0,
+            "38": 0,
+            "39": 0,
+            "40": 0,
+            "41": 0,
+            "42": 0,
+            "43": 0,
+            "44": 0,
+            "45": 0,
+            "46": 0,
+            "47": 0,
+            "48": 0,
+            "49": 0,
+            "50": 0,
+            "51": 0,
+            "52": 0,
+            "53": 0,
+            "54": 0,
+            "55": 0,
+            "56": 0,
+            "57": 0,
+            "58": 0,
+            "59": 0,
+            "60": 0,
+            "61": 0,
+            "62": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Changes/EntityStateTransition.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityStateTransition": {
+        "TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityStateTransition::get_From()": {
+          "Lines": {
+            "14": 117
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityStateTransition::get_To()": {
+          "Lines": {
+            "15": 117
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityStateTransition::GetHashCode()": {
+          "Lines": {
+            "21": 90,
+            "22": 90,
+            "23": 90,
+            "24": 90
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityStateTransition::Equals(System.Object)": {
+          "Lines": {
+            "30": 9,
+            "31": 0,
+            "33": 9
+          },
+          "Branches": [
+            {
+              "Line": 30,
+              "Offset": 8,
+              "EndOffset": 10,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 30,
+              "Offset": 8,
+              "EndOffset": 12,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 9
+            },
+            {
+              "Line": 33,
+              "Offset": 24,
+              "EndOffset": 26,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 9
+            },
+            {
+              "Line": 33,
+              "Offset": 24,
+              "EndOffset": 41,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.EntityStateTransition::.ctor(TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState,TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState)": {
+          "Lines": {
+            "8": 99,
+            "10": 99,
+            "11": 99,
+            "12": 99
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/UnitOfWork/Audit/Changes/InternalEntityChange.cs": {
+      "TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.InternalEntityChange`1": {
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.InternalEntityChange`1::SetCurrentEntity(System.Object)": {
+          "Lines": {
+            "25": 2
+          },
+          "Branches": [
+            {
+              "Line": 25,
+              "Offset": 18,
+              "EndOffset": 20,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 25,
+              "Offset": 18,
+              "EndOffset": 85,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 1
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.InternalEntityChange`1::SetOriginalEntity(System.Object)": {
+          "Lines": {
+            "28": 2
+          },
+          "Branches": [
+            {
+              "Line": 28,
+              "Offset": 18,
+              "EndOffset": 20,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 28,
+              "Offset": 18,
+              "EndOffset": 85,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 1
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.InternalEntityChange`1::SetEntityState(TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState)": {
+          "Lines": {
+            "31": 0
+          },
+          "Branches": []
+        },
+        "System.Object TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.InternalEntityChange`1::GetCurrentEntity()": {
+          "Lines": {
+            "34": 1
+          },
+          "Branches": []
+        },
+        "System.Object TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.InternalEntityChange`1::GetOriginalEntity()": {
+          "Lines": {
+            "37": 1
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.InternalEntityChange`1::GetAuditEntityState()": {
+          "Lines": {
+            "40": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes.InternalEntityChange`1::.ctor(TEntity,TEntity,System.Collections.Generic.Dictionary`2<System.String,System.Object>,TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState)": {
+          "Lines": {
+            "20": 8,
+            "22": 8
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/Querying/PagedResult.cs": {
+      "TailoredApps.Shared.EntityFramework.Querying.PagedResult`1": {
+        "TailoredApps.Shared.EntityFramework.Querying.PagedResult`1<T> TailoredApps.Shared.EntityFramework.Querying.PagedResult`1::GetPagedResult()": {
+          "Lines": {
+            "65": 0,
+            "68": 0,
+            "69": 0,
+            "70": 0
+          },
+          "Branches": [
+            {
+              "Line": 65,
+              "Offset": 6,
+              "EndOffset": 8,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 65,
+              "Offset": 6,
+              "EndOffset": 19,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 68,
+              "Offset": 31,
+              "EndOffset": 33,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 68,
+              "Offset": 31,
+              "EndOffset": 45,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 69,
+              "Offset": 74,
+              "EndOffset": 76,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 69,
+              "Offset": 74,
+              "EndOffset": 89,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Collections.Generic.ICollection`1<T> TailoredApps.Shared.EntityFramework.Querying.PagedResult`1::get_Results()": {
+          "Lines": {
+            "81": 0
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.EntityFramework.Querying.PagedResult`1::get_Count()": {
+          "Lines": {
+            "86": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Querying.PagedResult`1<T> TailoredApps.Shared.EntityFramework.Querying.PagedResult`1::get_Empty()": {
+          "Lines": {
+            "91": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Querying.PagedResult`1::.ctor(TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1<T>)": {
+          "Lines": {
+            "26": 0,
+            "28": 0,
+            "29": 0,
+            "30": 0
+          },
+          "Branches": [
+            {
+              "Line": 28,
+              "Offset": 7,
+              "EndOffset": 9,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 28,
+              "Offset": 7,
+              "EndOffset": 20,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Querying.PagedResult`1::.ctor(System.Collections.Generic.List`1<T>,System.Nullable`1<System.Int32>)": {
+          "Lines": {
+            "40": 0,
+            "42": 0,
+            "43": 0,
+            "44": 0
+          },
+          "Branches": [
+            {
+              "Line": 42,
+              "Offset": 9,
+              "EndOffset": 11,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 42,
+              "Offset": 9,
+              "EndOffset": 23,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 43,
+              "Offset": 38,
+              "EndOffset": 40,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 43,
+              "Offset": 38,
+              "EndOffset": 48,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Querying.PagedResult`1::.ctor()": {
+          "Lines": {
+            "73": 0,
+            "75": 0,
+            "76": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Querying.PagedResult`1::.cctor()": {
+          "Lines": {
+            "18": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.EntityFramework.Querying.PagedResult`1/<GetPagedResultAsync>d__4": {
+        "System.Void TailoredApps.Shared.EntityFramework.Querying.PagedResult`1/<GetPagedResultAsync>d__4::MoveNext()": {
+          "Lines": {
+            "53": 0,
+            "54": 0,
+            "55": 0,
+            "56": 0
+          },
+          "Branches": [
+            {
+              "Line": 53,
+              "Offset": 28,
+              "EndOffset": 30,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 53,
+              "Offset": 28,
+              "EndOffset": 142,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 54,
+              "Offset": 173,
+              "EndOffset": 175,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 54,
+              "Offset": 173,
+              "EndOffset": 188,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/Querying/PagingQuery.cs": {
+      "TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1": {
+        "TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1<T> TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::GetPagingQuery()": {
+          "Lines": {
+            "66": 0,
+            "67": 0,
+            "69": 0,
+            "70": 0,
+            "71": 0,
+            "73": 0
+          },
+          "Branches": [
+            {
+              "Line": 67,
+              "Offset": 28,
+              "EndOffset": 30,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 67,
+              "Offset": 28,
+              "EndOffset": 121,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Linq.IQueryable`1<T> TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::get_Query()": {
+          "Lines": {
+            "79": 0
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::get_PageNumber()": {
+          "Lines": {
+            "84": 0
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::get_PageCount()": {
+          "Lines": {
+            "89": 0
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::get_TotalCount()": {
+          "Lines": {
+            "94": 0
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::get_IsMoreDataToFetch()": {
+          "Lines": {
+            "102": 0
+          },
+          "Branches": [
+            {
+              "Line": 102,
+              "Offset": 7,
+              "EndOffset": 9,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 102,
+              "Offset": 21,
+              "EndOffset": 23,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 102,
+              "Offset": 21,
+              "EndOffset": 48,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 102,
+              "Offset": 7,
+              "EndOffset": 50,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Collections.Generic.IEnumerator`1<T> TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::GetEnumerator()": {
+          "Lines": {
+            "106": 0
+          },
+          "Branches": []
+        },
+        "System.Collections.IEnumerator TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::System.Collections.IEnumerable.GetEnumerator()": {
+          "Lines": {
+            "109": 0
+          },
+          "Branches": []
+        },
+        "System.Linq.Expressions.Expression TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::get_Expression()": {
+          "Lines": {
+            "112": 0
+          },
+          "Branches": []
+        },
+        "System.Type TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::get_ElementType()": {
+          "Lines": {
+            "115": 0
+          },
+          "Branches": []
+        },
+        "System.Linq.IQueryProvider TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::get_Provider()": {
+          "Lines": {
+            "118": 0
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::get_InternalPageNumber()": {
+          "Lines": {
+            "120": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1::.ctor(System.Linq.IQueryable`1<T>,TailoredApps.Shared.Querying.IPagingParameters)": {
+          "Lines": {
+            "27": 0,
+            "29": 0,
+            "30": 0,
+            "32": 0,
+            "33": 0,
+            "35": 0,
+            "36": 0,
+            "38": 0
+          },
+          "Branches": [
+            {
+              "Line": 29,
+              "Offset": 7,
+              "EndOffset": 9,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 29,
+              "Offset": 7,
+              "EndOffset": 20,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 32,
+              "Offset": 21,
+              "EndOffset": 23,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 32,
+              "Offset": 21,
+              "EndOffset": 34,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        }
+      },
+      "TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1/<GetPagingQueryAsync>d__2": {
+        "System.Void TailoredApps.Shared.EntityFramework.Querying.PagingQuery`1/<GetPagingQueryAsync>d__2::MoveNext()": {
+          "Lines": {
+            "48": 0,
+            "49": 0,
+            "51": 0,
+            "52": 0,
+            "53": 0,
+            "55": 0,
+            "56": 0
+          },
+          "Branches": [
+            {
+              "Line": 49,
+              "Offset": 145,
+              "EndOffset": 147,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 49,
+              "Offset": 145,
+              "EndOffset": 240,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/Querying/QueryFilterExtensions.cs": {
+      "TailoredApps.Shared.EntityFramework.Querying.QueryFilterExtensions": {
+        "System.Linq.IQueryable`1<T> TailoredApps.Shared.EntityFramework.Querying.QueryFilterExtensions::Filter(System.Linq.IQueryable`1<T>,System.Linq.Expressions.Expression`1<System.Func`2<T,System.Boolean>>)": {
+          "Lines": {
+            "29": 0,
+            "30": 0,
+            "32": 0
+          },
+          "Branches": [
+            {
+              "Line": 29,
+              "Offset": 1,
+              "EndOffset": 3,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 29,
+              "Offset": 1,
+              "EndOffset": 5,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/Querying/QueryPagingExtension.cs": {
+      "TailoredApps.Shared.EntityFramework.Querying.QueryPagingExtension": {
+        "TailoredApps.Shared.EntityFramework.Querying.PagedResult`1<T> TailoredApps.Shared.EntityFramework.Querying.QueryPagingExtension::Paging(System.Linq.IQueryable`1<T>,TailoredApps.Shared.Querying.IPagingParameters)": {
+          "Lines": {
+            "23": 0,
+            "25": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Querying.PagedResult`1<TDst> TailoredApps.Shared.EntityFramework.Querying.QueryPagingExtension::Project(TailoredApps.Shared.EntityFramework.Querying.PagedResult`1<TSrc>,System.Func`2<TSrc,TDst>)": {
+          "Lines": {
+            "55": 0,
+            "56": 0,
+            "58": 0,
+            "60": 0
+          },
+          "Branches": [
+            {
+              "Line": 55,
+              "Offset": 1,
+              "EndOffset": 3,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 55,
+              "Offset": 1,
+              "EndOffset": 14,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 56,
+              "Offset": 15,
+              "EndOffset": 17,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 56,
+              "Offset": 15,
+              "EndOffset": 28,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        }
+      },
+      "TailoredApps.Shared.EntityFramework.Querying.QueryPagingExtension/<PagingAsync>d__1`1": {
+        "System.Void TailoredApps.Shared.EntityFramework.Querying.QueryPagingExtension/<PagingAsync>d__1`1::MoveNext()": {
+          "Lines": {
+            "39": 0,
+            "40": 0,
+            "41": 0,
+            "42": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/Querying/QuerySortingExtensions.cs": {
+      "TailoredApps.Shared.EntityFramework.Querying.QuerySortingExtensions": {
+        "System.Linq.IQueryable`1<T> TailoredApps.Shared.EntityFramework.Querying.QuerySortingExtensions::ApplySorting(System.Linq.IQueryable`1<T>,TailoredApps.Shared.Querying.ISortingParameters)": {
+          "Lines": {
+            "28": 0,
+            "29": 0,
+            "30": 0
+          },
+          "Branches": [
+            {
+              "Line": 28,
+              "Offset": 1,
+              "EndOffset": 3,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 28,
+              "Offset": 1,
+              "EndOffset": 11,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 28,
+              "Offset": 9,
+              "EndOffset": 11,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 28,
+              "Offset": 9,
+              "EndOffset": 13,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Linq.IQueryable`1<T> TailoredApps.Shared.EntityFramework.Querying.QuerySortingExtensions::ApplySorting(System.Linq.IQueryable`1<T>,System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.Querying.ISortingParameters>)": {
+          "Lines": {
+            "46": 0,
+            "47": 0,
+            "49": 0,
+            "50": 0,
+            "51": 0
+          },
+          "Branches": [
+            {
+              "Line": 46,
+              "Offset": 1,
+              "EndOffset": 3,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 46,
+              "Offset": 1,
+              "EndOffset": 6,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 46,
+              "Offset": 13,
+              "EndOffset": 15,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 46,
+              "Offset": 13,
+              "EndOffset": 38,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 46,
+              "Offset": 49,
+              "EndOffset": 51,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 46,
+              "Offset": 49,
+              "EndOffset": 62,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            },
+            {
+              "Line": 49,
+              "Offset": 70,
+              "EndOffset": 72,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 0
+            },
+            {
+              "Line": 49,
+              "Offset": 70,
+              "EndOffset": 74,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Linq.IQueryable`1<T> TailoredApps.Shared.EntityFramework.Querying.QuerySortingExtensions::AdditionOperation(System.Linq.IQueryable`1<T>,System.Func`2<System.Linq.IQueryable`1<T>,System.Linq.IQueryable`1<T>>)": {
+          "Lines": {
+            "64": 0
+          },
+          "Branches": [
+            {
+              "Line": 64,
+              "Offset": 1,
+              "EndOffset": 3,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 64,
+              "Offset": 1,
+              "EndOffset": 6,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 64,
+              "Offset": 14,
+              "EndOffset": 16,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 64,
+              "Offset": 14,
+              "EndOffset": 18,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.String TailoredApps.Shared.EntityFramework.Querying.QuerySortingExtensions::GenerateSortQuery(System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.Querying.ISortingParameters>)": {
+          "Lines": {
+            "68": 0,
+            "69": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.EntityFramework.Querying.QuerySortingExtensions::GenerateSortQuery(TailoredApps.Shared.Querying.ISortingParameters)": {
+          "Lines": {
+            "73": 0,
+            "74": 0,
+            "75": 0
+          },
+          "Branches": [
+            {
+              "Line": 73,
+              "Offset": 15,
+              "EndOffset": 17,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 73,
+              "Offset": 15,
+              "EndOffset": 24,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/Logging/EFLoggerToConsole.cs": {
+      "TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole": {
+        "Microsoft.Extensions.Logging.ILogger TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole::CreateLogger(System.String)": {
+          "Lines": {
+            "25": 0,
+            "27": 0,
+            "30": 0
+          },
+          "Branches": [
+            {
+              "Line": 25,
+              "Offset": 21,
+              "EndOffset": 23,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 25,
+              "Offset": 21,
+              "EndOffset": 29,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole::Dispose()": {
+          "Lines": {
+            "37": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole/EFConsoleLogger": {
+        "System.Boolean TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole/EFConsoleLogger::IsEnabled(Microsoft.Extensions.Logging.LogLevel)": {
+          "Lines": {
+            "50": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole/EFConsoleLogger::Log(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,TState,System.Exception,System.Func`3<TState,System.Exception,System.String>)": {
+          "Lines": {
+            "58": 0,
+            "59": 0
+          },
+          "Branches": []
+        },
+        "System.IDisposable TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole/EFConsoleLogger::BeginScope(TState)": {
+          "Lines": {
+            "66": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole/NullLogger": {
+        "System.Boolean TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole/NullLogger::IsEnabled(Microsoft.Extensions.Logging.LogLevel)": {
+          "Lines": {
+            "81": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole/NullLogger::Log(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,TState,System.Exception,System.Func`3<TState,System.Exception,System.String>)": {
+          "Lines": {
+            "90": 0,
+            "92": 0
+          },
+          "Branches": []
+        },
+        "System.IDisposable TailoredApps.Shared.EntityFramework.Logging.EFLoggerToConsole/NullLogger::BeginScope(TState)": {
+          "Lines": {
+            "99": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/Interfaces/Audit/EntityChange.cs": {
+      "TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange": {
+        "System.Type TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange::get_EntityType()": {
+          "Lines": {
+            "24": 9
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange::get_State()": {
+          "Lines": {
+            "29": 12
+          },
+          "Branches": []
+        },
+        "System.Collections.Generic.Dictionary`2<System.String,System.Object> TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange::get_PrimaryKeys()": {
+          "Lines": {
+            "44": 9
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange::.ctor(TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState)": {
+          "Lines": {
+            "16": 11,
+            "18": 11,
+            "19": 11
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange`1": {
+        "TEntity TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange`1::get_OriginalEntity()": {
+          "Lines": {
+            "72": 12
+          },
+          "Branches": []
+        },
+        "System.Object TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange`1::get_Original()": {
+          "Lines": {
+            "75": 0
+          },
+          "Branches": []
+        },
+        "TEntity TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange`1::get_CurrentEntity()": {
+          "Lines": {
+            "80": 13
+          },
+          "Branches": []
+        },
+        "System.Object TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange`1::get_Current()": {
+          "Lines": {
+            "83": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.EntityFramework.Interfaces.Audit.EntityChange`1::.ctor(TEntity,TEntity,System.Collections.Generic.Dictionary`2<System.String,System.Object>,TailoredApps.Shared.EntityFramework.Interfaces.Audit.AuditEntityState)": {
+          "Lines": {
+            "61": 11,
+            "63": 11,
+            "64": 10,
+            "65": 9,
+            "66": 9,
+            "67": 9
+          },
+          "Branches": [
+            {
+              "Line": 63,
+              "Offset": 16,
+              "EndOffset": 18,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 63,
+              "Offset": 16,
+              "EndOffset": 30,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 10
+            },
+            {
+              "Line": 64,
+              "Offset": 43,
+              "EndOffset": 45,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 1
+            },
+            {
+              "Line": 64,
+              "Offset": 43,
+              "EndOffset": 57,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 9
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.EntityFramework/Extensions/EntityTypeBuilderExtension.cs": {
+      "TailoredApps.Shared.EntityFramework.Extensions.EntityTypeBuilderExtension": {
+        "System.Void TailoredApps.Shared.EntityFramework.Extensions.EntityTypeBuilderExtension::AddIActivity(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder`1<T>)": {
+          "Lines": {
+            "22": 0,
+            "23": 0,
+            "24": 0,
+            "25": 0,
+            "26": 0
+          },
+          "Branches": []
+        }
+      }
+    }
+  }
+}
