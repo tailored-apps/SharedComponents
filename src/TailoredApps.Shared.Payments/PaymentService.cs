@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,18 +6,32 @@ using System.Threading.Tasks;
 
 namespace TailoredApps.Shared.Payments
 {
+    /// <summary>
+    /// Default implementation of <see cref="IPaymentService"/>.
+    /// Resolves all registered <see cref="IPaymentProvider"/> instances at construction time
+    /// and routes calls to the appropriate provider by key.
+    /// </summary>
     public class PaymentService : IPaymentService
     {
         private readonly ICollection<IPaymentProvider> paymentService;
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="PaymentService"/> and resolves
+        /// all registered <see cref="IPaymentProvider"/> instances from the service provider.
+        /// </summary>
+        /// <param name="serviceProvider">The application service provider.</param>
         public PaymentService(IServiceProvider serviceProvider)
         {
             this.paymentService = serviceProvider.GetServices<IPaymentProvider>().ToList();
         }
 
+        /// <inheritdoc/>
         public async Task<ICollection<PaymentProvider>> GetProviders()
         {
             return await Task.Run(() => paymentService.Select(x => new PaymentProvider { Id = x.Key, Name = x.Name }).ToList());
         }
+
+        /// <inheritdoc/>
         public async Task<ICollection<PaymentChannel>> GetChannels(string providerId, string currency)
         {
             var channels = await paymentService.Single(x => x.Key == providerId).GetPaymentChannels(currency);
@@ -32,18 +46,22 @@ namespace TailoredApps.Shared.Payments
 
             }).ToList();
         }
+
+        /// <inheritdoc/>
         public async Task<PaymentResponse> RegisterPayment(PaymentRequest request)
         {
             var provider = paymentService.Single(x => x.Key == request.PaymentProvider);
             return await provider.RequestPayment(request);
         }
 
+        /// <inheritdoc/>
         public async Task<PaymentResponse> GetStatus(string providerId, string paymentId)
         {
             var provider = paymentService.Single(x => x.Key == providerId);
             return await provider.GetStatus(paymentId);
         }
 
+        /// <inheritdoc/>
         public async Task<PaymentResponse> TransactionStatusChange(string providerId, TransactionStatusChangePayload payload)
         {
             payload.ProviderId = providerId;

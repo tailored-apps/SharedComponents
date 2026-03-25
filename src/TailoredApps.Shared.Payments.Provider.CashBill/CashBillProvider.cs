@@ -33,6 +33,11 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
 
         public string Url => "https://cashbill.pl";
 
+        /// <summary>
+        /// Returns available payment channels from CashBill filtered by the requested currency.
+        /// </summary>
+        /// <param name="currency">ISO 4217 currency code (e.g. "PLN").</param>
+        /// <returns>Collection of <see cref="PaymentChannel"/> objects supported for the given currency.</returns>
         public async Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
         {
             var channels = await cashbillService.GetPaymentChannels(currency);
@@ -48,6 +53,14 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             ).ToList();
         }
 
+        /// <summary>
+        /// Initiates a new CashBill payment transaction and returns the provider redirect URL.
+        /// </summary>
+        /// <param name="request">Payment details including amount, currency, and payer data.</param>
+        /// <returns>
+        /// <see cref="PaymentResponse"/> with <see cref="PaymentResponse.RedirectUrl"/> pointing to
+        /// the CashBill hosted payment page and the initial payment status.
+        /// </returns>
         public async Task<PaymentResponse> RequestPayment(Payments.PaymentRequest request)
         {
             var payment = await cashbillService.GeneratePayment(new PaymentRequest
@@ -74,6 +87,11 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         }
 
 
+        /// <summary>
+        /// Retrieves the current status of a CashBill payment by its transaction ID.
+        /// </summary>
+        /// <param name="paymentId">CashBill transaction identifier.</param>
+        /// <returns>Current <see cref="PaymentResponse"/> including the normalised payment status.</returns>
         public async Task<PaymentResponse> GetStatus(string paymentId)
         {
             var payment = await cashbillService.GetPaymentStatus(paymentId);
@@ -102,6 +120,13 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             return key;
         }
 
+        /// <summary>
+        /// Processes a legacy back-channel status-change notification from CashBill.
+        /// Reads <c>cmd</c>, <c>args</c> (transaction ID) and <c>sign</c> from the query parameters,
+        /// then fetches the current payment status from the CashBill API.
+        /// </summary>
+        /// <param name="payload">Payload containing query parameters sent by CashBill.</param>
+        /// <returns>Resolved <see cref="PaymentResponse"/> with the current payment status.</returns>
         public async Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
         {
             var request = new TransactionStatusChanged
@@ -186,14 +211,24 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
 
 
 
+    /// <summary>
+    /// Binds <see cref="CashbillServiceOptions"/> from the application configuration
+    /// at the section defined by <see cref="CashbillServiceOptions.ConfigurationKey"/>.
+    /// </summary>
     public class CashbillConfigureOptions : IConfigureOptions<CashbillServiceOptions>
     {
         private readonly IConfiguration configuration;
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="CashbillConfigureOptions"/>.
+        /// </summary>
+        /// <param name="configuration">Application configuration instance.</param>
         public CashbillConfigureOptions(IConfiguration configuration)
         {
             this.configuration = configuration;
         }
 
+        /// <inheritdoc/>
         public void Configure(CashbillServiceOptions options)
         {
             var section = configuration.GetSection(CashbillServiceOptions.ConfigurationKey).Get<CashbillServiceOptions>();
