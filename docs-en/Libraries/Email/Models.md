@@ -5,9 +5,9 @@
 
 ---
 
-## Opis
+## Description
 
-Lekki pakiet zawierający wyłącznie model danych `MailMessage` — reprezentację wiadomości e-mail. Wydzielenie modelu do osobnego pakietu pozwala innym bibliotekom (np. `TailoredApps.Shared.Email.Office365`) zależeć tylko od modelu, bez ciągnięcia za sobą całej implementacji SMTP.
+A lightweight package containing only the `MailMessage` data model — a representation of an email message. Separating the model into its own package allows other libraries (e.g. `TailoredApps.Shared.Email.Office365`) to depend only on the model without pulling in the full SMTP implementation.
 
 ---
 

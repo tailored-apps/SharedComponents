@@ -5,13 +5,13 @@
 
 ---
 
-## Opis
+## Description
 
-Biblioteka dostarcza gotowy zestaw **pipeline behaviors** dla MediatR, które pokrywają najczęstsze potrzeby aplikacji enterprise: logowanie, walidację, cache'owanie, fallback i retry. Zamiast ręcznie implementować te cross-cutting concerns w każdym handlerze, rejestrujesz je raz przez `PipelineRegistration` i masz je dla wszystkich requestów.
+This library provides a ready-made set of **pipeline behaviors** for MediatR that cover the most common enterprise application needs: logging, validation, caching, fallback, and retry. Instead of manually implementing these cross-cutting concerns in every handler, register them once via `PipelineRegistration` and they apply to all requests.
 
-Behaviory działają w kolejności: **Logging → Validation → Caching → Fallback → Retry → Handler**.
+Behaviors execute in order: **Logging → Validation → Caching → Fallback → Retry → Handler**.
 
-Biblioteka wspiera mechanizm auto-discovery (przez Scrutor) — cache policies, fallback handlers i retry konfiguracje są skanowane i rejestrowane automatycznie ze wskazanego assembly.
+The library supports auto-discovery (via Scrutor) — cache policies, fallback handlers, and retry configurations are automatically scanned and registered from the specified assembly.
 
 ---
 

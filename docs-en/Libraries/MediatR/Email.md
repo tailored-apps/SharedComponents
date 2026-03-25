@@ -5,11 +5,11 @@
 
 ---
 
-## Opis
+## Description
 
-Integracja wysyłania emaili z pipeline MediatR. Biblioteka dostarcza command `SendMail` oraz jego handler `SendMailCommandHandler`, dzięki czemu wysyłka emaila staje się naturalną częścią architektury CQRS — możesz wysłać email przez `_mediator.Send(new SendMail { ... })` bez bezpośredniej zależności od `IEmailProvider`.
+MediatR pipeline integration for email sending. The library provides the `SendMail` command and its `SendMailCommandHandler`, making email sending a natural part of CQRS architecture — you can send an email via `_mediator.Send(new SendMail { ... })` without a direct dependency on `IEmailProvider`.
 
-To podejście umożliwia łatwe wzbogacenie procesu wysyłki o logowanie, retry i auditing z poziomu pipeline behaviors, bez modyfikowania handlera.
+This approach makes it easy to enrich the sending process with logging, retry, and auditing from the pipeline behaviors level, without modifying the handler.
 
 ---
 

@@ -5,15 +5,15 @@
 
 ---
 
-## Opis
+## Description
 
-Integracja Unit of Work z ASP.NET Core Web API — eliminuje boilerplate polegający na ręcznym commicie i rollbacku transakcji w każdym kontrolerze. Biblioteka dostarcza `TransactionFilterAttribute` — globalny ASP.NET Core action filter, który automatycznie:
+ASP.NET Core Web API integration for Unit of Work — eliminates the boilerplate of manually committing and rolling back transactions in every controller. The library provides `TransactionFilterAttribute` — a global ASP.NET Core action filter that automatically:
 
-- **Otwiera transakcję** przed wykonaniem akcji kontrolera
-- **Commituje** po pomyślnym wykonaniu
-- **Rollbackuje** w przypadku wyjątku
+- **Opens a transaction** before the controller action executes
+- **Commits** on successful completion
+- **Rolls back** on exception
 
-Opcjonalnie możesz udekorować akcję atrybutem `[TransactionIsolationLevel(IsolationLevel.Serializable)]`, aby ustawić konkretny poziom izolacji dla danego endpointu.
+Optionally decorate an action with `[TransactionIsolationLevel(IsolationLevel.Serializable)]` to set a specific isolation level for that endpoint.
 
 ---
 

@@ -5,15 +5,15 @@
 
 ---
 
-## Opis
+## Description
 
-Biblioteka dostarcza kompletną implementację wzorca **Unit of Work** na bazie Entity Framework Core. Rozwiązuje problem niekontrolowanego zarządzania transakcjami w aplikacjach wielowarstwowych — zamiast bezpośrednio wywoływać `SaveChanges()` w każdym repozytorium, masz jeden punkt kontroli (`IUnitOfWork`), który zarządza cyklem życia transakcji.
+This library provides a complete implementation of the **Unit of Work** pattern on top of Entity Framework Core. It solves the problem of uncontrolled transaction management in multi-layer applications — instead of calling `SaveChanges()` directly in each repository, you have a single control point (`IUnitOfWork`) managing the transaction lifecycle.
 
-Kluczowe możliwości:
-- **Transakcje** z konfigurowalnymi poziomami izolacji
-- **Auditing** — automatyczne śledzenie zmian encji (kto i co zmienił)
-- **Hooks** — `IHook` do wykonywania kodu przed/po `SaveChanges` lub commit/rollback transakcji
-- Obsługa **InMemory** provider na potrzeby testów
+Key capabilities:
+- **Transactions** with configurable isolation levels
+- **Auditing** — automatic entity change tracking (who changed what)
+- **Hooks** — `IHook` to execute code before/after `SaveChanges` or transaction commit/rollback
+- **InMemory** provider support for testing
 
 ---
 

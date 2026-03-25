@@ -2,7 +2,7 @@
 site_name: "Tailored Apps. .NET Shared Components"
 site_description: "Reusable components for webapps"
 site_author: "Tailored Apps."
-site_url: "https://shared.tailoredapps.pl/"
+site_url: "https://shared.tailoredapps.pl/en/"
 
 # Copyright
 copyright: "&copy; 2022 Tailored Apps"
@@ -10,10 +10,11 @@ copyright: "&copy; 2022 Tailored Apps"
 # Repository
 repo_name: "SharedComponents"
 repo_url: "https://github.com/tailored-apps/SharedComponents"
-edit_uri: "https://github.com/tailored-apps/SharedComponents/edit/master/docs"
+edit_uri: "https://github.com/tailored-apps/SharedComponents/edit/master/docs-en"
 
-# Configuration
-docs_dir: "docs"
+# Directories
+docs_dir: "docs-en"
+site_dir: "site/en"
 extra_css:
   - stylesheets/extra.css
 
@@ -50,36 +51,28 @@ nav:
               - Tpay: Libraries/Payments/Providers/Tpay.md
       - Querying: Libraries/Querying/index.md
   - Contributing: contributing.md
-  - Changelog: Libraries/Readme.md
 
 # Configuration
 theme:
   name: material
-  language: pl
+  language: en
   features:
     - announce.dismiss
     - content.action.edit
     - content.action.view
     - content.code.annotate
     - content.code.copy
-    # - content.tabs.link
     - content.tooltips
-    # - header.autohide
-    # - navigation.expand
     - navigation.footer
     - navigation.indexes
-    # - navigation.instant
-    # - navigation.prune
     - navigation.sections
     - navigation.tabs
-    # - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
     - search.highlight
     - search.share
     - search.suggest
     - toc.follow
-    # - toc.integrate
   palette:
     - scheme: default
       primary: indigo
@@ -105,10 +98,6 @@ plugins:
   - search:
       separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
 
-# Hooks
-#hooks:
-#  - material/.overrides/hooks/translations.py
-
 # Customization
 extra:
   annotate:
@@ -126,15 +115,7 @@ extra:
     - name: English
       link: /en/
       lang: en
-  alternate:
-    - name: Polski
-      link: /
-      lang: pl
-    - name: English
-      link: /en/
-      lang: en
 
-# Extensions
 markdown_extensions:
   - abbr
   - admonition
