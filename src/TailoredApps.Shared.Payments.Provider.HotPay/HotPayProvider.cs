@@ -213,7 +213,6 @@ public static class HotPayProviderExtensions
         services.AddHttpClient("HotPay");
         services.AddTransient<IHotPayServiceCaller, HotPayServiceCaller>();
         services.AddTransient<HotPayProvider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<HotPayProvider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<HotPayProvider>());
     }
 }

@@ -269,7 +269,6 @@ public static class PayNowProviderExtensions
         services.AddHttpClient("PayNow");
         services.AddTransient<IPayNowServiceCaller, PayNowServiceCaller>();
         services.AddTransient<PayNowProvider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<PayNowProvider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<PayNowProvider>());
     }
 }

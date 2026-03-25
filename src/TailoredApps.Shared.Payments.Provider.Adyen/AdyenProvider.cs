@@ -346,7 +346,6 @@ public static class AdyenProviderExtensions
         services.AddHttpClient("Adyen");
         services.AddTransient<IAdyenServiceCaller, AdyenServiceCaller>();
         services.AddTransient<AdyenProvider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<AdyenProvider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<AdyenProvider>());
     }
 }

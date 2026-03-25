@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Linq;
 
 namespace TailoredApps.Shared.Payments
 {
@@ -32,8 +33,17 @@ namespace TailoredApps.Shared.Payments
 
         private IPaymentOptionsBuilder WithPaymentProvider<TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider
         {
-
             Services.AddTransient<IPaymentProvider, TPaymentProvider>();
+
+            // If the provider also supports webhooks and is not already registered
+            // as IWebhookPaymentProvider (e.g. by Register*Provider()), register it here too.
+            if (typeof(IWebhookPaymentProvider).IsAssignableFrom(typeof(TPaymentProvider))
+                && !Services.Any(d => d.ServiceType == typeof(IWebhookPaymentProvider)
+                                      && d.ImplementationType == typeof(TPaymentProvider)))
+            {
+                Services.AddTransient<IWebhookPaymentProvider, TPaymentProvider>();
+            }
+
             return this;
         }
 
@@ -41,6 +51,14 @@ namespace TailoredApps.Shared.Payments
             where TPaymentProvider : class, IPaymentProvider
         {
             Services.AddTransient<IPaymentProvider, TPaymentProvider>(implementationFactory);
+
+            if (typeof(IWebhookPaymentProvider).IsAssignableFrom(typeof(TPaymentProvider))
+                && !Services.Any(d => d.ServiceType == typeof(IWebhookPaymentProvider)
+                                      && d.ImplementationType == typeof(TPaymentProvider)))
+            {
+                Services.AddTransient<IWebhookPaymentProvider, TPaymentProvider>();
+            }
+
             return this;
         }
     }

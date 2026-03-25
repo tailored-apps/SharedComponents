@@ -253,7 +253,6 @@ public static class StripeProviderExtensions
         // Register as both IPaymentProvider (for PaymentService aggregator)
         // and IWebhookPaymentProvider (for webhook dispatch).
         services.AddTransient<StripeProvider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<StripeProvider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<StripeProvider>());
     }
 }

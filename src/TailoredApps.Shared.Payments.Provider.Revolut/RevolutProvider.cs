@@ -254,7 +254,6 @@ public static class RevolutProviderExtensions
         services.AddHttpClient("Revolut");
         services.AddTransient<IRevolutServiceCaller, RevolutServiceCaller>();
         services.AddTransient<RevolutProvider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<RevolutProvider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<RevolutProvider>());
     }
 }

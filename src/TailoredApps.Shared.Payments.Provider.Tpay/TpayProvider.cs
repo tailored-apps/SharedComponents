@@ -323,7 +323,6 @@ public static class TpayProviderExtensions
         services.AddHttpClient("Tpay");
         services.AddTransient<ITpayServiceCaller, TpayServiceCaller>();
         services.AddTransient<TpayProvider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<TpayProvider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<TpayProvider>());
     }
 }

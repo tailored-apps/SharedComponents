@@ -204,7 +204,6 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
 
             // Register as both IPaymentProvider and IWebhookPaymentProvider
             services.AddTransient<CashBillProvider>();
-            services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<CashBillProvider>());
             services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<CashBillProvider>());
         }
     }

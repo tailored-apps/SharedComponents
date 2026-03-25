@@ -332,7 +332,6 @@ public static class Przelewy24ProviderExtensions
         services.AddHttpClient("Przelewy24");
         services.AddTransient<IPrzelewy24ServiceCaller, Przelewy24ServiceCaller>();
         services.AddTransient<Przelewy24Provider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<Przelewy24Provider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<Przelewy24Provider>());
     }
 }

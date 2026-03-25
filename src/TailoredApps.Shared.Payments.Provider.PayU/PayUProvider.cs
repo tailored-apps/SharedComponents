@@ -376,7 +376,6 @@ public static class PayUProviderExtensions
         services.AddHttpClient("PayU");
         services.AddTransient<IPayUServiceCaller, PayUServiceCaller>();
         services.AddTransient<PayUProvider>();
-        services.AddTransient<IPaymentProvider>(sp => sp.GetRequiredService<PayUProvider>());
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<PayUProvider>());
     }
 }
