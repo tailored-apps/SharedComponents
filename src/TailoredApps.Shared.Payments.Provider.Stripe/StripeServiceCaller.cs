@@ -1,5 +1,6 @@
 using global::Stripe;
 using global::Stripe.Checkout;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace TailoredApps.Shared.Payments.Provider.Stripe;
@@ -12,15 +13,17 @@ namespace TailoredApps.Shared.Payments.Provider.Stripe;
 public class StripeServiceCaller : IStripeServiceCaller
 {
     private readonly StripeServiceOptions options;
+    private readonly IConfiguration? configuration;
 
     // Stripe.net services — wstrzykiwane przez DI (możliwe mockowanie w testach)
     private readonly SessionService sessionService;
 
     /// <summary>Inicjalizuje instancję callera.</summary>
-    public StripeServiceCaller(IOptions<StripeServiceOptions> options, SessionService sessionService)
+    public StripeServiceCaller(IOptions<StripeServiceOptions> options, SessionService sessionService, IConfiguration? configuration = null)
     {
         this.options = options.Value;
         this.sessionService = sessionService;
+        this.configuration = configuration;
     }
 
     private RequestOptions RequestOptions => new() { ApiKey = options.SecretKey };
@@ -28,8 +31,14 @@ public class StripeServiceCaller : IStripeServiceCaller
     /// <inheritdoc/>
     public async Task<Session> CreateCheckoutSessionAsync(Payments.PaymentRequest request)
     {
-        // Metody płatności zależne od waluty
-        var paymentMethods = GetPaymentMethodsForCurrency(request.Currency);
+        // Metody płatności — z konfiguracji (Stripe:AllowedPaymentMethods) lub domyślne per waluta
+        var configuredMethods = configuration?
+            .GetSection("Stripe:AllowedPaymentMethods")
+            .Get<List<string>>();
+
+        var paymentMethods = configuredMethods is { Count: > 0 }
+            ? configuredMethods
+            : GetPaymentMethodsForCurrency(request.Currency);
 
         var createOptions = new SessionCreateOptions
         {
@@ -111,14 +120,16 @@ public class StripeServiceCaller : IStripeServiceCaller
     }
 
     /// <summary>
-    /// Zwraca listę metod płatności dostępnych dla danej waluty.
-    /// PLN: karta + BLIK + Przelewy24 (p24).
+    /// Zwraca domyślną listę metod płatności dla danej waluty.
+    /// Można nadpisać przez konfigurację: <c>Stripe:AllowedPaymentMethods</c>.
+    /// PLN: karta + BLIK (p24 wymaga aktywacji w Stripe Dashboard).
+    /// EUR: karta + SEPA Direct Debit.
     /// Inne: tylko karta (najbezpieczniejszy fallback).
     /// </summary>
     private static List<string> GetPaymentMethodsForCurrency(string currency) =>
         currency.ToUpperInvariant() switch
         {
-            "PLN" => ["card", "blik", "p24"],
+            "PLN" => ["card", "blik"],
             "EUR" => ["card", "sepa_debit"],
             _ => ["card"],
         };
