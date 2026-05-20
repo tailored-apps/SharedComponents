@@ -22,6 +22,9 @@ permissions:
 jobs:
   bump:
     runs-on: ubuntu-latest
+    env:
+      ALLOWED_LICENSES: ${{ github.event.inputs.allowed-licenses || 'MIT,Apache-2.0' }}
+      DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,23 +40,23 @@ jobs:
         id: bump
         shell: pwsh
         run: |
-          $licenses = '${{ inputs.allowed-licenses || ''MIT,Apache-2.0'' }}' -split ','
-          $dryRun = '${{ inputs.dry-run }}' -eq 'true'
-          $args = @{
+          $licenses = $env:ALLOWED_LICENSES -split ','
+          $dryRun = $env:DRY_RUN -eq 'true'
+          $scriptArgs = @{
             AllowedLicenses = $licenses
             GithubOutput    = $true
           }
-          if ($dryRun) { $args.DryRun = $true }
-          ./scripts/Bump-Deps.ps1 @args
+          if ($dryRun) { $scriptArgs.DryRun = $true }
+          ./scripts/Bump-Deps.ps1 @scriptArgs
 
       - name: Verify build
-        if: steps.bump.outputs.bumped == 'true' && inputs.dry-run != 'true'
+        if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'
         run: |
           dotnet restore TailoredApps.Shared.sln
           dotnet build TailoredApps.Shared.sln --no-restore --nologo
 
       - name: Create pull request
-        if: steps.bump.outputs.bumped == 'true' && inputs.dry-run != 'true'
+        if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: 'chore(deps): automated dependency bump'
@@ -61,7 +64,7 @@ jobs:
           body: |
             Automated bump produced by `.github/workflows/bump-deps.yml`.
 
-            Allowed licenses: `${{ inputs.allowed-licenses || 'MIT,Apache-2.0' }}`
+            Allowed licenses: `${{ env.ALLOWED_LICENSES }}`
 
             ### Bumps and skips
             See workflow run log for the full BUMP/SKIP report.
