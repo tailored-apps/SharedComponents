@@ -1,0 +1,78 @@
+name: 'Bump dependencies'
+
+on:
+  workflow_dispatch:
+    inputs:
+      allowed-licenses:
+        description: 'Comma-separated SPDX allowlist'
+        required: false
+        default: 'MIT,Apache-2.0'
+      dry-run:
+        description: 'Dry run (no commits, no PR)'
+        required: false
+        default: 'false'
+  schedule:
+    # Weekly, Mondays at 06:00 UTC
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run bump script
+        id: bump
+        shell: pwsh
+        run: |
+          $licenses = '${{ inputs.allowed-licenses || ''MIT,Apache-2.0'' }}' -split ','
+          $dryRun = '${{ inputs.dry-run }}' -eq 'true'
+          $args = @{
+            AllowedLicenses = $licenses
+            GithubOutput    = $true
+          }
+          if ($dryRun) { $args.DryRun = $true }
+          ./scripts/Bump-Deps.ps1 @args
+
+      - name: Verify build
+        if: steps.bump.outputs.bumped == 'true' && inputs.dry-run != 'true'
+        run: |
+          dotnet restore TailoredApps.Shared.sln
+          dotnet build TailoredApps.Shared.sln --no-restore --nologo
+
+      - name: Create pull request
+        if: steps.bump.outputs.bumped == 'true' && inputs.dry-run != 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'chore(deps): automated dependency bump'
+          title: 'chore(deps): automated dependency bump'
+          body: |
+            Automated bump produced by `.github/workflows/bump-deps.yml`.
+
+            Allowed licenses: `${{ inputs.allowed-licenses || 'MIT,Apache-2.0' }}`
+
+            ### Bumps and skips
+            See workflow run log for the full BUMP/SKIP report.
+            Packages with license drift or licenses outside the allowlist are skipped automatically.
+
+            ### Test plan
+            - [x] `dotnet restore` (workflow)
+            - [x] `dotnet build` (workflow)
+            - [ ] CI green
+            - [ ] Spot-check API surface for any breaking changes
+          branch: chore/auto-bump-deps
+          base: master
+          delete-branch: true
+          labels: dependencies, automated
