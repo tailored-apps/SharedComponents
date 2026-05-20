@@ -31,6 +31,12 @@
     If set, also writes a summary line to $env:GITHUB_OUTPUT for CI consumption
     (key: bumped, value: true|false).
 
+.PARAMETER Ignore
+    Hashtable of package name -> max allowed version (exclusive ceiling) or $null
+    to block all bumps. Used to enforce known license-change cutoffs that the
+    SPDX check cannot detect (e.g. MediatR 13+ switched to RPL-1.5 without
+    declaring SPDX). Names are matched case-insensitively.
+
 .EXAMPLE
     .\scripts\Bump-Deps.ps1 -DryRun
 .EXAMPLE
@@ -42,8 +48,18 @@ param(
     [switch]$AllowUndeclaredLicense,
     [switch]$DryRun,
     [string]$Path = '.',
-    [switch]$GithubOutput
+    [switch]$GithubOutput,
+    [hashtable]$Ignore = @{
+        # MediatR 13+ relicensed Apache-2.0 -> RPL-1.5 (Lucky Penny Software).
+        # SPDX is not published, so the license-change rule cannot catch it.
+        'MediatR' = '13.0.0'
+    }
 )
+
+# Normalize ignore keys to lowercase for case-insensitive lookup.
+$normalizedIgnore = @{}
+foreach ($k in $Ignore.Keys) { $normalizedIgnore[$k.ToLowerInvariant()] = $Ignore[$k] }
+$Ignore = $normalizedIgnore
 
 $ErrorActionPreference = 'Stop'
 
@@ -121,6 +137,16 @@ foreach ($file in $csprojs) {
         if (-not $cur) { continue }
         if ($cur -match '\*') { continue }  # leave wildcards alone
 
+        $lname = $name.ToLowerInvariant()
+        if ($Ignore.ContainsKey($lname)) {
+            $ceiling = $Ignore[$lname]
+            if ($null -eq $ceiling) {
+                Write-Host "SKIP $name (ignore list, all bumps blocked)" -ForegroundColor Yellow
+                $summary += "SKIP $name (ignore list)"
+                continue
+            }
+        }
+
         $info = Get-PackageInfo -Name $name
         if (-not $info) {
             Write-Warning "no nuget metadata for $name (skipping)"
@@ -133,6 +159,35 @@ foreach ($file in $csprojs) {
         }
         $latest = Get-LatestStableEntry -Entries $entries
         if (-not $latest) { continue }
+
+        # Apply ignore-list version ceiling, if any.
+        if ($Ignore.ContainsKey($lname) -and $null -ne $Ignore[$lname]) {
+            $ceiling = [version]($Ignore[$lname])
+            try { $latestVer = [version]($latest.version -replace '\+.*$','') } catch { $latestVer = $null }
+            if ($latestVer -and $latestVer -ge $ceiling) {
+                # Latest is at or above ceiling — find highest stable strictly below it.
+                $belowCeiling = $entries |
+                    Where-Object {
+                        $_.catalogEntry.listed -ne $false -and
+                        $_.catalogEntry.version -notmatch '-'
+                    } |
+                    Where-Object {
+                        try { ([version]($_.catalogEntry.version -replace '\+.*$','')) -lt $ceiling } catch { $false }
+                    } |
+                    Sort-Object {
+                        try { [version]($_.catalogEntry.version -replace '\+.*$','') } catch { [version]'0.0.0.0' }
+                    } |
+                    Select-Object -Last 1
+                if (-not $belowCeiling) {
+                    Write-Host "SKIP $name ${cur} -> $($latest.version): ignore-list ceiling $ceiling, no version below it" -ForegroundColor Yellow
+                    $summary += "SKIP $name (no version below ignore ceiling $ceiling)"
+                    continue
+                }
+                Write-Host "CLAMP $name latest=$($latest.version) -> $($belowCeiling.catalogEntry.version) (ignore ceiling $ceiling)" -ForegroundColor DarkYellow
+                $latest = $belowCeiling.catalogEntry
+            }
+        }
+
         if ($latest.version -eq $cur) { continue }
 
         $curLic    = Get-LicenseForVersion -Entries $entries -Version $cur
