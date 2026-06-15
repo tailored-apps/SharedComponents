@@ -19,7 +19,7 @@
 		<PackageReference Include="Microsoft.ML.AutoML" Version="0.23.0" />
 		<PackageReference Include="FluentValidation" Version="12.*" />
 		<!-- Pin transitive dependency to address NU1903 vulnerability in 9.0.4 (GHSA-73j8-2gch-69rq) -->
-		<PackageReference Include="Microsoft.Bcl.Memory" Version="10.0.8" />
+		<PackageReference Include="Microsoft.Bcl.Memory" Version="10.0.9" />
 	</ItemGroup>
 
 	<ItemGroup>
