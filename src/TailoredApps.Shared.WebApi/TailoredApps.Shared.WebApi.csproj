@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<AssemblyName>TailoredApps.Shared.WebApi</AssemblyName>
+		<RootNamespace>TailoredApps.Shared.WebApi</RootNamespace>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+
+		<Authors>Lukasz Kowalski</Authors>
+		<Company>Tailored Apps.</Company>
+		<Product>Shared.WebApi</Product>
+		<Description>Shared.WebApi wires production-ready defaults into an ASP.NET Core Web API through a single call: OpenTelemetry metrics, tracing and logging exported over OTLP, liveness/readiness health checks, and resilient service-discovery-aware HTTP clients.</Description>
+		<Copyright>Copyright © Lukasz Kowalski</Copyright>
+		<Summary>Production-ready observability, health check and resilience defaults for ASP.NET Core Web APIs.</Summary>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<Title>Shared.WebApi</Title>
+		<PackageId>TailoredApps.Shared.WebApi</PackageId>
+		<PackageTags>aspnetcore;webapi;opentelemetry;metrics;tracing;healthchecks;observability;resilience;servicediscovery;otlp</PackageTags>
+		<PackageIconUrl>https://www.nuget.org/profiles/TailoredApps/avatar?imageSize=512</PackageIconUrl>
+		<PackageProjectUrl>https://shared.tailoredapps.pl</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<!-- OpenTelemetry uses a unified 1.x version scheme across all target frameworks. -->
+	<ItemGroup>
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.*" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.*" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.*" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.*" />
+	</ItemGroup>
+
+	<!-- Resilience and service discovery are runtime-aligned; pin each TFM to its own generation. -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+		<PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.*" />
+		<PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="8.*" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+		<PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.*" />
+		<PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="9.*" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.*" />
+		<PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="10.*" />
+	</ItemGroup>
+
+</Project>
