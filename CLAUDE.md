@@ -61,3 +61,14 @@ tells an AI coding agent how to wire the library into a project. It must state:
 - XML doc comments on every public type and member (`<GenerateDocumentationFile>True</GenerateDocumentationFile>`).
 
 When in doubt, mirror an existing page such as `docs/Libraries/EntityFramework/UnitOfWork.WebApiCore.md`.
+
+## Enforcement
+- **CI (blocking):** the *Docs guard* workflow (`.github/workflows/docs-guard.yml`) fails a PR when
+  `src/**` changed without matching `docs/**` + `docs-en/**` updates (escape hatch: add the `skip-docs`
+  label), and runs `mkdocs build --strict` for both sites. Add both checks to branch protection so they
+  block merge.
+- **Local (pre-push):** enable the shared hook once per clone — `git config core.hooksPath .githooks`.
+  It blocks a push that changes `src/**` without docs. Bypass a single push with `SKIP_DOCS_CHECK=1 git push`.
+- **Changelog:** GitHub Releases are generated from merged PRs on every `v*` tag; note categories live in
+  `.github/release.yml`. Label PRs (`new-library`, `feature`, `bug`, `documentation`, `dependencies`) so
+  they group correctly.

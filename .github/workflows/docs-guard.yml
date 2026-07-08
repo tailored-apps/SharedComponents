@@ -1,0 +1,52 @@
+name: Docs guard
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  require-docs:
+    name: Docs required for library changes
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-docs') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail when src changes ship without docs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed="$(git diff --name-only "$BASE_SHA"...HEAD)"
+          echo "Changed files:"
+          echo "$changed"
+          code="$(echo "$changed" | grep -E '^src/' || true)"
+          docs="$(echo "$changed" | grep -E '^(docs|docs-en)/' || true)"
+          if [ -n "$code" ] && [ -z "$docs" ]; then
+            echo "::error::Library code under src/ changed but no docs/ or docs-en/ updates were found. Update the library docs (see DOCUMENTATION_RULE.md) or add the 'skip-docs' label to this PR."
+            exit 1
+          fi
+          echo "OK: documentation updated, or no library code changed."
+
+  strict-build:
+    name: mkdocs build --strict
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+
+      - name: Install MkDocs Material
+        run: pip install mkdocs-material
+
+      - name: Build Polish site (strict)
+        run: mkdocs build --config-file mkdocs.yml --strict --site-dir /tmp/site-pl
+
+      - name: Build English site (strict)
+        run: mkdocs build --config-file mkdocs-en.yml --strict --site-dir /tmp/site-en
