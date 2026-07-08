@@ -1,5 +1,5 @@
-﻿using Moq;
 using System.Collections.Generic;
+using Moq;
 using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
 using TailoredApps.Shared.EntityFramework.UnitOfWork;
 using Xunit;

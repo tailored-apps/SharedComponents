@@ -1,0 +1,1553 @@
+{
+  "TailoredApps.Shared.MediatR.dll": {
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR/PipelineBehaviours/CachingBehavior.cs": {
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.CachingBehavior`2": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.CachingBehavior`2::.ctor(TailoredApps.Shared.MediatR.Interfaces.Caching.ICache,Microsoft.Extensions.Logging.ILogger`1<TailoredApps.Shared.MediatR.PipelineBehaviours.CachingBehavior`2<TRequest,TResponse>>,System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.MediatR.Interfaces.Caching.ICachePolicy`2<TRequest,TResponse>>)": {
+          "Lines": {
+            "31": 0,
+            "33": 0,
+            "34": 0,
+            "35": 0,
+            "36": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.CachingBehavior`2/<Handle>d__4": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.CachingBehavior`2/<Handle>d__4::MoveNext()": {
+          "Lines": {
+            "48": 0,
+            "49": 0,
+            "52": 0,
+            "54": 0,
+            "55": 0,
+            "56": 0,
+            "58": 0,
+            "59": 0,
+            "62": 0,
+            "63": 0,
+            "65": 0,
+            "66": 0,
+            "67": 0
+          },
+          "Branches": [
+            {
+              "Line": 49,
+              "Offset": 59,
+              "EndOffset": 61,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 49,
+              "Offset": 59,
+              "EndOffset": 176,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 56,
+              "Offset": 317,
+              "EndOffset": 319,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 56,
+              "Offset": 317,
+              "EndOffset": 378,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR/PipelineBehaviours/FallbackBehavior.cs": {
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.FallbackBehavior`2": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.FallbackBehavior`2::.ctor(System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.MediatR.Interfaces.Handlers.IFallbackHandler`2<TRequest,TResponse>>,Microsoft.Extensions.Logging.ILogger`1<TailoredApps.Shared.MediatR.PipelineBehaviours.FallbackBehavior`2<TRequest,TResponse>>)": {
+          "Lines": {
+            "31": 0,
+            "33": 0,
+            "34": 0,
+            "35": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.FallbackBehavior`2/<>c__DisplayClass3_0/<<Handle>b__0>d": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.FallbackBehavior`2/<>c__DisplayClass3_0/<<Handle>b__0>d::MoveNext()": {
+          "Lines": {
+            "50": 0,
+            "51": 0,
+            "52": 0,
+            "53": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.FallbackBehavior`2/<>c__DisplayClass3_0/<<Handle>b__1>d": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.FallbackBehavior`2/<>c__DisplayClass3_0/<<Handle>b__1>d::MoveNext()": {
+          "Lines": {
+            "55": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.FallbackBehavior`2/<Handle>d__3": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.FallbackBehavior`2/<Handle>d__3::MoveNext()": {
+          "Lines": {
+            "40": 0,
+            "41": 0,
+            "43": 0,
+            "46": 0,
+            "47": 0,
+            "48": 0,
+            "49": 0,
+            "57": 0,
+            "58": 0
+          },
+          "Branches": [
+            {
+              "Line": 41,
+              "Offset": 92,
+              "EndOffset": 94,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 41,
+              "Offset": 92,
+              "EndOffset": 209,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR/PipelineBehaviours/LoggingBehavior.cs": {
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.LoggingBehavior`2": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.LoggingBehavior`2::.ctor(Microsoft.Extensions.Logging.ILogger`1<TRequest>)": {
+          "Lines": {
+            "24": 0,
+            "26": 0,
+            "27": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.LoggingBehavior`2/<Handle>d__2": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.LoggingBehavior`2/<Handle>d__2::MoveNext()": {
+          "Lines": {
+            "32": 0,
+            "33": 0,
+            "34": 0,
+            "38": 0,
+            "39": 0,
+            "40": 0,
+            "41": 0,
+            "42": 0,
+            "44": 0,
+            "46": 0,
+            "48": 0,
+            "49": 0,
+            "50": 0,
+            "53": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR/PipelineBehaviours/RetryBehavior.cs": {
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2::.ctor(System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.MediatR.Interfaces.Messages.IRetryableRequest`2<TRequest,TResponse>>,Microsoft.Extensions.Logging.ILogger`1<TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2<TRequest,TResponse>>)": {
+          "Lines": {
+            "29": 0,
+            "31": 0,
+            "32": 0,
+            "33": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2/<>c": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2/<>c::<Handle>b__3_1()": {
+          "Lines": {
+            "54": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2/<>c__DisplayClass3_0": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2/<>c__DisplayClass3_0::<Handle>b__0(Polly.DelegateResult`1<TResponse>,System.TimeSpan)": {
+          "Lines": {
+            "50": 0,
+            "51": 0
+          },
+          "Branches": []
+        },
+        "System.TimeSpan TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2/<>c__DisplayClass3_0::<Handle>b__2(System.Int32)": {
+          "Lines": {
+            "60": 0,
+            "61": 0,
+            "62": 0,
+            "64": 0,
+            "66": 0
+          },
+          "Branches": [
+            {
+              "Line": 60,
+              "Offset": 11,
+              "EndOffset": 13,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 60,
+              "Offset": 11,
+              "EndOffset": 32,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2/<>c__DisplayClass3_0/<<Handle>b__3>d": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2/<>c__DisplayClass3_0/<<Handle>b__3>d::MoveNext()": {
+          "Lines": {
+            "69": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2/<Handle>d__3": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.RetryBehavior`2/<Handle>d__3::MoveNext()": {
+          "Lines": {
+            "38": 0,
+            "39": 0,
+            "42": 0,
+            "45": 0,
+            "46": 0,
+            "47": 0,
+            "48": 0,
+            "49": 0,
+            "52": 0,
+            "53": 0,
+            "56": 0,
+            "57": 0,
+            "58": 0,
+            "59": 0,
+            "63": 0,
+            "65": 0,
+            "67": 0,
+            "71": 0,
+            "72": 0
+          },
+          "Branches": [
+            {
+              "Line": 39,
+              "Offset": 80,
+              "EndOffset": 82,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 39,
+              "Offset": 80,
+              "EndOffset": 197,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 45,
+              "Offset": 242,
+              "EndOffset": 244,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 45,
+              "Offset": 242,
+              "EndOffset": 267,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR/PipelineBehaviours/ValidationBehavior.cs": {
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.ValidationBehavior`2": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.ValidationBehavior`2::.ctor(System.Collections.Generic.IEnumerable`1<FluentValidation.IValidator`1<TRequest>>)": {
+          "Lines": {
+            "25": 0,
+            "27": 0,
+            "28": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.ValidationBehavior`2/<>c": {
+        "System.Collections.Generic.IEnumerable`1<FluentValidation.Results.ValidationFailure> TailoredApps.Shared.MediatR.PipelineBehaviours.ValidationBehavior`2/<>c::<Handle>b__2_1(FluentValidation.Results.ValidationResult)": {
+          "Lines": {
+            "36": 0
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.MediatR.PipelineBehaviours.ValidationBehavior`2/<>c::<Handle>b__2_2(FluentValidation.Results.ValidationFailure)": {
+          "Lines": {
+            "37": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.ValidationBehavior`2/<>c__DisplayClass2_0": {
+        "FluentValidation.Results.ValidationResult TailoredApps.Shared.MediatR.PipelineBehaviours.ValidationBehavior`2/<>c__DisplayClass2_0::<Handle>b__0(FluentValidation.IValidator`1<TRequest>)": {
+          "Lines": {
+            "35": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.PipelineBehaviours.ValidationBehavior`2/<Handle>d__2": {
+        "System.Void TailoredApps.Shared.MediatR.PipelineBehaviours.ValidationBehavior`2/<Handle>d__2::MoveNext()": {
+          "Lines": {
+            "33": 0,
+            "34": 0,
+            "38": 0,
+            "40": 0,
+            "42": 0,
+            "45": 0,
+            "46": 0
+          },
+          "Branches": [
+            {
+              "Line": 34,
+              "Offset": 72,
+              "EndOffset": 74,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 34,
+              "Offset": 72,
+              "EndOffset": 97,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 34,
+              "Offset": 108,
+              "EndOffset": 110,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 34,
+              "Offset": 108,
+              "EndOffset": 133,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 40,
+              "Offset": 152,
+              "EndOffset": 154,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 40,
+              "Offset": 152,
+              "EndOffset": 162,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR/Interfaces/Messages/IRetryableRequest.cs": {
+      "TailoredApps.Shared.MediatR.Interfaces.Messages.IRetryableRequest`2": {
+        "System.Int32 TailoredApps.Shared.MediatR.Interfaces.Messages.IRetryableRequest`2::get_RetryAttempts()": {
+          "Lines": {
+            "15": 0
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.MediatR.Interfaces.Messages.IRetryableRequest`2::get_RetryDelay()": {
+          "Lines": {
+            "18": 0
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.MediatR.Interfaces.Messages.IRetryableRequest`2::get_RetryWithExponentialBackoff()": {
+          "Lines": {
+            "24": 0
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.MediatR.Interfaces.Messages.IRetryableRequest`2::get_ExceptionsAllowedBeforeCircuitTrip()": {
+          "Lines": {
+            "30": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR/Interfaces/Caching/ICachePolicy.cs": {
+      "TailoredApps.Shared.MediatR.Interfaces.Caching.ICachePolicy`2": {
+        "System.Nullable`1<System.DateTime> TailoredApps.Shared.MediatR.Interfaces.Caching.ICachePolicy`2::get_AbsoluteExpiration()": {
+          "Lines": {
+            "21": 0
+          },
+          "Branches": []
+        },
+        "System.Nullable`1<System.TimeSpan> TailoredApps.Shared.MediatR.Interfaces.Caching.ICachePolicy`2::get_AbsoluteExpirationRelativeToNow()": {
+          "Lines": {
+            "27": 0
+          },
+          "Branches": []
+        },
+        "System.Nullable`1<System.TimeSpan> TailoredApps.Shared.MediatR.Interfaces.Caching.ICachePolicy`2::get_SlidingExpiration()": {
+          "Lines": {
+            "33": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.Interfaces.Caching.ICachePolicy`2::GetCacheKey(TRequest)": {
+          "Lines": {
+            "43": 0,
+            "44": 0,
+            "45": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR/DI/PipelineRegistration.cs": {
+      "TailoredApps.Shared.MediatR.DI.PipelineRegistration": {
+        "System.Void TailoredApps.Shared.MediatR.DI.PipelineRegistration::RegisterPipelineBehaviors()": {
+          "Lines": {
+            "35": 0,
+            "36": 0,
+            "37": 0,
+            "38": 0,
+            "39": 0,
+            "40": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.DI.PipelineRegistration::RegisterPipelineBehaviors(System.Reflection.Assembly)": {
+          "Lines": {
+            "46": 0,
+            "47": 0,
+            "48": 0,
+            "49": 0,
+            "50": 0,
+            "53": 0,
+            "54": 0,
+            "55": 0,
+            "56": 0,
+            "57": 0,
+            "58": 0,
+            "61": 0,
+            "62": 0,
+            "63": 0,
+            "64": 0,
+            "65": 0,
+            "66": 0,
+            "67": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.DI.PipelineRegistration::.ctor(Microsoft.Extensions.DependencyInjection.IServiceCollection)": {
+          "Lines": {
+            "26": 0,
+            "28": 0,
+            "29": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR/Caching/Cache.cs": {
+      "TailoredApps.Shared.MediatR.Caching.Cache": {
+        "System.Void TailoredApps.Shared.MediatR.Caching.Cache::.ctor(Microsoft.Extensions.Caching.Distributed.IDistributedCache)": {
+          "Lines": {
+            "23": 0,
+            "25": 0,
+            "26": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.Caching.Cache/<GetAsync>d__2`1": {
+        "System.Void TailoredApps.Shared.MediatR.Caching.Cache/<GetAsync>d__2`1::MoveNext()": {
+          "Lines": {
+            "31": 0,
+            "32": 0,
+            "34": 0,
+            "36": 0,
+            "37": 0,
+            "38": 0,
+            "39": 0
+          },
+          "Branches": [
+            {
+              "Line": 32,
+              "Offset": 130,
+              "EndOffset": 132,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 32,
+              "Offset": 130,
+              "EndOffset": 142,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      },
+      "TailoredApps.Shared.MediatR.Caching.Cache/<SetAsync>d__3`1": {
+        "System.Void TailoredApps.Shared.MediatR.Caching.Cache/<SetAsync>d__3`1::MoveNext()": {
+          "Lines": {
+            "44": 0,
+            "45": 0,
+            "47": 0,
+            "48": 0,
+            "49": 0
+          },
+          "Branches": [
+            {
+              "Line": 47,
+              "Offset": 70,
+              "EndOffset": 72,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 47,
+              "Offset": 70,
+              "EndOffset": 84,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    }
+  },
+  "TailoredApps.Shared.MediatR.Caching.dll": {},
+  "TailoredApps.Shared.MediatR.ML.dll": {
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Infrastructure/FileUtils.cs": {
+      "TailoredApps.Shared.MediatR.ML.Infrastructure.FileUtils": {
+        "System.Collections.Generic.IEnumerable`1<System.ValueTuple`2<System.String,System.String>> TailoredApps.Shared.MediatR.ML.Infrastructure.FileUtils::LoadImagesFromDirectory(System.String,System.Boolean)": {
+          "Lines": {
+            "30": 0,
+            "31": 0,
+            "32": 0,
+            "33": 0,
+            "34": 0,
+            "35": 0,
+            "36": 0,
+            "37": 0,
+            "38": 0,
+            "39": 0,
+            "40": 0,
+            "41": 0,
+            "42": 0,
+            "43": 0,
+            "44": 0,
+            "45": 0,
+            "46": 0,
+            "47": 0
+          },
+          "Branches": [
+            {
+              "Line": 33,
+              "Offset": 50,
+              "EndOffset": 52,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 33,
+              "Offset": 50,
+              "EndOffset": 92,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 32,
+              "Offset": 16,
+              "EndOffset": 18,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 32,
+              "Offset": 16,
+              "EndOffset": 35,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 38,
+              "Offset": 47,
+              "EndOffset": 11,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 40,
+              "Offset": 23,
+              "EndOffset": 25,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 40,
+              "Offset": 23,
+              "EndOffset": 36,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 38,
+              "Offset": 47,
+              "EndOffset": 49,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.String TailoredApps.Shared.MediatR.ML.Infrastructure.FileUtils::GetAbsolutePath(System.Reflection.Assembly,System.String)": {
+          "Lines": {
+            "59": 0,
+            "60": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Infrastructure/PredictionEngineServiceConfiguration.cs": {
+      "TailoredApps.Shared.MediatR.ML.Infrastructure.PredictionEngineServiceConfiguration": {
+        "System.Void TailoredApps.Shared.MediatR.ML.Infrastructure.PredictionEngineServiceConfiguration::RegisterMachineLearningModel(System.Action`1<Microsoft.Extensions.ML.PredictionEnginePoolBuilder`2<D,R>>)": {
+          "Lines": {
+            "35": 0,
+            "37": 0,
+            "38": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.ML.Infrastructure.PredictionEngineServiceConfiguration::.ctor(Microsoft.Extensions.DependencyInjection.IServiceCollection)": {
+          "Lines": {
+            "21": 0,
+            "23": 0,
+            "24": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Interfaces/Domain/Models/ImagePredictionScore.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.ImagePredictionScore": {
+        "System.Single[] TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.ImagePredictionScore::get_Score()": {
+          "Lines": {
+            "15": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.ImagePredictionScore::get_PredictedLabel()": {
+          "Lines": {
+            "20": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Interfaces/Domain/Models/InMemoryImageData.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.InMemoryImageData": {
+        "System.Byte[] TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.InMemoryImageData::get_Image()": {
+          "Lines": {
+            "26": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.InMemoryImageData::get_Label()": {
+          "Lines": {
+            "31": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.InMemoryImageData::get_FileName()": {
+          "Lines": {
+            "36": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.InMemoryImageData::.ctor(System.Byte[],System.String,System.String)": {
+          "Lines": {
+            "15": 0,
+            "17": 0,
+            "18": 0,
+            "19": 0,
+            "21": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Infrastructure/AddPredictionEngineExtension.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.AddPredictionEngineExtension": {
+        "Microsoft.Extensions.ML.PredictionEnginePoolBuilder`2<TData,TPrediction> TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.AddPredictionEngineExtension::AddAdapter(Microsoft.Extensions.ML.PredictionEnginePoolBuilder`2<TData,TPrediction>)": {
+          "Lines": {
+            "29": 0
+          },
+          "Branches": []
+        },
+        "Microsoft.Extensions.DependencyInjection.IServiceCollection TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.AddPredictionEngineExtension::AddPredictionEngine(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action`1<TailoredApps.Shared.MediatR.ML.Infrastructure.PredictionEngineServiceConfiguration>)": {
+          "Lines": {
+            "48": 0,
+            "49": 0,
+            "51": 0,
+            "52": 0,
+            "53": 0,
+            "54": 0,
+            "56": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Infrastructure/ClassificationService.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationService": {
+        "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ModelInfo TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationService::GetModelInfo()": {
+          "Lines": {
+            "41": 0,
+            "42": 0,
+            "43": 0,
+            "44": 0,
+            "45": 0,
+            "46": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ImagePrediction TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationService::Predict(System.Byte[],System.String)": {
+          "Lines": {
+            "57": 0,
+            "58": 0,
+            "61": 0,
+            "62": 0,
+            "63": 0,
+            "64": 0,
+            "65": 0,
+            "66": 0,
+            "67": 0,
+            "68": 0,
+            "69": 0,
+            "70": 0,
+            "71": 0,
+            "72": 0,
+            "73": 0
+          },
+          "Branches": []
+        },
+        "System.ValueTuple`2<System.String,System.String[]> TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationService::Train(System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ImageData>,System.String,System.String)": {
+          "Lines": {
+            "88": 0,
+            "89": 0,
+            "90": 0,
+            "92": 0,
+            "93": 0,
+            "94": 0,
+            "95": 0,
+            "96": 0,
+            "97": 0,
+            "98": 0,
+            "99": 0,
+            "101": 0,
+            "102": 0,
+            "103": 0,
+            "105": 0,
+            "106": 0,
+            "107": 0,
+            "109": 0,
+            "111": 0,
+            "112": 0,
+            "113": 0,
+            "114": 0,
+            "115": 0,
+            "116": 0
+          },
+          "Branches": []
+        },
+        "System.ValueTuple`2<System.String[],System.String> TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationService::EvaluateModel(Microsoft.ML.MLContext,Microsoft.ML.IDataView,Microsoft.ML.ITransformer)": {
+          "Lines": {
+            "128": 0,
+            "129": 0,
+            "130": 0,
+            "131": 0,
+            "133": 0,
+            "134": 0,
+            "135": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationService::PrintMultiClassClassificationMetrics(System.String,Microsoft.ML.Data.MulticlassClassificationMetrics)": {
+          "Lines": {
+            "147": 0,
+            "149": 0,
+            "150": 0,
+            "151": 0,
+            "152": 0,
+            "153": 0,
+            "155": 0,
+            "156": 0,
+            "159": 0
+          },
+          "Branches": [
+            {
+              "Line": 153,
+              "Offset": 314,
+              "EndOffset": 215,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 153,
+              "Offset": 314,
+              "EndOffset": 316,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.String[] TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationService::GetLabels(Microsoft.ML.DataViewSchema)": {
+          "Lines": {
+            "169": 0,
+            "170": 0,
+            "171": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationService::.ctor(TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure.IPredictionEnginePoolAdapter`2<TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.InMemoryImageData,TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models.ImagePredictionScore>,TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure.IModelInfoService)": {
+          "Lines": {
+            "29": 0,
+            "31": 0,
+            "32": 0,
+            "33": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Infrastructure/ImageClassificationOptions.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions": {
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions::get_ModelFilePath()": {
+          "Lines": {
+            "24": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions/ImageClassificationConfigureOptions": {
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions/ImageClassificationConfigureOptions::Configure(TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions)": {
+          "Lines": {
+            "49": 0,
+            "51": 0,
+            "52": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions/ImageClassificationConfigureOptions::.ctor(Microsoft.Extensions.Configuration.IConfiguration)": {
+          "Lines": {
+            "38": 0,
+            "40": 0,
+            "41": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Infrastructure/ModelHelper.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelHelper": {
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelHelper::AddVersion(System.String)": {
+          "Lines": {
+            "31": 0,
+            "32": 0,
+            "34": 0,
+            "36": 0,
+            "39": 0,
+            "40": 0,
+            "42": 0,
+            "43": 0,
+            "44": 0,
+            "48": 0,
+            "49": 0,
+            "50": 0,
+            "54": 0
+          },
+          "Branches": [
+            {
+              "Line": 48,
+              "Offset": 92,
+              "EndOffset": 94,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 48,
+              "Offset": 92,
+              "EndOffset": 101,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelHelper::AddLabels(System.String,System.String[])": {
+          "Lines": {
+            "64": 0,
+            "66": 0,
+            "68": 0,
+            "71": 0,
+            "72": 0,
+            "74": 0,
+            "75": 0,
+            "76": 0,
+            "80": 0,
+            "81": 0,
+            "82": 0,
+            "86": 0
+          },
+          "Branches": [
+            {
+              "Line": 80,
+              "Offset": 74,
+              "EndOffset": 76,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 80,
+              "Offset": 74,
+              "EndOffset": 82,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelHelper::GetChecksum(System.String)": {
+          "Lines": {
+            "95": 0,
+            "96": 0,
+            "97": 0,
+            "98": 0,
+            "99": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelHelper::GetVersion(System.String)": {
+          "Lines": {
+            "112": 0,
+            "113": 0,
+            "114": 0,
+            "115": 0,
+            "117": 0,
+            "118": 0,
+            "120": 0,
+            "121": 0,
+            "124": 0,
+            "125": 0,
+            "126": 0
+          },
+          "Branches": [
+            {
+              "Line": 115,
+              "Offset": 29,
+              "EndOffset": 31,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 115,
+              "Offset": 29,
+              "EndOffset": 63,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.String[] TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelHelper::GetLabels(System.String)": {
+          "Lines": {
+            "139": 0,
+            "140": 0,
+            "141": 0,
+            "142": 0,
+            "144": 0,
+            "145": 0,
+            "147": 0,
+            "148": 0,
+            "151": 0,
+            "152": 0,
+            "153": 0
+          },
+          "Branches": [
+            {
+              "Line": 142,
+              "Offset": 29,
+              "EndOffset": 31,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 142,
+              "Offset": 29,
+              "EndOffset": 148,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Infrastructure/ModelInfoService.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelInfoService": {
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelInfoService::get_ModelChecksum()": {
+          "Lines": {
+            "29": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelInfoService::get_ModelVersion()": {
+          "Lines": {
+            "34": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelInfoService::get_ModelFilePath()": {
+          "Lines": {
+            "39": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelInfoService::get_ModelFileName()": {
+          "Lines": {
+            "44": 0
+          },
+          "Branches": []
+        },
+        "System.String[] TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelInfoService::get_Labels()": {
+          "Lines": {
+            "49": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ModelInfoService::.ctor(Microsoft.Extensions.Options.IOptions`1<TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions>,TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure.IModelHelper)": {
+          "Lines": {
+            "21": 0,
+            "23": 0,
+            "24": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Infrastructure/PredictionEnginePoolAdapter.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.PredictionEnginePoolAdapter`2": {
+        "System.String[] TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.PredictionEnginePoolAdapter`2::GetLabels()": {
+          "Lines": {
+            "38": 0,
+            "39": 0,
+            "40": 0,
+            "41": 0
+          },
+          "Branches": [
+            {
+              "Line": 41,
+              "Offset": 67,
+              "EndOffset": 69,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 41,
+              "Offset": 67,
+              "EndOffset": 92,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "TPrediction TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.PredictionEnginePoolAdapter`2::Predict(TData)": {
+          "Lines": {
+            "51": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.PredictionEnginePoolAdapter`2::.ctor(Microsoft.Extensions.ML.PredictionEnginePool`2<TData,TPrediction>)": {
+          "Lines": {
+            "26": 0,
+            "28": 0,
+            "30": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Domain/Validation/ImageValidationExtension.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.Validation.ImageValidationExtension": {
+        "System.Boolean TailoredApps.Shared.MediatR.ImageClassification.Domain.Validation.ImageValidationExtension::IsValidImage(System.Byte[])": {
+          "Lines": {
+            "19": 0,
+            "20": 0
+          },
+          "Branches": [
+            {
+              "Line": 20,
+              "Offset": 9,
+              "EndOffset": 11,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 20,
+              "Offset": 9,
+              "EndOffset": 16,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        },
+        "TailoredApps.Shared.MediatR.ImageClassification.Domain.Validation.ImageValidationExtension/ImageFormat TailoredApps.Shared.MediatR.ImageClassification.Domain.Validation.ImageValidationExtension::GetImageFormat(System.Byte[])": {
+          "Lines": {
+            "31": 0,
+            "32": 0,
+            "33": 0,
+            "34": 0,
+            "35": 0,
+            "36": 0,
+            "37": 0,
+            "40": 0,
+            "41": 0,
+            "43": 0,
+            "44": 0,
+            "46": 0,
+            "47": 0,
+            "49": 0,
+            "50": 0,
+            "52": 0,
+            "53": 0,
+            "55": 0,
+            "56": 0,
+            "58": 0,
+            "59": 0,
+            "61": 0
+          },
+          "Branches": [
+            {
+              "Line": 40,
+              "Offset": 140,
+              "EndOffset": 142,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 40,
+              "Offset": 140,
+              "EndOffset": 144,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 43,
+              "Offset": 159,
+              "EndOffset": 161,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 43,
+              "Offset": 159,
+              "EndOffset": 163,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 46,
+              "Offset": 178,
+              "EndOffset": 180,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 46,
+              "Offset": 178,
+              "EndOffset": 182,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            },
+            {
+              "Line": 49,
+              "Offset": 197,
+              "EndOffset": 199,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 0
+            },
+            {
+              "Line": 49,
+              "Offset": 197,
+              "EndOffset": 201,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 0
+            },
+            {
+              "Line": 52,
+              "Offset": 218,
+              "EndOffset": 220,
+              "Path": 0,
+              "Ordinal": 8,
+              "Hits": 0
+            },
+            {
+              "Line": 52,
+              "Offset": 218,
+              "EndOffset": 222,
+              "Path": 1,
+              "Ordinal": 9,
+              "Hits": 0
+            },
+            {
+              "Line": 55,
+              "Offset": 239,
+              "EndOffset": 241,
+              "Path": 0,
+              "Ordinal": 10,
+              "Hits": 0
+            },
+            {
+              "Line": 55,
+              "Offset": 239,
+              "EndOffset": 243,
+              "Path": 1,
+              "Ordinal": 11,
+              "Hits": 0
+            },
+            {
+              "Line": 58,
+              "Offset": 260,
+              "EndOffset": 262,
+              "Path": 0,
+              "Ordinal": 12,
+              "Hits": 0
+            },
+            {
+              "Line": 58,
+              "Offset": 260,
+              "EndOffset": 264,
+              "Path": 1,
+              "Ordinal": 13,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Domain/Handlers/Commands/ClassifyImageCommandHandler.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ClassifyImageCommandHandler": {
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ClassifyImageCommandHandler::.ctor(TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure.IImageClassificationService)": {
+          "Lines": {
+            "22": 0,
+            "24": 0,
+            "25": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ClassifyImageCommandHandler/<>c__DisplayClass2_0": {
+        "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands.ClassifyImageResponse TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ClassifyImageCommandHandler/<>c__DisplayClass2_0::<Handle>b__0()": {
+          "Lines": {
+            "39": 0,
+            "41": 0,
+            "42": 0,
+            "44": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ClassifyImageCommandHandler/<Handle>d__2": {
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ClassifyImageCommandHandler/<Handle>d__2::MoveNext()": {
+          "Lines": {
+            "37": 0,
+            "38": 0,
+            "40": 0,
+            "43": 0,
+            "45": 0,
+            "46": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Domain/Handlers/Commands/TrainImageClassificationModelCommandHandler.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.TrainImageClassificationModelCommandHandler": {
+        "System.Collections.Generic.IEnumerable`1<TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ImageData> TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.TrainImageClassificationModelCommandHandler::LoadImagesFromDirectory(System.String,System.Boolean)": {
+          "Lines": {
+            "71": 0,
+            "72": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.TrainImageClassificationModelCommandHandler::.ctor(TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure.IImageClassificationService,TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure.IModelHelper)": {
+          "Lines": {
+            "27": 0,
+            "29": 0,
+            "30": 0,
+            "31": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.TrainImageClassificationModelCommandHandler/<Handle>d__3": {
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.TrainImageClassificationModelCommandHandler/<Handle>d__3::MoveNext()": {
+          "Lines": {
+            "47": 0,
+            "49": 0,
+            "50": 0,
+            "51": 0,
+            "52": 0,
+            "53": 0,
+            "54": 0,
+            "55": 0,
+            "56": 0,
+            "57": 0,
+            "59": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ImageData": {
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ImageData::get_ImagePath()": {
+          "Lines": {
+            "95": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ImageData::get_Label()": {
+          "Lines": {
+            "100": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands.ImageData::.ctor(System.String,System.String)": {
+          "Lines": {
+            "86": 0,
+            "88": 0,
+            "89": 0,
+            "90": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Domain/DataModel/Responses/Commands/ClassifyImageResponse.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands.ClassifyImageResponse": {
+        "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ImagePrediction TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands.ClassifyImageResponse::get_ImagePrediction()": {
+          "Lines": {
+            "14": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Domain/DataModel/Responses/Commands/TrainImageClassificationModelResponse.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands.TrainImageClassificationModelResponse": {
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands.TrainImageClassificationModelResponse::get_ModelPath()": {
+          "Lines": {
+            "14": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands.TrainImageClassificationModelResponse::get_ModelVersion()": {
+          "Lines": {
+            "19": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands.TrainImageClassificationModelResponse::get_ModelInfo()": {
+          "Lines": {
+            "24": 0
+          },
+          "Branches": []
+        },
+        "System.String[] TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands.TrainImageClassificationModelResponse::get_Labels()": {
+          "Lines": {
+            "29": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Domain/DataModel/Models/ImagePrediction.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ImagePrediction": {
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ImagePrediction::get_FileName()": {
+          "Lines": {
+            "15": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ImagePrediction::get_PredictedLabel()": {
+          "Lines": {
+            "20": 0
+          },
+          "Branches": []
+        },
+        "System.Single TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ImagePrediction::get_PredictedScore()": {
+          "Lines": {
+            "25": 0
+          },
+          "Branches": []
+        },
+        "System.Collections.Generic.Dictionary`2<System.String,System.Single> TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ImagePrediction::get_Scores()": {
+          "Lines": {
+            "30": 0
+          },
+          "Branches": []
+        },
+        "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ModelInfo TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ImagePrediction::get_ModelInfo()": {
+          "Lines": {
+            "35": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Domain/DataModel/Models/ModelInfo.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ModelInfo": {
+        "System.String[] TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ModelInfo::get_Labels()": {
+          "Lines": {
+            "26": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ModelInfo::get_Name()": {
+          "Lines": {
+            "31": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ModelInfo::get_Version()": {
+          "Lines": {
+            "36": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ModelInfo::get_Checksum()": {
+          "Lines": {
+            "41": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models.ModelInfo::.ctor(System.String,System.String,System.String,System.String[])": {
+          "Lines": {
+            "15": 0,
+            "17": 0,
+            "18": 0,
+            "19": 0,
+            "20": 0,
+            "21": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Domain/DataModel/Message/Commands/ClassifyImage.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands.ClassifyImage": {
+        "System.Byte[] TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands.ClassifyImage::get_FileByteArray()": {
+          "Lines": {
+            "15": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands.ClassifyImage::get_FileName()": {
+          "Lines": {
+            "20": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.MediatR.ML/Domain/DataModel/Message/Commands/TrainImageClassificationModel.cs": {
+      "TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands.TrainImageClassificationModel": {
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands.TrainImageClassificationModel::get_Source()": {
+          "Lines": {
+            "16": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands.TrainImageClassificationModel::get_ModelDestFolderPath()": {
+          "Lines": {
+            "21": 0
+          },
+          "Branches": []
+        }
+      }
+    }
+  }
+}

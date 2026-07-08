@@ -1,4 +1,4 @@
-﻿namespace TailoredApps.Shared.EntityFramework.Tests.UnitOfWork.Audit.Utils
+namespace TailoredApps.Shared.EntityFramework.Tests.UnitOfWork.Audit.Utils
 {
     public class ExampleEntity
     {

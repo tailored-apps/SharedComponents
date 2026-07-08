@@ -7,13 +7,14 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.*"  Condition="'$(TargetFramework)' == 'net10.0'"/>
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.*" />
 		<PackageReference Include="xunit" Version="2.*" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.*">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="coverlet.msbuild" Version="6.*">
+		<PackageReference Include="Moq" Version="4.*" />
+		<PackageReference Include="coverlet.msbuild" Version="10.0.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -21,6 +22,14 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.CashBill\TailoredApps.Shared.Payments.Provider.CashBill.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Stripe\TailoredApps.Shared.Payments.Provider.Stripe.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Adyen\TailoredApps.Shared.Payments.Provider.Adyen.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.PayU\TailoredApps.Shared.Payments.Provider.PayU.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Przelewy24\TailoredApps.Shared.Payments.Provider.Przelewy24.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Tpay\TailoredApps.Shared.Payments.Provider.Tpay.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.HotPay\TailoredApps.Shared.Payments.Provider.HotPay.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.PayNow\TailoredApps.Shared.Payments.Provider.PayNow.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Revolut\TailoredApps.Shared.Payments.Provider.Revolut.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments\TailoredApps.Shared.Payments.csproj" />
 	</ItemGroup>
 

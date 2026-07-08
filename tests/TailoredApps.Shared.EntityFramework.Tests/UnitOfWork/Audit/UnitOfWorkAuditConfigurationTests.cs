@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
 using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
 using TailoredApps.Shared.EntityFramework.Tests.UnitOfWork.Audit.Utils;

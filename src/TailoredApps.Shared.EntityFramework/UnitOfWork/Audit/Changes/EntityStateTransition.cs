@@ -1,4 +1,4 @@
-﻿using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
+using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
 
 namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes
 {

@@ -1,4 +1,3 @@
-﻿using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Net;
@@ -6,16 +5,29 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace TailoredApps.Shared.Payments.Provider.CashBill
 {
+    /// <summary>
+    /// Concrete implementation of <see cref="ICashbillHttpClient"/>.
+    /// Sends HTTP requests to the CashBill REST API using <see cref="WebRequest"/>
+    /// with form-encoded payloads.
+    /// </summary>
     public class CashbillHttpClient : ICashbillHttpClient
     {
         private readonly ILogger logger;
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="CashbillHttpClient"/>.
+        /// </summary>
+        /// <param name="logger">Logger instance for error reporting.</param>
         public CashbillHttpClient(ILogger<CashbillHttpClient> logger)
         {
             this.logger = logger;
         }
+
+        /// <inheritdoc/>
         public async Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent requestFormData)
         {
             try
@@ -71,7 +83,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             }
         }
 
-
+        /// <inheritdoc/>
         public async Task MakeFormRequest(string url, string method, FormUrlEncodedContent requestFormData)
         {
             try

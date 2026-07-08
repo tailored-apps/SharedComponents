@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
 using TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions;
 

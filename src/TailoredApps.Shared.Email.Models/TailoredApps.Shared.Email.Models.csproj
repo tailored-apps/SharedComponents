@@ -24,5 +24,8 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	</PropertyGroup>
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);NU5048</NoWarn>
+	</PropertyGroup>
 
 </Project>

@@ -1,9 +1,13 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Primitives;
+using Moq;
 using TailoredApps.Shared.Payments.Provider.CashBill;
+using TailoredApps.Shared.Payments.Provider.CashBill.Models;
 using Xunit;
 
 namespace TailoredApps.Shared.Payments.Tests
@@ -30,11 +34,30 @@ namespace TailoredApps.Shared.Payments.Tests
         [Fact]
         public async Task CanRequestPaymentProvidersOnCashbillAndRequestTransaction()
         {
+            // Mocked — replaces real HTTP call to CashBill API.
+            // Remove mock and restore real caller when CashBill sandbox credentials are available.
+            var callerMock = new Mock<ICashbillServiceCaller>();
+            callerMock.Setup(c => c.GetPaymentChannels("PLN"))
+                      .ReturnsAsync(new List<PaymentChannels>
+                      {
+                          new() { Id = "blik_pbl", AvailableCurrencies = ["PLN"], Name = "BLIK" },
+                      });
+            callerMock.Setup(c => c.GeneratePayment(It.IsAny<Provider.CashBill.PaymentRequest>()))
+                      .ReturnsAsync(new PaymentStatus
+                      {
+                          Id = "TEST_CASHBILL_001",
+                          Status = "Start",
+                          PaymentProviderRedirectUrl = "https://pay.cashbill.pl/pay/TEST_CASHBILL_001",
+                      });
+            callerMock.Setup(c => c.GetPaymentStatus("TEST_CASHBILL_001"))
+                      .ReturnsAsync(new PaymentStatus { Id = "TEST_CASHBILL_001", Status = "Start" });
+
             var host = Host.CreateDefaultBuilder()
                  .ConfigureAppConfiguration(a => a.AddEnvironmentVariables())
                  .ConfigureServices((_, services) =>
                  {
                      services.RegisterCashbillProvider();
+                     services.AddTransient(_ => callerMock.Object);
                      services.AddPayments()
                         .RegisterPaymentProvider<CashBillProvider>();
                  });

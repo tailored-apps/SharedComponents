@@ -1,16 +1,16 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using TailoredApps.Shared.Email.Office365;
-using System.Threading.Tasks;
 using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using TailoredApps.Shared.Email.Office365;
+using Xunit;
 
 namespace TailoredApps.Shared.Email.Tests
 {
     public class SmtpTest
     {
-        [Fact(Skip ="please do not send dumb data from build")]
+        [Fact(Skip = "please do not send dumb data from build")]
         public async Task SendEmailTestFromSmtp()
         {
             var build = Host.CreateDefaultBuilder()
@@ -20,7 +20,7 @@ namespace TailoredApps.Shared.Email.Tests
                       services.RegisterSmtpProvider();
                   }).Build();
             var provider = build.Services.GetService<IEmailProvider>();
-            await provider.SendMail("test@adress.pl","test email","test body", null);
+            await provider.SendMail("test@adress.pl", "test email", "test body", null);
         }
     }
 }

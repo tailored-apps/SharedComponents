@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
 using TailoredApps.Shared.EntityFramework.Tests.UnitOfWork.Audit.Utils;
 using Xunit;

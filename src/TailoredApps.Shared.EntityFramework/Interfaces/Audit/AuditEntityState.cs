@@ -1,6 +1,9 @@
-﻿namespace TailoredApps.Shared.EntityFramework.Interfaces.Audit
+namespace TailoredApps.Shared.EntityFramework.Interfaces.Audit
 {
-
+    /// <summary>
+    /// Represents the audited state of an entity tracked by the Unit of Work audit context.
+    /// Mirrors the relevant values of <see cref="Microsoft.EntityFrameworkCore.EntityState"/>.
+    /// </summary>
     public enum AuditEntityState
     {
         /// <summary>

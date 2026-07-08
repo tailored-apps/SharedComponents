@@ -1,4 +1,3 @@
-﻿using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,15 +6,27 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using TailoredApps.Shared.Payments.Provider.CashBill.Models;
 
 namespace TailoredApps.Shared.Payments.Provider.CashBill
 {
+    /// <summary>
+    /// Concrete implementation of <see cref="ICashbillServiceCaller"/>.
+    /// Handles all communication with the CashBill REST API including
+    /// payment creation, status polling, return URL updates, and signature computation.
+    /// </summary>
     public class CashbillServiceCaller : ICashbillServiceCaller
     {
 
         private readonly ICashbillHttpClient cashbillCaller;
         private readonly IOptions<CashbillServiceOptions> options;
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="CashbillServiceCaller"/>.
+        /// </summary>
+        /// <param name="cashbillCaller">Low-level HTTP client for CashBill API requests.</param>
+        /// <param name="options">Bound configuration options for the CashBill provider.</param>
         public CashbillServiceCaller(ICashbillHttpClient cashbillCaller, IOptions<CashbillServiceOptions> options)
         {
             this.cashbillCaller = cashbillCaller;
@@ -32,6 +43,19 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             return hash;
         }
 
+        /// <summary>
+        /// Oblicza MD5 stringa UTF-8.
+        /// CashBill wysyła w notyfikacjach backchannel sign oparty na MD5 (nie SHA1).
+        /// Formuła: MD5(cmd + transactionId + shopSecretPhrase)
+        /// </summary>
+        private static string HashMd5(string input)
+        {
+            var buffer = Encoding.UTF8.GetBytes(input);
+            using var md5 = MD5.Create();
+            return BitConverter.ToString(md5.ComputeHash(buffer)).Replace("-", "").ToLower();
+        }
+
+        /// <inheritdoc/>
         public async Task<ICollection<PaymentChannels>> GetPaymentChannels(string currency)
         {
             var shopId = options.Value.ShopId;
@@ -41,6 +65,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             return paymentChannels.Where(x => x.AvailableCurrencies.Any(c => string.Equals(c, currency, StringComparison.InvariantCultureIgnoreCase))).ToList();
         }
 
+        /// <inheritdoc/>
         public async Task<PaymentStatus> GeneratePayment(PaymentRequest request)
         {
             var shopId = options.Value.ShopId;
@@ -103,7 +128,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             Payment payment = await cashbillCaller.MakeFormRequest<Payment>(new Uri(mainUrl, $"payment/{shopId}").ToString(), "POST", requestContent);
             returnUrl = new Uri($"{returnUrl}/{payment.Id}");
 
-            ///return url
+            // return url
             var signReturn = Hash(payment.Id + returnUrl + negativeReturnUrl + secretPhrase);
             var requestReturnBrowserContent = new FormUrlEncodedContent(new[]
             {
@@ -120,6 +145,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             status.PaymentProviderRedirectUrl = payment.RedirectUrl;
             return status;
         }
+        /// <inheritdoc/>
         public async Task<PaymentStatus> GetPaymentStatus(string paymentId)
         {
             var shopId = options.Value.ShopId;
@@ -131,18 +157,22 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
 
             return status;
         }
+        /// <inheritdoc/>
         public async Task<string> GetSignForNotificationService(TransactionStatusChanged transactionStatusChanged)
         {
             return await Task.Run(() =>
-             {
-                 var secretPhrase = options.Value.ShopSecretPhrase;
-                 var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
-                 var signStatus = Hash(toCalc);
-                 return signStatus;
-             });
+            {
+                var secretPhrase = options.Value.ShopSecretPhrase;
+                var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
+                // BUG FIX: CashBill wysyła sign MD5(cmd + args + secret), nie SHA1.
+                // Zweryfikowane empirycznie na podstawie rzeczywistych webhook logów (2026-03-20).
+                var signStatus = HashMd5(toCalc);
+                return signStatus;
+            });
         }
 
 
+        /// <summary>Well-known CashBill payment status string constants.</summary>
         public static class PaymentStatusConst
         {
             /// <summary>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes;
 
 namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions

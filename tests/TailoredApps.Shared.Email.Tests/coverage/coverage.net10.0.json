@@ -1,0 +1,972 @@
+{
+  "TailoredApps.Shared.Email.Models.dll": {
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Email.Models/MailMessage.cs": {
+      "TailoredApps.Shared.Email.Models.MailMessage": {
+        "System.String TailoredApps.Shared.Email.Models.MailMessage::get_Topic()": {
+          "Lines": {
+            "10": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Models.MailMessage::get_Sender()": {
+          "Lines": {
+            "13": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Models.MailMessage::get_Recipent()": {
+          "Lines": {
+            "16": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Models.MailMessage::get_Copy()": {
+          "Lines": {
+            "19": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Models.MailMessage::get_Body()": {
+          "Lines": {
+            "22": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Models.MailMessage::get_HtmlBody()": {
+          "Lines": {
+            "25": 0
+          },
+          "Branches": []
+        },
+        "System.Collections.Generic.Dictionary`2<System.String,System.String> TailoredApps.Shared.Email.Models.MailMessage::get_Attachements()": {
+          "Lines": {
+            "28": 0
+          },
+          "Branches": []
+        },
+        "System.DateTimeOffset TailoredApps.Shared.Email.Models.MailMessage::get_Date()": {
+          "Lines": {
+            "31": 0
+          },
+          "Branches": []
+        }
+      }
+    }
+  },
+  "TailoredApps.Shared.Email.dll": {
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Email/EmailServiceToConsolleWritter.cs": {
+      "TailoredApps.Shared.Email.EmailServiceToConsolleWritter/<GetMail>d__0": {
+        "System.Void TailoredApps.Shared.Email.EmailServiceToConsolleWritter/<GetMail>d__0::MoveNext()": {
+          "Lines": {
+            "25": 0,
+            "26": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.Email.EmailServiceToConsolleWritter/<SendMail>d__1": {
+        "System.Void TailoredApps.Shared.Email.EmailServiceToConsolleWritter/<SendMail>d__1::MoveNext()": {
+          "Lines": {
+            "42": 0,
+            "43": 0,
+            "44": 0,
+            "45": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Email/SmtpEmailProvider.cs": {
+      "TailoredApps.Shared.Email.SmtpEmailProvider": {
+        "System.Void TailoredApps.Shared.Email.SmtpEmailProvider::.ctor(Microsoft.Extensions.Options.IOptions`1<TailoredApps.Shared.Email.SmtpEmailServiceOptions>)": {
+          "Lines": {
+            "25": 0,
+            "27": 0,
+            "28": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.Email.SmtpEmailProvider/<GetMail>d__2": {
+        "System.Void TailoredApps.Shared.Email.SmtpEmailProvider/<GetMail>d__2::MoveNext()": {
+          "Lines": {
+            "41": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.Email.SmtpEmailProvider/<SendMail>d__3": {
+        "System.Void TailoredApps.Shared.Email.SmtpEmailProvider/<SendMail>d__3::MoveNext()": {
+          "Lines": {
+            "61": 0,
+            "63": 0,
+            "64": 0,
+            "65": 0,
+            "66": 0,
+            "68": 0,
+            "69": 0,
+            "70": 0,
+            "71": 0,
+            "72": 0,
+            "73": 0,
+            "74": 0,
+            "76": 0,
+            "78": 0,
+            "81": 0,
+            "83": 0,
+            "87": 0,
+            "90": 0,
+            "91": 0,
+            "92": 0,
+            "93": 0,
+            "94": 0,
+            "95": 0,
+            "96": 0,
+            "98": 0
+          },
+          "Branches": [
+            {
+              "Line": 74,
+              "Offset": 259,
+              "EndOffset": 261,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 76,
+              "Offset": 327,
+              "EndOffset": 276,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 76,
+              "Offset": 327,
+              "EndOffset": 329,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 74,
+              "Offset": 259,
+              "EndOffset": 349,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 81,
+              "Offset": 365,
+              "EndOffset": 367,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 81,
+              "Offset": 365,
+              "EndOffset": 386,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            }
+          ]
+        }
+      },
+      "TailoredApps.Shared.Email.SmtpEmailProviderExtensions": {
+        "System.Void TailoredApps.Shared.Email.SmtpEmailProviderExtensions::RegisterSmtpProvider(Microsoft.Extensions.DependencyInjection.IServiceCollection)": {
+          "Lines": {
+            "113": 0,
+            "114": 0,
+            "115": 0,
+            "116": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.Email.SmtpEmailProviderExtensions::RegisterConsoleProvider(Microsoft.Extensions.DependencyInjection.IServiceCollection)": {
+          "Lines": {
+            "125": 0,
+            "126": 0,
+            "127": 0,
+            "128": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.Email.SmtpEmailConfigureOptions": {
+        "System.Void TailoredApps.Shared.Email.SmtpEmailConfigureOptions::Configure(TailoredApps.Shared.Email.SmtpEmailServiceOptions)": {
+          "Lines": {
+            "155": 0,
+            "157": 0,
+            "158": 0,
+            "159": 0,
+            "160": 0,
+            "161": 0,
+            "162": 0,
+            "163": 0,
+            "164": 0,
+            "165": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.Email.SmtpEmailConfigureOptions::.ctor(Microsoft.Extensions.Configuration.IConfiguration)": {
+          "Lines": {
+            "143": 0,
+            "145": 0,
+            "146": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Email/SmtpEmailServiceOptions.cs": {
+      "TailoredApps.Shared.Email.SmtpEmailServiceOptions": {
+        "System.String TailoredApps.Shared.Email.SmtpEmailServiceOptions::get_ConfigurationKey()": {
+          "Lines": {
+            "13": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.SmtpEmailServiceOptions::get_Host()": {
+          "Lines": {
+            "18": 0
+          },
+          "Branches": []
+        },
+        "System.Int32 TailoredApps.Shared.Email.SmtpEmailServiceOptions::get_Port()": {
+          "Lines": {
+            "23": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.SmtpEmailServiceOptions::get_Password()": {
+          "Lines": {
+            "28": 0
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.Email.SmtpEmailServiceOptions::get_EnableSsl()": {
+          "Lines": {
+            "33": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.SmtpEmailServiceOptions::get_UserName()": {
+          "Lines": {
+            "38": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.SmtpEmailServiceOptions::get_From()": {
+          "Lines": {
+            "43": 0
+          },
+          "Branches": []
+        },
+        "System.Boolean TailoredApps.Shared.Email.SmtpEmailServiceOptions::get_IsProd()": {
+          "Lines": {
+            "49": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.SmtpEmailServiceOptions::get_CatchAll()": {
+          "Lines": {
+            "55": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Email/MailMessageBuilder/DefaultMessageBuilder.cs": {
+      "TailoredApps.Shared.Email.MailMessageBuilder.DefaultMessageBuilder": {
+        "System.String TailoredApps.Shared.Email.MailMessageBuilder.DefaultMessageBuilder::Build(System.String,System.Collections.Generic.IDictionary`2<System.String,System.String>,System.Collections.Generic.IDictionary`2<System.String,System.String>)": {
+          "Lines": {
+            "31": 0,
+            "33": 0,
+            "34": 0,
+            "36": 0,
+            "38": 0,
+            "40": 0
+          },
+          "Branches": [
+            {
+              "Line": 31,
+              "Offset": 7,
+              "EndOffset": 9,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 34,
+              "Offset": 60,
+              "EndOffset": 26,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 34,
+              "Offset": 60,
+              "EndOffset": 62,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 31,
+              "Offset": 7,
+              "EndOffset": 76,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Email/MailMessageBuilder/TokenReplacingMailMessageBuilder.cs": {
+      "TailoredApps.Shared.Email.MailMessageBuilder.TokenReplacingMailMessageBuilder": {
+        "System.String TailoredApps.Shared.Email.MailMessageBuilder.TokenReplacingMailMessageBuilder::Build(System.String,System.Collections.Generic.IDictionary`2<System.String,System.String>,System.Collections.Generic.IDictionary`2<System.String,System.String>)": {
+          "Lines": {
+            "53": 0,
+            "55": 0,
+            "58": 0,
+            "60": 0,
+            "61": 0,
+            "63": 0,
+            "65": 0,
+            "66": 0,
+            "71": 0,
+            "73": 0,
+            "74": 0,
+            "76": 0,
+            "78": 0,
+            "81": 0
+          },
+          "Branches": [
+            {
+              "Line": 53,
+              "Offset": 1,
+              "EndOffset": 3,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 53,
+              "Offset": 1,
+              "EndOffset": 10,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 58,
+              "Offset": 16,
+              "EndOffset": 21,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 58,
+              "Offset": 32,
+              "EndOffset": 37,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 58,
+              "Offset": 58,
+              "EndOffset": 60,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 0
+            },
+            {
+              "Line": 61,
+              "Offset": 164,
+              "EndOffset": 118,
+              "Path": 1,
+              "Ordinal": 11,
+              "Hits": 0
+            },
+            {
+              "Line": 63,
+              "Offset": 134,
+              "EndOffset": 136,
+              "Path": 0,
+              "Ordinal": 8,
+              "Hits": 0
+            },
+            {
+              "Line": 63,
+              "Offset": 134,
+              "EndOffset": 156,
+              "Path": 1,
+              "Ordinal": 9,
+              "Hits": 0
+            },
+            {
+              "Line": 58,
+              "Offset": 16,
+              "EndOffset": 166,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 58,
+              "Offset": 32,
+              "EndOffset": 166,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            },
+            {
+              "Line": 58,
+              "Offset": 58,
+              "EndOffset": 166,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 0
+            },
+            {
+              "Line": 61,
+              "Offset": 164,
+              "EndOffset": 166,
+              "Path": 0,
+              "Ordinal": 10,
+              "Hits": 0
+            },
+            {
+              "Line": 71,
+              "Offset": 173,
+              "EndOffset": 175,
+              "Path": 0,
+              "Ordinal": 12,
+              "Hits": 0
+            },
+            {
+              "Line": 74,
+              "Offset": 249,
+              "EndOffset": 199,
+              "Path": 1,
+              "Ordinal": 15,
+              "Hits": 0
+            },
+            {
+              "Line": 74,
+              "Offset": 249,
+              "EndOffset": 251,
+              "Path": 0,
+              "Ordinal": 14,
+              "Hits": 0
+            },
+            {
+              "Line": 71,
+              "Offset": 173,
+              "EndOffset": 268,
+              "Path": 1,
+              "Ordinal": 13,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.Email.MailMessageBuilder.TokenReplacingMailMessageBuilder::.ctor(Microsoft.Extensions.Options.IOptions`1<TailoredApps.Shared.Email.MailMessageBuilder.TokenReplacingMailMessageBuilderOptions>)": {
+          "Lines": {
+            "23": 0,
+            "25": 0,
+            "26": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Email/MailMessageBuilder/TokenReplacingMailMessageBuilderOptions.cs": {
+      "TailoredApps.Shared.Email.MailMessageBuilder.TokenReplacingMailMessageBuilderOptions": {
+        "System.String TailoredApps.Shared.Email.MailMessageBuilder.TokenReplacingMailMessageBuilderOptions::get_Location()": {
+          "Lines": {
+            "13": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.MailMessageBuilder.TokenReplacingMailMessageBuilderOptions::get_FileExtension()": {
+          "Lines": {
+            "19": 0
+          },
+          "Branches": []
+        }
+      }
+    }
+  },
+  "TailoredApps.Shared.Email.Office365.dll": {
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Email.Office365/AuthenticationConfig.cs": {
+      "TailoredApps.Shared.Email.Office365.AuthenticationConfig": {
+        "System.String TailoredApps.Shared.Email.Office365.AuthenticationConfig::get_ConfigurationKey()": {
+          "Lines": {
+            "16": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Office365.AuthenticationConfig::get_Instance()": {
+          "Lines": {
+            "20": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Office365.AuthenticationConfig::get_ApiUrl()": {
+          "Lines": {
+            "25": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Office365.AuthenticationConfig::get_Tenant()": {
+          "Lines": {
+            "33": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Office365.AuthenticationConfig::get_ClientId()": {
+          "Lines": {
+            "38": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Office365.AuthenticationConfig::get_MailBox()": {
+          "Lines": {
+            "43": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Office365.AuthenticationConfig::get_Authority()": {
+          "Lines": {
+            "54": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Office365.AuthenticationConfig::get_ClientSecret()": {
+          "Lines": {
+            "66": 0
+          },
+          "Branches": []
+        },
+        "Microsoft.Identity.Web.CertificateDescription TailoredApps.Shared.Email.Office365.AuthenticationConfig::get_Certificate()": {
+          "Lines": {
+            "76": 0
+          },
+          "Branches": []
+        }
+      }
+    },
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.Email.Office365/Office365EmailProvider.cs": {
+      "TailoredApps.Shared.Email.Office365.Office365EmailProvider": {
+        "System.Boolean TailoredApps.Shared.Email.Office365.Office365EmailProvider::IsAppUsingClientSecret(TailoredApps.Shared.Email.Office365.AuthenticationConfig)": {
+          "Lines": {
+            "82": 0,
+            "84": 0,
+            "86": 0,
+            "89": 0,
+            "91": 0,
+            "95": 0
+          },
+          "Branches": [
+            {
+              "Line": 84,
+              "Offset": 17,
+              "EndOffset": 19,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 84,
+              "Offset": 31,
+              "EndOffset": 33,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 84,
+              "Offset": 17,
+              "EndOffset": 35,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 84,
+              "Offset": 31,
+              "EndOffset": 35,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 89,
+              "Offset": 41,
+              "EndOffset": 43,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 89,
+              "Offset": 41,
+              "EndOffset": 45,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Collections.Generic.Dictionary`2<System.String,System.String> TailoredApps.Shared.Email.Office365.Office365EmailProvider::GetAttachements(System.Collections.Generic.IEnumerable`1<MimeKit.MimeEntity>)": {
+          "Lines": {
+            "168": 0,
+            "169": 0,
+            "171": 0,
+            "174": 0,
+            "176": 0,
+            "178": 0,
+            "179": 0,
+            "180": 0,
+            "181": 0,
+            "184": 0
+          },
+          "Branches": [
+            {
+              "Line": 169,
+              "Offset": 115,
+              "EndOffset": 15,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 171,
+              "Offset": 28,
+              "EndOffset": 30,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 171,
+              "Offset": 28,
+              "EndOffset": 109,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 169,
+              "Offset": 115,
+              "EndOffset": 117,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            }
+          ]
+        },
+        "System.Void TailoredApps.Shared.Email.Office365.Office365EmailProvider::.ctor(Microsoft.Extensions.Options.IOptions`1<TailoredApps.Shared.Email.Office365.AuthenticationConfig>)": {
+          "Lines": {
+            "28": 0,
+            "29": 0,
+            "30": 0,
+            "31": 0,
+            "38": 0,
+            "40": 0,
+            "43": 0,
+            "48": 0,
+            "51": 0,
+            "52": 0,
+            "53": 0,
+            "54": 0,
+            "59": 0,
+            "60": 0,
+            "62": 0,
+            "63": 0,
+            "64": 0,
+            "65": 0,
+            "68": 0,
+            "70": 0,
+            "71": 0
+          },
+          "Branches": [
+            {
+              "Line": 48,
+              "Offset": 44,
+              "EndOffset": 46,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 48,
+              "Offset": 44,
+              "EndOffset": 108,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            }
+          ]
+        }
+      },
+      "TailoredApps.Shared.Email.Office365.Office365EmailProvider/<>c": {
+        "System.String TailoredApps.Shared.Email.Office365.Office365EmailProvider/<>c::<GetMail>b__5_0(MimeKit.InternetAddress)": {
+          "Lines": {
+            "151": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Office365.Office365EmailProvider/<>c::<GetMail>b__5_1(MimeKit.InternetAddress)": {
+          "Lines": {
+            "152": 0
+          },
+          "Branches": []
+        },
+        "System.String TailoredApps.Shared.Email.Office365.Office365EmailProvider/<>c::<GetMail>b__5_2(MimeKit.InternetAddress)": {
+          "Lines": {
+            "153": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.Email.Office365.Office365EmailProvider/<GetMail>d__5": {
+        "System.Void TailoredApps.Shared.Email.Office365.Office365EmailProvider/<GetMail>d__5::MoveNext()": {
+          "Lines": {
+            "111": 0,
+            "112": 0,
+            "113": 0,
+            "115": 0,
+            "117": 0,
+            "118": 0,
+            "119": 0,
+            "120": 0,
+            "122": 0,
+            "124": 0,
+            "126": 0,
+            "127": 0,
+            "129": 0,
+            "131": 0,
+            "133": 0,
+            "135": 0,
+            "137": 0,
+            "140": 0,
+            "141": 0,
+            "143": 0,
+            "145": 0,
+            "147": 0,
+            "148": 0,
+            "149": 0,
+            "150": 0,
+            "154": 0,
+            "155": 0,
+            "156": 0,
+            "157": 0,
+            "158": 0,
+            "161": 0,
+            "162": 0,
+            "163": 0,
+            "164": 0
+          },
+          "Branches": [
+            {
+              "Line": 111,
+              "Offset": 21,
+              "EndOffset": 26,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 0
+            },
+            {
+              "Line": 111,
+              "Offset": 21,
+              "EndOffset": 192,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 0
+            },
+            {
+              "Line": 120,
+              "Offset": 472,
+              "EndOffset": 474,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 0
+            },
+            {
+              "Line": 120,
+              "Offset": 472,
+              "EndOffset": 499,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 0
+            },
+            {
+              "Line": 127,
+              "Offset": 536,
+              "EndOffset": 538,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 0
+            },
+            {
+              "Line": 127,
+              "Offset": 536,
+              "EndOffset": 558,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 0
+            },
+            {
+              "Line": 131,
+              "Offset": 569,
+              "EndOffset": 571,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 0
+            },
+            {
+              "Line": 131,
+              "Offset": 569,
+              "EndOffset": 591,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 0
+            },
+            {
+              "Line": 135,
+              "Offset": 602,
+              "EndOffset": 604,
+              "Path": 0,
+              "Ordinal": 8,
+              "Hits": 0
+            },
+            {
+              "Line": 135,
+              "Offset": 602,
+              "EndOffset": 639,
+              "Path": 1,
+              "Ordinal": 9,
+              "Hits": 0
+            },
+            {
+              "Line": 143,
+              "Offset": 1027,
+              "EndOffset": 699,
+              "Path": 1,
+              "Ordinal": 17,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 775,
+              "EndOffset": 777,
+              "Path": 0,
+              "Ordinal": 10,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 775,
+              "EndOffset": 781,
+              "Path": 1,
+              "Ordinal": 11,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 841,
+              "EndOffset": 843,
+              "Path": 0,
+              "Ordinal": 12,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 841,
+              "EndOffset": 847,
+              "Path": 1,
+              "Ordinal": 13,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 907,
+              "EndOffset": 909,
+              "Path": 0,
+              "Ordinal": 14,
+              "Hits": 0
+            },
+            {
+              "Line": 147,
+              "Offset": 907,
+              "EndOffset": 913,
+              "Path": 1,
+              "Ordinal": 15,
+              "Hits": 0
+            },
+            {
+              "Line": 143,
+              "Offset": 1027,
+              "EndOffset": 1032,
+              "Path": 0,
+              "Ordinal": 16,
+              "Hits": 0
+            }
+          ]
+        }
+      },
+      "TailoredApps.Shared.Email.Office365.Office365EmailProvider/<SendMail>d__7": {
+        "System.Void TailoredApps.Shared.Email.Office365.Office365EmailProvider/<SendMail>d__7::MoveNext()": {
+          "Lines": {
+            "195": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.Email.Office365.Office365EmailProviderExtensions": {
+        "System.Void TailoredApps.Shared.Email.Office365.Office365EmailProviderExtensions::RegisterOffice365Provider(Microsoft.Extensions.DependencyInjection.IServiceCollection)": {
+          "Lines": {
+            "207": 0,
+            "208": 0,
+            "209": 0,
+            "210": 0
+          },
+          "Branches": []
+        }
+      },
+      "TailoredApps.Shared.Email.Office365.Office365EmailConfigureOptions": {
+        "System.Void TailoredApps.Shared.Email.Office365.Office365EmailConfigureOptions::Configure(TailoredApps.Shared.Email.Office365.AuthenticationConfig)": {
+          "Lines": {
+            "233": 0,
+            "235": 0,
+            "236": 0,
+            "237": 0,
+            "238": 0,
+            "239": 0,
+            "240": 0,
+            "241": 0,
+            "242": 0
+          },
+          "Branches": []
+        },
+        "System.Void TailoredApps.Shared.Email.Office365.Office365EmailConfigureOptions::.ctor(Microsoft.Extensions.Configuration.IConfiguration)": {
+          "Lines": {
+            "224": 0,
+            "226": 0,
+            "227": 0
+          },
+          "Branches": []
+        }
+      }
+    }
+  }
+}

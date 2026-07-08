@@ -1,0 +1,44 @@
+{
+  "TailoredApps.Shared.DateTime.dll": {
+    "/Users/private/.openclaw/workspace/SharedComponents/src/TailoredApps.Shared.DateTime/DateTimeProvider.cs": {
+      "TailoredApps.Shared.DateTime.DateTimeProvider": {
+        "System.DateTime TailoredApps.Shared.DateTime.DateTimeProvider::get_Now()": {
+          "Lines": {
+            "11": 1
+          },
+          "Branches": []
+        },
+        "System.DateTime TailoredApps.Shared.DateTime.DateTimeProvider::get_UtcNow()": {
+          "Lines": {
+            "16": 1
+          },
+          "Branches": []
+        },
+        "System.TimeSpan TailoredApps.Shared.DateTime.DateTimeProvider::get_TimeOfDay()": {
+          "Lines": {
+            "21": 2
+          },
+          "Branches": []
+        },
+        "System.TimeSpan TailoredApps.Shared.DateTime.DateTimeProvider::get_UtcTimeOfDaty()": {
+          "Lines": {
+            "26": 0
+          },
+          "Branches": []
+        },
+        "System.DateTime TailoredApps.Shared.DateTime.DateTimeProvider::get_Today()": {
+          "Lines": {
+            "31": 1
+          },
+          "Branches": []
+        },
+        "System.DateTime TailoredApps.Shared.DateTime.DateTimeProvider::get_UtcToday()": {
+          "Lines": {
+            "36": 1
+          },
+          "Branches": []
+        }
+      }
+    }
+  }
+}
