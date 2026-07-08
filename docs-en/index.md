@@ -34,6 +34,7 @@ Welcome to the documentation of **TailoredApps Shared Components** — a set of 
 | [Payments.Provider.Stripe](Libraries/Payments/Providers/Stripe.md) | `TailoredApps.Shared.Payments.Provider.Stripe` | Stripe Checkout integration |
 | [Payments.Provider.Tpay](Libraries/Payments/Providers/Tpay.md) | `TailoredApps.Shared.Payments.Provider.Tpay` | Tpay integration |
 | [Querying](Libraries/Querying/index.md) | `TailoredApps.Shared.Querying` | Base query classes: `QueryBase`, `PagedAndSortedQuery`, `IPagedResult` |
+| [WebApi](Libraries/WebApi/index.md) | `TailoredApps.Shared.WebApi` | Production Web API defaults: OpenTelemetry (metrics/tracing/logs via OTLP), health checks, HTTP resilience |
 
 ---
 
