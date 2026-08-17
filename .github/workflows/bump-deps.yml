@@ -39,15 +39,30 @@ jobs:
       - name: Run bump script
         id: bump
         shell: pwsh
+        env:
+          RECORDS_PATH: ${{ runner.temp }}/bump-records.json
         run: |
           $licenses = $env:ALLOWED_LICENSES -split ','
           $dryRun = $env:DRY_RUN -eq 'true'
           $scriptArgs = @{
             AllowedLicenses = $licenses
             GithubOutput    = $true
+            RecordsPath     = $env:RECORDS_PATH
           }
           if ($dryRun) { $scriptArgs.DryRun = $true }
           ./scripts/Bump-Deps.ps1 @scriptArgs
+
+      # The "Docs guard" workflow rejects any PR that touches src/ without touching
+      # docs/ + docs-en/, so the bump PR has to carry its own documentation entry.
+      - name: Generate dependency documentation
+        if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'
+        shell: pwsh
+        env:
+          RECORDS_PATH: ${{ runner.temp }}/bump-records.json
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          ./scripts/New-BumpDocs.ps1 -RecordsPath $env:RECORDS_PATH -RunUrl $env:RUN_URL
+          git --no-pager diff --stat -- docs docs-en
 
       - name: Verify build
         if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'
@@ -67,12 +82,15 @@ jobs:
             Allowed licenses: `${{ env.ALLOWED_LICENSES }}`
 
             ### Bumps and skips
-            See workflow run log for the full BUMP/SKIP report.
+            See workflow run log for the full BUMP/SKIP report, and the generated
+            entry in `docs/Dependencies/index.md` / `docs-en/Dependencies/index.md`
+            for the per-project package list.
             Packages with license drift or licenses outside the allowlist are skipped automatically.
 
             ### Test plan
             - [x] `dotnet restore` (workflow)
             - [x] `dotnet build` (workflow)
+            - [x] Dependency docs regenerated (`scripts/New-BumpDocs.ps1`)
             - [ ] CI green
             - [ ] Spot-check API surface for any breaking changes
           branch: chore/auto-bump-deps

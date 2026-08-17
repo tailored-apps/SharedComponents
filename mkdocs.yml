@@ -49,6 +49,8 @@ nav:
               - Stripe: Libraries/Payments/Providers/Stripe.md
               - Tpay: Libraries/Payments/Providers/Tpay.md
       - Querying: Libraries/Querying/index.md
+      - WebApi: Libraries/WebApi/index.md
+  - Zależności: Dependencies/index.md
   - Contributing: contributing.md
   - Changelog: Libraries/Readme.md
 

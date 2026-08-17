@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Bump NuGet PackageReference versions to latest stable, with license-awareness.
 
@@ -29,7 +29,12 @@
 
 .PARAMETER GithubOutput
     If set, also writes a summary line to $env:GITHUB_OUTPUT for CI consumption
-    (key: bumped, value: true|false).
+    (keys: bumped=true|false, summary-file=<path>, records-file=<path>).
+
+.PARAMETER RecordsPath
+    Where to write the machine-readable JSON report of every BUMP and SKIP
+    decision. Consumed by scripts/New-BumpDocs.ps1 to generate the dependency
+    documentation. Defaults to a temp file when -GithubOutput is used.
 
 .PARAMETER Ignore
     Hashtable of package name -> max allowed version (exclusive ceiling) or $null
@@ -49,6 +54,7 @@ param(
     [switch]$DryRun,
     [string]$Path = '.',
     [switch]$GithubOutput,
+    [string]$RecordsPath,
     [hashtable]$Ignore = @{
         # MediatR 13+ relicensed Apache-2.0 -> RPL-1.5 (Lucky Penny Software).
         # SPDX is not published, so the license-change rule cannot catch it.
@@ -116,17 +122,50 @@ function Get-LicenseForVersion {
     return $null
 }
 
+function New-BumpRecord {
+    param(
+        [ValidateSet('bump', 'skip')][string]$Action,
+        [string]$Project,
+        [string]$ProjectPath,
+        [string]$Package,
+        [string]$From,
+        [string]$To,
+        [string]$License,
+        [string]$Reason
+    )
+    [pscustomobject]@{
+        action      = $Action
+        project     = $Project
+        projectPath = $ProjectPath
+        package     = $Package
+        from        = $From
+        to          = $To
+        license     = $License
+        reason      = $Reason
+    }
+}
+
 $root = Resolve-Path $Path
-$csprojs = Get-ChildItem -Path $root -Recurse -Filter *.csproj
+$rootPrefix = $root.Path.TrimEnd('\', '/')
+$csprojs = @(Get-ChildItem -Path $root -Recurse -Filter *.csproj | Where-Object {
+    # Skip anything inside a dot-directory — nested checkouts (.claude/worktrees),
+    # tool caches and the like are not part of this repository's sources.
+    $rel = $_.FullName.Substring($rootPrefix.Length).TrimStart('\', '/')
+    -not ($rel -split '[\\/]' | Where-Object { $_.StartsWith('.') })
+})
 Write-Host "Scanning $($csprojs.Count) csproj files under $root" -ForegroundColor Cyan
 
 $bumpedAny = $false
 $summary = @()
+$records = [System.Collections.Generic.List[object]]::new()
 
 foreach ($file in $csprojs) {
     $xml = New-Object System.Xml.XmlDocument
     $xml.PreserveWhitespace = $true
     $xml.Load($file.FullName)
+
+    $projName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+    $projPath = $file.FullName.Substring($rootPrefix.Length).TrimStart('\', '/') -replace '\\', '/'
 
     $changed = $false
     $refs = $xml.SelectNodes('//PackageReference')
@@ -143,6 +182,8 @@ foreach ($file in $csprojs) {
             if ($null -eq $ceiling) {
                 Write-Host "SKIP $name (ignore list, all bumps blocked)" -ForegroundColor Yellow
                 $summary += "SKIP $name (ignore list)"
+                $records.Add((New-BumpRecord -Action skip -Project $projName -ProjectPath $projPath `
+                            -Package $name -From $cur -Reason 'ignore list'))
                 continue
             }
         }
@@ -150,11 +191,15 @@ foreach ($file in $csprojs) {
         $info = Get-PackageInfo -Name $name
         if (-not $info) {
             Write-Warning "no nuget metadata for $name (skipping)"
+            $records.Add((New-BumpRecord -Action skip -Project $projName -ProjectPath $projPath `
+                        -Package $name -From $cur -Reason 'no nuget metadata'))
             continue
         }
         $entries = Get-CatalogEntries -Info $info
         if (-not $entries) {
             Write-Warning "no catalog entries for $name (skipping)"
+            $records.Add((New-BumpRecord -Action skip -Project $projName -ProjectPath $projPath `
+                        -Package $name -From $cur -Reason 'no catalog entries'))
             continue
         }
         $latest = Get-LatestStableEntry -Entries $entries
@@ -181,6 +226,9 @@ foreach ($file in $csprojs) {
                 if (-not $belowCeiling) {
                     Write-Host "SKIP $name ${cur} -> $($latest.version): ignore-list ceiling $ceiling, no version below it" -ForegroundColor Yellow
                     $summary += "SKIP $name (no version below ignore ceiling $ceiling)"
+                    $records.Add((New-BumpRecord -Action skip -Project $projName -ProjectPath $projPath `
+                                -Package $name -From $cur -To $latest.version `
+                                -Reason "no version below ignore ceiling $ceiling"))
                     continue
                 }
                 Write-Host "CLAMP $name latest=$($latest.version) -> $($belowCeiling.catalogEntry.version) (ignore ceiling $ceiling)" -ForegroundColor DarkYellow
@@ -197,20 +245,30 @@ foreach ($file in $csprojs) {
             if (-not $AllowUndeclaredLicense) {
                 Write-Host "SKIP $name ${cur} -> $($latest.version): no declared license" -ForegroundColor Yellow
                 $summary += "SKIP $name -> $($latest.version) (no declared license)"
+                $records.Add((New-BumpRecord -Action skip -Project $projName -ProjectPath $projPath `
+                            -Package $name -From $cur -To $latest.version -Reason 'no declared license'))
                 continue
             }
         } elseif ($curLic -and $curLic -ne $latestLic) {
             Write-Host "SKIP $name ${cur} -> $($latest.version): license changed ($curLic -> $latestLic)" -ForegroundColor Yellow
             $summary += "SKIP $name -> $($latest.version) (license $curLic -> $latestLic)"
+            $records.Add((New-BumpRecord -Action skip -Project $projName -ProjectPath $projPath `
+                        -Package $name -From $cur -To $latest.version -License $latestLic `
+                        -Reason "license changed ($curLic -> $latestLic)"))
             continue
         } elseif ($latestLic -notin $AllowedLicenses) {
             Write-Host "SKIP $name ${cur} -> $($latest.version): license $latestLic not in allowlist" -ForegroundColor Yellow
             $summary += "SKIP $name -> $($latest.version) (license $latestLic not allowed)"
+            $records.Add((New-BumpRecord -Action skip -Project $projName -ProjectPath $projPath `
+                        -Package $name -From $cur -To $latest.version -License $latestLic `
+                        -Reason "license $latestLic not in allowlist"))
             continue
         }
 
         Write-Host "BUMP $name ${cur} -> $($latest.version) ($latestLic) in $($file.Name)" -ForegroundColor Green
         $summary += "BUMP $name $cur -> $($latest.version) ($latestLic)"
+        $records.Add((New-BumpRecord -Action bump -Project $projName -ProjectPath $projPath `
+                    -Package $name -From $cur -To $latest.version -License $latestLic))
         $ref.SetAttribute('Version', $latest.version)
         $changed = $true
         $bumpedAny = $true
@@ -235,11 +293,27 @@ if ($summary.Count -eq 0) {
     $summary | ForEach-Object { Write-Host $_ }
 }
 
+# Machine-readable report — feeds scripts/New-BumpDocs.ps1 so every bump PR also
+# ships the documentation change the Docs guard requires.
+if (-not $RecordsPath -and $GithubOutput) {
+    $RecordsPath = Join-Path ([System.IO.Path]::GetTempPath()) 'bump-records.json'
+}
+if ($RecordsPath) {
+    $payload = [ordered]@{
+        generatedUtc = (Get-Date).ToUniversalTime().ToString('o')
+        records      = @($records)
+    }
+    $json = ConvertTo-Json -InputObject $payload -Depth 5
+    [System.IO.File]::WriteAllText($RecordsPath, $json, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "Records written to $RecordsPath" -ForegroundColor Gray
+}
+
 if ($GithubOutput -and $env:GITHUB_OUTPUT) {
     "bumped=$($bumpedAny.ToString().ToLower())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
     $sumPath = Join-Path ([System.IO.Path]::GetTempPath()) "bump-summary.txt"
     $summary | Out-File -FilePath $sumPath -Encoding utf8
     "summary-file=$sumPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+    "records-file=$RecordsPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 }
 
 if ($DryRun) { Write-Host "(dry run — no files modified)" -ForegroundColor Gray }
