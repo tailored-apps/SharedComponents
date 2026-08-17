@@ -80,6 +80,22 @@ Używasz biblioteki TailoredApps.Shared.XXXXX w projekcie .NET.
 
 ---
 
+## Automatyczne bumpy zależności
+
+PR-y tworzone przez workflow **Bump dependencies** też muszą spełniać tę zasadę — zmieniają
+`*.csproj` pod `src/`, więc *Docs guard* wymaga od nich zmiany w `docs/` i `docs-en/`.
+Robi to za nie `scripts/New-BumpDocs.ps1`, uruchamiany zaraz po `scripts/Bump-Deps.ps1`:
+dopisuje datowany wpis (projekt → pakiet → wersja z/na → licencja) na stronach
+`docs/Dependencies/index.md` i `docs-en/Dependencies/index.md`.
+
+Zasady:
+
+- Nie edytuj ręcznie treści między znacznikami `<!-- BUMP-LOG:START -->` a `<!-- BUMP-LOG:END -->`
+  — jest nadpisywana przy każdym przebiegu. Tekst poza znacznikami jest zachowywany.
+- Etykieta `skip-docs` na takim PR-ze nie jest potrzebna; jeżeli jej używasz, robisz to świadomie
+  (np. przy ręcznej poprawce, która nie przeszła przez skrypt).
+- Bumpy nie są bibliotekami — nie wymagają sekcji 🤖 AI Agent Prompt ani wpisu w tabeli `docs/index.md`.
+
 ## Checklist PR
 
 - [ ] Plik `docs/Libraries/<Nazwa>/index.md` (lub odpowiednia strona) istnieje
