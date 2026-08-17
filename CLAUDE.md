@@ -62,6 +62,13 @@ tells an AI coding agent how to wire the library into a project. It must state:
 
 When in doubt, mirror an existing page such as `docs/Libraries/EntityFramework/UnitOfWork.WebApiCore.md`.
 
+## Automated dependency bumps
+`.github/workflows/bump-deps.yml` changes `src/**/*.csproj`, so it must satisfy the same rule.
+`scripts/Bump-Deps.ps1 -RecordsPath <json>` emits a machine-readable BUMP/SKIP report and
+`scripts/New-BumpDocs.ps1 -RecordsPath <json>` turns it into a dated entry on
+`docs/Dependencies/index.md` + `docs-en/Dependencies/index.md`. Only the region between the
+`<!-- BUMP-LOG:START -->` / `<!-- BUMP-LOG:END -->` markers is rewritten — never hand-edit it.
+
 ## Enforcement
 - **CI (blocking):** the *Docs guard* workflow (`.github/workflows/docs-guard.yml`) fails a PR when
   `src/**` changed without matching `docs/**` + `docs-en/**` updates (escape hatch: add the `skip-docs`

@@ -51,6 +51,7 @@ nav:
               - Tpay: Libraries/Payments/Providers/Tpay.md
       - Querying: Libraries/Querying/index.md
       - WebApi: Libraries/WebApi/index.md
+  - Dependencies: Dependencies/index.md
   - Contributing: contributing.md
 
 # Configuration
