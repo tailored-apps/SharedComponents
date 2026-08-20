@@ -153,6 +153,10 @@ namespace TailoredApps.Shared.Email
         public void Configure(SmtpEmailServiceOptions options)
         {
             var section = configuration.GetSection(SmtpEmailServiceOptions.ConfigurationKey).Get<SmtpEmailServiceOptions>();
+            if (section == null)
+            {
+                throw new System.InvalidOperationException($"Configuration section '{SmtpEmailServiceOptions.ConfigurationKey}' is missing.");
+            }
 
             options.Host = section.Host;
             options.Port = section.Port;

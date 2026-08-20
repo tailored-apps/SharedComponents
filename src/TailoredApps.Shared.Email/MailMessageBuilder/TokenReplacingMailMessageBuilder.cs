@@ -62,8 +62,8 @@ namespace TailoredApps.Shared.Email.MailMessageBuilder
                 {
                     if (!templates.ContainsKey(file.Name))
                     {
-                        var template = file.OpenText().ReadToEnd();
-                        templates.Add(templateKey, template);
+                        var template = File.ReadAllText(file.FullName);
+                        templates.Add(file.Name, template);
                     }
                 }
             }

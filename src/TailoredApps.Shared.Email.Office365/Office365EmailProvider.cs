@@ -231,6 +231,10 @@ namespace TailoredApps.Shared.Email.Office365
         public void Configure(AuthenticationConfig options)
         {
             var section = configuration.GetSection(AuthenticationConfig.ConfigurationKey).Get<AuthenticationConfig>();
+            if (section == null)
+            {
+                throw new System.InvalidOperationException($"Configuration section '{AuthenticationConfig.ConfigurationKey}' is missing.");
+            }
 
             options.Instance = section.Instance;
             options.ApiUrl = section.ApiUrl;

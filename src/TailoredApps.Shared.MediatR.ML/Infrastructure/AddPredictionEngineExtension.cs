@@ -25,9 +25,6 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             where TData : class
             where TPrediction : class, new()
         {
-
-            return builder;
-
             builder.Services.AddSingleton<IPredictionEnginePoolAdapter<TData, TPrediction>, PredictionEnginePoolAdapter<TData, TPrediction>>();
             return builder;
         }

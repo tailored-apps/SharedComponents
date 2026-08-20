@@ -35,6 +35,8 @@ namespace TailoredApps.Shared.ExceptionHandling.WebApiCore.Filters
         {
             var controllerActionDescriptor = actionContext.ActionDescriptor as ControllerActionDescriptor;
             var handleExceptionAttribute = controllerActionDescriptor?.MethodInfo
+                .GetCustomAttribute<HandleExceptionAttribute>(true)
+                ?? controllerActionDescriptor?.ControllerTypeInfo
                 .GetCustomAttribute<HandleExceptionAttribute>(true);
 
             if (handleExceptionAttribute != null)
@@ -56,6 +58,8 @@ namespace TailoredApps.Shared.ExceptionHandling.WebApiCore.Filters
         {
             var controllerActionDescriptor = actionContext.ActionDescriptor as ControllerActionDescriptor;
             var handleExceptionAttribute = controllerActionDescriptor?.MethodInfo
+                .GetCustomAttribute<HandleExceptionAttribute>(true)
+                ?? controllerActionDescriptor?.ControllerTypeInfo
                 .GetCustomAttribute<HandleExceptionAttribute>(true);
 
             if (handleExceptionAttribute != null)

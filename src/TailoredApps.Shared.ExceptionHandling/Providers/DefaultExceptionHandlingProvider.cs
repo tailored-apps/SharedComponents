@@ -34,7 +34,7 @@ namespace TailoredApps.Shared.ExceptionHandling.Providers
             else
             {
                 return new ExceptionHandlingResultModel(sourceException.Message, new List<ExceptionOrValidationError>(new[] {
-                new ExceptionOrValidationError("",exception.Message)
+                new ExceptionOrValidationError("",sourceException.Message)
             }));
             }
         }

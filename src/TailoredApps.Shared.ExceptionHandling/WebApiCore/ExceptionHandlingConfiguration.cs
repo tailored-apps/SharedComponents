@@ -36,9 +36,17 @@ namespace TailoredApps.Shared.ExceptionHandling.WebApiCore
         /// actions decorated with <see cref="HandleExceptionAttribute"/> are automatically handled.
         /// </summary>
         /// <param name="filter">The global filter collection.</param>
-        public static void AddExceptionHAndlingFilterAttribute(this FilterCollection filter)
+        public static void AddExceptionHandlingFilterAttribute(this FilterCollection filter)
         {
             filter.Add<HandleExceptionFilterAttribute>();
         }
+
+        /// <summary>
+        /// Adds <see cref="HandleExceptionFilterAttribute"/> as a global MVC filter.
+        /// </summary>
+        /// <param name="filter">The global filter collection.</param>
+        [System.Obsolete("Use AddExceptionHandlingFilterAttribute instead. This misspelled overload will be removed in the next major version.")]
+        public static void AddExceptionHAndlingFilterAttribute(this FilterCollection filter)
+            => filter.AddExceptionHandlingFilterAttribute();
     }
 }
