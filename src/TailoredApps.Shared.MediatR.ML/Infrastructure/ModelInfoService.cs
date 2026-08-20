@@ -20,6 +20,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         /// <param name="modelHelper">The helper used to extract metadata from the model file.</param>
         public ModelInfoService(IOptions<ImageClassificationOptions> options, IModelHelper modelHelper)
         {
+            this.options = options;
             this.modelHelper = modelHelper;
         }
 

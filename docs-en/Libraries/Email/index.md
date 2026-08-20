@@ -15,7 +15,7 @@ Built-in safeguard against accidental spam in non-production environments: when 
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Email
@@ -23,18 +23,18 @@ dotnet add package TailoredApps.Shared.Email
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
-=== "SMTP (produkcja)"
+=== "SMTP (production)"
 
     ```csharp
     // Program.cs
     using TailoredApps.Shared.Email;
 
-    // Rejestracja SMTP provider
+    // Register the SMTP provider
     builder.Services.RegisterSmtpProvider();
 
-    // Opcjonalnie: rejestracja buildera szablonów
+    // Optional: register the template builder
     builder.Services.AddTransient<IMailMessageBuilder, TokenReplacingMailMessageBuilder>();
     builder.Services.Configure<TokenReplacingMailMessageBuilderOptions>(options =>
     {
@@ -43,14 +43,14 @@ dotnet add package TailoredApps.Shared.Email
     });
     ```
 
-=== "Konsola (development)"
+=== "Console (development)"
 
     ```csharp
     // Program.cs
     builder.Services.RegisterConsoleProvider();
     ```
 
-### Konfiguracja `appsettings.json`
+### `appsettings.json` configuration
 
 ```json
 {
@@ -73,7 +73,7 @@ dotnet add package TailoredApps.Shared.Email
 
 ---
 
-## Przykład użycia
+## Usage example
 
 ```csharp
 public class NotificationService
@@ -98,12 +98,12 @@ public class NotificationService
                 { "UserName", userName },
                 { "AppUrl", "https://myapp.example.com" }
             },
-            templates: null  // załaduje z pliku, jeśli skonfigurowano Location
+            templates: null  // loaded from disk when Location is configured
         );
 
         var messageId = await _emailProvider.SendMail(
             recipnet: recipientEmail,
-            topic: "Witaj w MyApp!",
+            topic: "Welcome to MyApp!",
             messageBody: body,
             attachments: null
         );
@@ -123,21 +123,21 @@ public class NotificationService
             messageBody: htmlBody,
             attachments: new Dictionary<string, byte[]>
             {
-                { "faktura.pdf", pdfBytes }
+                { "invoice.pdf", pdfBytes }
             }
         );
     }
 }
 ```
 
-### Szablon e-mail (welcome.html)
+### Email template (welcome.html)
 
 ```html
 <!DOCTYPE html>
 <html>
 <body>
-  <h1>Witaj, {{UserName}}!</h1>
-  <p>Twoje konto zostało założone. <a href="{{AppUrl}}">Kliknij tutaj</a> by się zalogować.</p>
+  <h1>Hello, {{UserName}}!</h1>
+  <p>Your account has been created. <a href="{{AppUrl}}">Click here</a> to sign in.</p>
 </body>
 </html>
 ```
@@ -146,37 +146,37 @@ public class NotificationService
 
 ## API Reference
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
-| `IEmailProvider` | Interfejs | Główny kontrakt: `SendMail`, `GetMail` |
-| `SmtpEmailProvider` | Klasa | Wysyłka przez SMTP; opcje z `SmtpEmailServiceOptions` |
-| `EmailServiceToConsoleWriter` | Klasa | Wypisuje dane emaila do konsoli (dev/test) |
-| `SmtpEmailServiceOptions` | Klasa | Konfiguracja SMTP: Host, Port, UserName, Password, From, IsProd, CatchAll |
-| `IMailMessageBuilder` | Interfejs | Kontrakt: `Build(templateKey, variables, templates)` |
-| `DefaultMessageBuilder` | Klasa | Podstawia tokeny w słowniku szablonów |
-| `TokenReplacingMailMessageBuilder` | Klasa | Ładuje szablony z systemu plików; placeholdery `{{token}}` |
-| `TokenReplacingMailMessageBuilderOptions` | Klasa | `Location` (ścieżka do katalogu szablonów), `FileExtension` |
-| `SmtpEmailProviderExtensions.RegisterSmtpProvider` | Metoda ext. | Rejestruje `SmtpEmailProvider` w DI |
-| `SmtpEmailProviderExtensions.RegisterConsoleProvider` | Metoda ext. | Rejestruje `EmailServiceToConsoleWriter` w DI |
+| `IEmailProvider` | Interface | Main contract: `SendMail`, `GetMail` |
+| `SmtpEmailProvider` | Class | Sends via SMTP; options from `SmtpEmailServiceOptions` |
+| `EmailServiceToConsoleWriter` | Class | Writes the email data to the console (dev/test) |
+| `SmtpEmailServiceOptions` | Class | SMTP configuration: Host, Port, UserName, Password, From, IsProd, CatchAll |
+| `IMailMessageBuilder` | Interface | Contract: `Build(templateKey, variables, templates)` |
+| `DefaultMessageBuilder` | Class | Substitutes tokens in the template dictionary |
+| `TokenReplacingMailMessageBuilder` | Class | Loads templates from the file system; `{{token}}` placeholders |
+| `TokenReplacingMailMessageBuilderOptions` | Class | `Location` (template directory path), `FileExtension` |
+| `SmtpEmailProviderExtensions.RegisterSmtpProvider` | Ext. method | Registers `SmtpEmailProvider` in DI |
+| `SmtpEmailProviderExtensions.RegisterConsoleProvider` | Ext. method | Registers `EmailServiceToConsoleWriter` in DI |
 
 ---
 
 ## 🤖 AI Agent Prompt
 
 ```markdown
-## TailoredApps.Shared.Email — Instrukcja dla agenta AI
+## TailoredApps.Shared.Email — AI agent instructions
 
-Używasz biblioteki TailoredApps.Shared.Email w projekcie .NET.
+You are using the TailoredApps.Shared.Email library in a .NET project.
 
-### Rejestracja
+### Registration
 ```csharp
-// Produkcja (SMTP):
+// Production (SMTP):
 builder.Services.RegisterSmtpProvider();
 
-// Development (konsola):
+// Development (console):
 builder.Services.RegisterConsoleProvider();
 
-// Builder szablonów (opcjonalnie):
+// Template builder (optional):
 builder.Services.AddTransient<IMailMessageBuilder, TokenReplacingMailMessageBuilder>();
 builder.Services.Configure<TokenReplacingMailMessageBuilderOptions>(o => {
     o.Location = "EmailTemplates/";
@@ -193,16 +193,18 @@ builder.Services.Configure<TokenReplacingMailMessageBuilderOptions>(o => {
 }}}
 ```
 
-### Użycie
+### Usage
 ```csharp
-// Wstrzyknij IEmailProvider + IMailMessageBuilder
+// Inject IEmailProvider + IMailMessageBuilder
 var body = _builder.Build("template.html", variables, null);
 await _emailProvider.SendMail(email, subject, body, attachments);
 ```
 
-### Zasady
-- Gdy IsProd=false, wszystkie emaile trafiają na CatchAll — nigdy do prawdziwych odbiorców
-- Do testów wstrzyknij IEmailProvider jako mock lub użyj RegisterConsoleProvider
-- Placeholdery w szablonach TokenReplacing: {{NazwaTokena}}
-- Załączniki: słownik fileName → byte[]
+### Rules
+- When IsProd=false, every email goes to CatchAll — never to real recipients
+- For tests inject IEmailProvider as a mock or use RegisterConsoleProvider
+- Placeholders in TokenReplacing templates: {{TokenName}}
+- The template key (`templateKey`) must equal the template file name including its extension, e.g. `template.html`; an unknown key → `KeyNotFoundException`
+- The "Mail:Providers:Smtp" configuration section is required — a missing section throws `InvalidOperationException`
+- Attachments: dictionary fileName → byte[]
 ```

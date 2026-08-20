@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Polly;
+using Polly.CircuitBreaker;
 using TailoredApps.Shared.MediatR.Interfaces.Messages;
 
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours
@@ -18,6 +19,11 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
     /// <typeparam name="TResponse">The type of the response.</typeparam>
     public class RetryBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
     {
+        // The circuit breaker must outlive the (transient) behavior instance to ever trip,
+        // so it is shared per closed request/response type and created from the first handler's configuration.
+        private static readonly object _circuitBreakerLock = new object();
+        private static AsyncCircuitBreakerPolicy<TResponse> _circuitBreaker;
+
         private readonly IEnumerable<IRetryableRequest<TRequest, TResponse>> _retryHandlers;
         private readonly ILogger<RetryBehavior<TRequest, TResponse>> _logger;
 
@@ -42,16 +48,7 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
                 return await next();
             }
 
-            var circuitBreaker = Policy<TResponse>
-                .Handle<Exception>()
-                .CircuitBreakerAsync(retryHandler.ExceptionsAllowedBeforeCircuitTrip, TimeSpan.FromMilliseconds(5000),
-                    (exception, things) =>
-                    {
-                        _logger.LogDebug("Circuit Tripped!");
-                    },
-                    () =>
-                    {
-                    });
+            var circuitBreaker = GetOrCreateCircuitBreaker(retryHandler);
 
             var retryPolicy = Policy<TResponse>
                 .Handle<Exception>()
@@ -66,9 +63,36 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
                     return retryDelay;
                 });
 
-            var response = await retryPolicy.ExecuteAsync(async () => await next());
+            // Breaker wraps the retried operation, so a single request still exhausts its retries;
+            // only consecutively failing requests open the circuit and fail fast.
+            var response = await circuitBreaker.WrapAsync(retryPolicy).ExecuteAsync(async () => await next());
 
             return response;
+        }
+
+        private AsyncCircuitBreakerPolicy<TResponse> GetOrCreateCircuitBreaker(IRetryableRequest<TRequest, TResponse> retryHandler)
+        {
+            if (_circuitBreaker == null)
+            {
+                lock (_circuitBreakerLock)
+                {
+                    if (_circuitBreaker == null)
+                    {
+                        _circuitBreaker = Policy<TResponse>
+                            .Handle<Exception>()
+                            .CircuitBreakerAsync(retryHandler.ExceptionsAllowedBeforeCircuitTrip, TimeSpan.FromMilliseconds(5000),
+                                (exception, things) =>
+                                {
+                                    _logger.LogDebug("Circuit Tripped!");
+                                },
+                                () =>
+                                {
+                                });
+                    }
+                }
+            }
+
+            return _circuitBreaker;
         }
     }
 }

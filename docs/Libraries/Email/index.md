@@ -204,5 +204,7 @@ await _emailProvider.SendMail(email, subject, body, attachments);
 - Gdy IsProd=false, wszystkie emaile trafiają na CatchAll — nigdy do prawdziwych odbiorców
 - Do testów wstrzyknij IEmailProvider jako mock lub użyj RegisterConsoleProvider
 - Placeholdery w szablonach TokenReplacing: {{NazwaTokena}}
+- Klucz szablonu (`templateKey`) musi być równy nazwie pliku szablonu wraz z rozszerzeniem, np. `template.html`; nieznany klucz → `KeyNotFoundException`
+- Sekcja konfiguracji "Mail:Providers:Smtp" jest wymagana — jej brak powoduje `InvalidOperationException`
 - Załączniki: słownik fileName → byte[]
 ```

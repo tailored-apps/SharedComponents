@@ -118,7 +118,7 @@ public class GetProductQueryFallback : IFallbackHandler<GetProductQuery, Product
 | `ValidationBehavior<TRequest, TResponse>` | Pipeline Behavior | Wykonuje wszystkie `IValidator<TRequest>` (FluentValidation) |
 | `CachingBehavior<TRequest, TResponse>` | Pipeline Behavior | Cache'uje odpowiedź zgodnie z `ICachePolicy<TRequest, TResponse>` |
 | `FallbackBehavior<TRequest, TResponse>` | Pipeline Behavior | Przy wyjątku wywołuje `IFallbackHandler<TRequest, TResponse>` |
-| `RetryBehavior<TRequest, TResponse>` | Pipeline Behavior | Ponawia request zgodnie z `IRetryableRequest<TRequest, TResponse>` |
+| `RetryBehavior<TRequest, TResponse>` | Pipeline Behavior | Ponawia request zgodnie z `IRetryableRequest<TRequest, TResponse>`; po `ExceptionsAllowedBeforeCircuitTrip` kolejnych nieudanych requestach otwiera circuit breaker (współdzielony per typ requestu) i przez 5 s odrzuca wywołania `BrokenCircuitException` |
 | `PipelineRegistration` | Klasa | Rejestruje wszystkie behaviors + auto-discovery z assembly |
 | `IPipelineRegistration` | Interfejs | Kontrakt PipelineRegistration |
 | `ICachePolicy<TRequest, TResponse>` | Interfejs | Konfiguracja cache: klucz, TTL, sliding/absolute expiration |

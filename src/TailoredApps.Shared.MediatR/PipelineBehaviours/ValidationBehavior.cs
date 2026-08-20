@@ -30,9 +30,8 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
         /// <inheritdoc/>
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
-            var context = new ValidationContext<TRequest>(request);
             var failures = _validators
-                .Select(v => v.Validate(context))
+                .Select(v => v.Validate(new ValidationContext<TRequest>(request)))
                 .SelectMany(result => result.Errors)
                 .Where(f => f != null)
                 .ToList();

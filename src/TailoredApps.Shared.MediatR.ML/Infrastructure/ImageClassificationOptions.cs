@@ -47,6 +47,10 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             public void Configure(ImageClassificationOptions options)
             {
                 var section = configuration.GetSection(ImageClassificationOptions.ConfigurationKey).Get<ImageClassificationOptions>();
+                if (section == null)
+                {
+                    throw new System.InvalidOperationException($"Configuration section '{ImageClassificationOptions.ConfigurationKey}' is missing.");
+                }
 
                 options.ModelFilePath = section.ModelFilePath;
             }

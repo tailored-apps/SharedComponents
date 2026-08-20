@@ -68,7 +68,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
                     Stream readmeStream = null;
                     try
                     {
-                        readmeStream = ARCHIVE.CreateEntry(versionFileName).Open();
+                        readmeStream = ARCHIVE.CreateEntry(labelsFileName).Open();
                         using (StreamWriter sw = new StreamWriter(readmeStream))
                         {
                             readmeStream = null;
@@ -138,7 +138,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             {
                 using FileStream fileStream = new FileStream(modelFilePath, FileMode.Open);
                 using ZipArchive archive = new ZipArchive(fileStream, ZipArchiveMode.Read);
-                ZipArchiveEntry zipArchiveEntry = archive.GetEntry(versionFileName);
+                ZipArchiveEntry zipArchiveEntry = archive.GetEntry(labelsFileName);
                 if (zipArchiveEntry != null)
                 {
                     using StreamReader streamReader = new StreamReader(zipArchiveEntry.Open());

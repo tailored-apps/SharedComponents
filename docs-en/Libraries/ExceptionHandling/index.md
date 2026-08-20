@@ -39,7 +39,7 @@ builder.Services
 // Opcja A: Globalny filter MVC
 builder.Services.AddControllers(options =>
 {
-    options.Filters.AddExceptionHAndlingFilterAttribute();
+    options.Filters.AddExceptionHandlingFilterAttribute();
 });
 
 // Opcja B: Middleware (preferowane dla globalnej obsługi)
@@ -140,7 +140,7 @@ builder.Services.AddExceptionHandlingForWebApi<IExceptionHandlingProvider, MyPro
 // Opcja A - middleware (globalnie):
 app.ConfigureExceptionHandler();
 // Opcja B - filter MVC:
-builder.Services.AddControllers(o => o.Filters.AddExceptionHAndlingFilterAttribute());
+builder.Services.AddControllers(o => o.Filters.AddExceptionHandlingFilterAttribute());
 ```
 
 ### Implementacja własnego providera
@@ -166,4 +166,7 @@ public class MyProvider : IExceptionHandlingProvider
 - ExceptionOrValidationError z pustym field (string.Empty) → pole Field = null w JSON (pomijane)
 - Zawsze implementuj własny IExceptionHandlingProvider mapujący domeny wyjątki
 - Middleware ConfigureExceptionHandler obsługuje WSZYSTKIE wyjątki — filter tylko opakowane
+- [HandleException] works at both the action AND the controller class level
+- For nested exceptions the message comes from the base exception (GetBaseException)
+- AddExceptionHAndlingFilterAttribute (typo) is marked [Obsolete] — use AddExceptionHandlingFilterAttribute
 ```
