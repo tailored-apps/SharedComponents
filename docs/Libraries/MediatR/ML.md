@@ -156,6 +156,8 @@ var result = await _mediator.Send(new TrainImageClassificationModel
 
 ### Zasady
 - Model musi być plikiem ZIP (ML.NET format)
+- Sekcja konfiguracji `ImageClassification` jest wymagana — jej brak powoduje `InvalidOperationException` przy pierwszym użyciu opcji
+- Wersja i etykiety modelu są zapisywane w archiwum jako osobne wpisy `Version.txt` i `Labels.txt`
 - Folder treningowy: każdy podfolder = jedna klasa, nazwa folderu = etykieta
 - PredictionEnginePool jest thread-safe — bezpieczne współbieżne użycie
 - PredictedScore ∈ [0,1] — im bliżej 1, tym wyższe zaufanie modelu
