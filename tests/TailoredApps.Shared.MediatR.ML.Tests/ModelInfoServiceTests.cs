@@ -1,3 +1,4 @@
+using System.IO;
 using Microsoft.Extensions.Options;
 using Moq;
 using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
@@ -8,7 +9,8 @@ namespace TailoredApps.Shared.MediatR.ML.Tests
 {
     public class ModelInfoServiceTests
     {
-        private const string ModelFilePath = @"c:\models\image.zip";
+        // Built with Path.Combine so Path.GetFileName splits it on every OS (CI runs on Linux).
+        private static readonly string ModelFilePath = Path.Combine("models", "image.zip");
 
         private readonly Mock<IModelHelper> modelHelperMock;
         private readonly ModelInfoService sut;
