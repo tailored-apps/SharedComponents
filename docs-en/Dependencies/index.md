@@ -44,5 +44,17 @@ pwsh ./scripts/New-BumpDocs.ps1 -RecordsPath ./bump-records.json
 ## Change log
 
 <!-- BUMP-LOG:START -->
-_No updates recorded yet._
+
+## 2026-08-31
+
+Updated **1** package reference across **1** project.
+
+Source: [workflow run](https://github.com/tailored-apps/SharedComponents/actions/runs/33394567918).
+
+**`src/TailoredApps.Shared.EntityFramework/TailoredApps.Shared.EntityFramework.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `System.Linq.Dynamic.Core` | `1.7.3` | `1.7.4` | `Apache-2.0` |
+
 <!-- BUMP-LOG:END -->
