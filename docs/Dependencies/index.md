@@ -44,5 +44,17 @@ pwsh ./scripts/New-BumpDocs.ps1 -RecordsPath ./bump-records.json
 ## Dziennik zmian
 
 <!-- BUMP-LOG:START -->
-_Brak zarejestrowanych aktualizacji._
+
+## 2026-08-31
+
+Zaktualizowano **1** referencję pakietu w **1** projekcie.
+
+Źródło: [przebieg workflow](https://github.com/tailored-apps/SharedComponents/actions/runs/33394567918).
+
+**`src/TailoredApps.Shared.EntityFramework/TailoredApps.Shared.EntityFramework.csproj`**
+
+| Pakiet | Z wersji | Na wersję | Licencja |
+|---|---|---|---|
+| `System.Linq.Dynamic.Core` | `1.7.3` | `1.7.4` | `Apache-2.0` |
+
 <!-- BUMP-LOG:END -->
