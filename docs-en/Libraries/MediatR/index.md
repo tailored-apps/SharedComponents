@@ -128,6 +128,14 @@ public class GetProductQueryFallback : IFallbackHandler<GetProductQuery, Product
 
 ---
 
+## 🔒 Security
+
+- **The cache key carries no request data.** The default `ICachePolicy.GetCacheKey` builds `{RequestType.FullName}:{SHA-256 of the request JSON}` (`CacheKeyGenerator.Generate`). The previous `Prop:ToString()` format gave requests that differed only in collection contents (`CustomerIds = [1]` vs `[2]`) the same key, returning another caller's data.
+- **The key does not include the caller's identity.** For per-user or per-tenant data override `GetCacheKey` and prefix the key with the caller id, otherwise one user's response is served to another.
+- **`LoggingBehavior` does not serialize the request.** Only the request type name and a correlation id go into the logging scope; passwords, tokens and binary payloads never reach the logs.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -171,4 +179,6 @@ public class MyCachePolicy : ICachePolicy<MyQuery, MyResponse>
 - Aby cache działał, zaimplementuj ICachePolicy<TRequest, TResponse> i zarejestruj (auto-discovery)
 - LoggingBehavior loguje na poziomie DEBUG — włącz odpowiedni log level
 - Każdy request ma unikalne correlation ID w logach
+- The default cache key is a hash of the request content; for per-user data override GetCacheKey and add the user/tenant id
+- LoggingBehavior logs only the request name and correlation id - log request fields explicitly in the handler, never whole objects with secrets
 ```

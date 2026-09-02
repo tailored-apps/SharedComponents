@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TailoredApps.Shared.Payments.Security;
 
 namespace TailoredApps.Shared.Payments.Provider.Tpay;
 
@@ -173,7 +174,8 @@ public class TpayServiceCaller : ITpayServiceCaller
     {
         using var client = httpClientFactory.CreateClient("Tpay");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await client.GetAsync($"{options.ServiceUrl}/transactions/{transactionId}");
+        var safeTransactionId = PaymentIdentifier.EnsureSafe(transactionId, nameof(transactionId));
+        var response = await client.GetAsync($"{options.ServiceUrl}/transactions/{safeTransactionId}");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
         var json = await response.Content.ReadAsStringAsync();
         var status = JsonSerializer.Deserialize<TpayStatusResponse>(json)?.Status;
@@ -190,10 +192,14 @@ public class TpayServiceCaller : ITpayServiceCaller
     /// <inheritdoc/>
     public bool VerifyNotification(string body, string signature)
     {
-        var input = body + options.SecurityCode;
+        // Fail closed: SHA256(body) without a security code is computable by anyone.
+        if (!WebhookSignature.IsSecretConfigured(options.SecurityCode) || string.IsNullOrEmpty(signature))
+            return false;
+
+        var input = (body ?? string.Empty) + options.SecurityCode;
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         var computed = Convert.ToHexString(hash).ToLowerInvariant();
-        return string.Equals(computed, signature, StringComparison.OrdinalIgnoreCase);
+        return WebhookSignature.FixedTimeEqualsIgnoreCase(computed, signature);
     }
 }
 
@@ -278,7 +284,7 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
                 return PaymentWebhookResult.Fail(msg);
         }
 
-        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+        if (response.PaymentStatus == PaymentStatusEnum.Processing)
             return PaymentWebhookResult.Ignore("Non-actionable event");
 
         return PaymentWebhookResult.Ok(response);
@@ -294,10 +300,13 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
             return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
 
         var status = PaymentStatusEnum.Processing;
+        string? paymentUniqueId = null;
         try
         {
-            var doc = JsonDocument.Parse(body);
+            using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
+            if (root.TryGetProperty("transactionId", out var tid) || root.TryGetProperty("tr_id", out tid))
+                paymentUniqueId = tid.ValueKind == JsonValueKind.String ? tid.GetString() : tid.GetRawText();
             // Support both "status" (API v2) and "tr_status" (legacy webhook) fields
             if (root.TryGetProperty("status", out var st) || root.TryGetProperty("tr_status", out st))
                 status = st.GetString() switch
@@ -314,7 +323,7 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
         }
         catch { /* ignore */ }
 
-        return Task.FromResult(new PaymentResponse { PaymentStatus = status, ResponseObject = "OK" });
+        return Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
     }
 }
 

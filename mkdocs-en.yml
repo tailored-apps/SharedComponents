@@ -52,6 +52,7 @@ nav:
       - Querying: Libraries/Querying/index.md
       - WebApi: Libraries/WebApi/index.md
   - Dependencies: Dependencies/index.md
+  - Security: Security/index.md
   - Contributing: contributing.md
 
 # Configuration

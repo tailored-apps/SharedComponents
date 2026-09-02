@@ -131,24 +131,16 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
         {
             "checkout.session.completed" =>
                 HandleSessionCompleted(stripeEvent),
+            "checkout.session.async_payment_succeeded" =>
+                SessionResponse(stripeEvent, PaymentStatusEnum.Finished),
+            "checkout.session.async_payment_failed" =>
+                SessionResponse(stripeEvent, PaymentStatusEnum.Rejected),
             "checkout.session.expired" =>
-                new PaymentResponse
-                {
-                    PaymentStatus = PaymentStatusEnum.Rejected,
-                    ResponseObject = "OK",
-                },
+                SessionResponse(stripeEvent, PaymentStatusEnum.Rejected),
             "payment_intent.succeeded" =>
-                new PaymentResponse
-                {
-                    PaymentStatus = PaymentStatusEnum.Finished,
-                    ResponseObject = "OK",
-                },
+                PaymentIntentResponse(stripeEvent, PaymentStatusEnum.Finished),
             "payment_intent.payment_failed" =>
-                new PaymentResponse
-                {
-                    PaymentStatus = PaymentStatusEnum.Rejected,
-                    ResponseObject = "OK",
-                },
+                PaymentIntentResponse(stripeEvent, PaymentStatusEnum.Rejected),
             _ => new PaymentResponse
             {
                 PaymentStatus = PaymentStatusEnum.Processing,
@@ -219,6 +211,29 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
         {
             PaymentUniqueId = session?.Id,
             RedirectUrl = session?.Url,
+            PaymentStatus = status,
+            ResponseObject = "OK",
+        };
+    }
+
+    private static PaymentResponse SessionResponse(Event stripeEvent, PaymentStatusEnum status)
+    {
+        var session = stripeEvent.Data.Object as global::Stripe.Checkout.Session;
+        return new PaymentResponse
+        {
+            PaymentUniqueId = session?.Id,
+            RedirectUrl = session?.Url,
+            PaymentStatus = status,
+            ResponseObject = "OK",
+        };
+    }
+
+    private static PaymentResponse PaymentIntentResponse(Event stripeEvent, PaymentStatusEnum status)
+    {
+        var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
+        return new PaymentResponse
+        {
+            PaymentUniqueId = paymentIntent?.Id,
             PaymentStatus = status,
             ResponseObject = "OK",
         };

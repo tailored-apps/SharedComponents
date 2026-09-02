@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TailoredApps.Shared.Payments.Security;
 
 namespace TailoredApps.Shared.Payments.Provider.HotPay;
 
@@ -68,14 +69,16 @@ public class HotPayServiceCaller : IHotPayServiceCaller
     public async Task<(string? paymentId, string? redirectUrl)> InitPaymentAsync(PaymentRequest request, string paymentId)
     {
         var amount = request.Amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
-        var hashData = $"{options.SecretHash};{amount};{request.Title ?? "Order"};{paymentId};{options.ReturnUrl}";
+        // The signed service name must be exactly the one sent in the request body.
+        var serviceName = request.Title ?? request.Description ?? "Order";
+        var hashData = $"{options.SecretHash};{amount};{serviceName};{paymentId};{options.ReturnUrl}";
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(hashData))).ToLowerInvariant();
 
         var body = new HotPayRequest
         {
             Secret = options.SecretHash,
             Amount = amount,
-            ServiceName = request.Title ?? request.Description ?? "Order",
+            ServiceName = serviceName,
             PaymentId = paymentId,
             ReturnUrl = options.ReturnUrl,
             Email = request.Email,
@@ -93,9 +96,13 @@ public class HotPayServiceCaller : IHotPayServiceCaller
     /// <inheritdoc/>
     public bool VerifyNotification(string hash, string kwota, string idPlatnosci, string status)
     {
+        // Fail closed: without a configured secret the hash is computable by anyone.
+        if (!WebhookSignature.IsSecretConfigured(options.SecretHash) || string.IsNullOrEmpty(hash))
+            return false;
+
         var data = $"{options.SecretHash};{kwota};{idPlatnosci};{status}";
         var computed = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))).ToLowerInvariant();
-        return string.Equals(computed, hash, StringComparison.OrdinalIgnoreCase);
+        return WebhookSignature.FixedTimeEqualsIgnoreCase(computed, hash);
     }
 }
 
@@ -182,7 +189,7 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
                 return PaymentWebhookResult.Fail(msg);
         }
 
-        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+        if (response.PaymentStatus == PaymentStatusEnum.Processing)
             return PaymentWebhookResult.Ignore("Non-actionable event");
 
         return PaymentWebhookResult.Ok(response);

@@ -55,12 +55,12 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
             var cachedResponse = await _cache.GetAsync<TResponse>(cacheKey, cancellationToken);
             if (cachedResponse != null)
             {
-                _logger.LogDebug($"Response retrieved {typeof(TRequest).FullName} from cache. CacheKey: {cacheKey}");
+                _logger.LogDebug("Response for {RequestType} retrieved from cache. CacheKey: {CacheKey}", typeof(TRequest).FullName, cacheKey);
                 return cachedResponse;
             }
 
             var response = await next();
-            _logger.LogDebug($"Caching response for {typeof(TRequest).FullName} with cache key: {cacheKey}");
+            _logger.LogDebug("Caching response for {RequestType} with cache key: {CacheKey}", typeof(TRequest).FullName, cacheKey);
 
             await _cache.SetAsync(cacheKey, response, cachePolicy.SlidingExpiration, cachePolicy.AbsoluteExpiration, cachePolicy.AbsoluteExpirationRelativeToNow, cancellationToken);
             return response;

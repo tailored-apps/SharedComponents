@@ -90,6 +90,14 @@ public async Task<IActionResult> PayUWebhook([FromBody] JsonElement body)
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+- Pusty `SignatureKey` lub brak `signature=` w nagłówku `OpenPayU-Signature` → odrzucenie (fail-closed); porównanie w stałym czasie.
+- Obsługiwane algorytmy: `MD5`, `SHA-1`, `SHA-256` (zgodnie z ustawieniem POS w panelu PayU); inne wartości `algorithm=` są odrzucane. Zalecany SHA-256.
+- Wynik webhooka niesie `PaymentUniqueId` (`order.orderId`).
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -108,4 +116,5 @@ Kwota w API: grosze (int) — biblioteka konwertuje automatycznie z decimal
 Sandbox: ServiceUrl = "https://secure.snd.payu.com"
 
 Rejestracja: builder.Services.AddPayments().RegisterPayUProvider();
+- Ustaw w panelu PayU algorytm SHA-256 dla podpisu powiadomień
 ```

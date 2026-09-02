@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TailoredApps.Shared.Payments.Security;
 
 namespace TailoredApps.Shared.Payments.Provider.Adyen;
 
@@ -156,7 +157,8 @@ public class AdyenServiceCaller : IAdyenServiceCaller
     public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId)
     {
         using var client = CreateClient();
-        var response = await client.GetAsync($"{BaseUrl}/payments/{paymentId}/details");
+        var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
+        var response = await client.GetAsync($"{BaseUrl}/payments/{safePaymentId}/details");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
         var json = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<AdyenStatusResponse>(json);
@@ -174,12 +176,17 @@ public class AdyenServiceCaller : IAdyenServiceCaller
     /// <inheritdoc/>
     public bool VerifyNotificationHmac(string payload, string hmacSignature)
     {
+        // Fail closed: an empty HMAC key would let anyone compute a "valid" signature.
+        if (!WebhookSignature.IsSecretConfigured(options.NotificationHmacKey) || string.IsNullOrEmpty(hmacSignature))
+            return false;
+
         try
         {
             var keyBytes = Convert.FromHexString(options.NotificationHmacKey);
-            var dataBytes = Encoding.UTF8.GetBytes(payload);
+            if (keyBytes.Length == 0) return false;
+            var dataBytes = Encoding.UTF8.GetBytes(payload ?? string.Empty);
             var computed = Convert.ToBase64String(HMACSHA256.HashData(keyBytes, dataBytes));
-            return string.Equals(computed, hmacSignature, StringComparison.Ordinal);
+            return WebhookSignature.FixedTimeEquals(computed, hmacSignature);
         }
         catch { return false; }
     }
@@ -284,7 +291,7 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
                 return PaymentWebhookResult.Fail(msg);
         }
 
-        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+        if (response.PaymentStatus == PaymentStatusEnum.Processing)
             return PaymentWebhookResult.Ignore("Non-actionable event");
 
         return PaymentWebhookResult.Ok(response);
@@ -300,9 +307,10 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
             return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid HMAC" });
 
         var status = PaymentStatusEnum.Processing;
+        string? paymentUniqueId = null;
         try
         {
-            var doc = JsonDocument.Parse(body);
+            using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
 
             // Adyen sends notifications wrapped in notificationItems array
@@ -315,8 +323,11 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
             }
 
             var eventCode = item.TryGetProperty("eventCode", out var ev) ? ev.GetString() : null;
-            var success = item.TryGetProperty("success", out var s) ? s.GetString() : "true";
-            var succeeded = !string.Equals(success, "false", StringComparison.OrdinalIgnoreCase);
+            // A missing "success" flag must never be treated as success.
+            var success = item.TryGetProperty("success", out var s) ? s.GetString() : "false";
+            var succeeded = string.Equals(success, "true", StringComparison.OrdinalIgnoreCase);
+            paymentUniqueId = (item.TryGetProperty("merchantReference", out var mr) ? mr.GetString() : null)
+                              ?? (item.TryGetProperty("pspReference", out var psp) ? psp.GetString() : null);
 
             status = eventCode switch
             {
@@ -329,7 +340,7 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
         }
         catch { /* ignore */ }
 
-        return Task.FromResult(new PaymentResponse { PaymentStatus = status, ResponseObject = "OK" });
+        return Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
     }
 }
 

@@ -87,6 +87,14 @@ public async Task<IActionResult> AdyenWebhook([FromBody] JsonElement body)
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+- Pusty `NotificationHmacKey` lub pusty podpis → odrzucenie (fail-closed); porównanie w stałym czasie. Brak pola `success` w powiadomieniu jest traktowany jako **niepowodzenie**.
+- Wynik webhooka niesie `PaymentUniqueId` (`merchantReference`, a w razie braku `pspReference`).
+- ⚠️ **Znane ograniczenie.** Adyen liczy HMAC nie z surowego body, lecz z pól `pspReference:originalReference:merchantAccountCode:merchantReference:amount.value:amount.currency:eventCode:success` i przesyła go w `additionalData.hmacSignature`, a nie w nagłówku. Obecna weryfikacja odrzuca prawdziwe powiadomienia (bezpiecznie, ale niefunkcjonalnie) — nie obchodź jej stubem zwracającym `true`.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -103,4 +111,5 @@ Webhook: HMAC-SHA256, klucz NotificationHmacKey
 Rejestracja: builder.Services.AddPayments().RegisterAdyenProvider();
 
 Środowisko testowe: Environment = "test" (checkout-test.adyen.com)
+- Nie zastępuj VerifyNotificationHmac stubem zwracającym true — zaimplementuj schemat HMAC Adyen (pola rozdzielone dwukropkami, additionalData.hmacSignature)
 ```

@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # Keeps the commit-SHA pins in .github/workflows/*.yml current and reviewed.
+  # NuGet packages are handled by the "Bump dependencies" workflow (scripts/Bump-Deps.ps1).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "ci"

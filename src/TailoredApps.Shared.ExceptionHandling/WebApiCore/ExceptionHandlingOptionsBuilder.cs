@@ -54,9 +54,7 @@ namespace TailoredApps.Shared.ExceptionHandling.WebApiCore
             where TTargetExceptionHandlingProviderInterface : class, IExceptionHandlingProvider
         {
             services.AddTransient<TTargetExceptionHandlingProviderInterface, TTargetExceptionHandlingProvider>(container => container.GetRequiredService<TTargetExceptionHandlingProvider>());
-
             services.AddScoped<IExceptionHandlingService, ExceptionHandlingService<TTargetExceptionHandlingProvider>>();
-            services.AddTransient<TTargetExceptionHandlingProviderInterface, TTargetExceptionHandlingProvider>();
             services.AddTransient<TTargetExceptionHandlingProvider, TTargetExceptionHandlingProvider>();
 
             return new ExceptionHandlingOptionsBuilder(services);

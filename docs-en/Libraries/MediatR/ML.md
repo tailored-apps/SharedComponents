@@ -121,6 +121,24 @@ Console.WriteLine(trainingResult.EvaluationInfo);
 
 ---
 
+## 🔒 Security
+
+- **Training paths are confined to configured directories.** `TrainImageClassificationModel.Source` must resolve inside `ImageClassification:TrainingRoot` and `ModelDestFolderPath` inside `ImageClassification:ModelsRoot` (relative paths are resolved against those roots). A path outside its root throws `ArgumentException`; missing root configuration throws `InvalidOperationException`. Without this a request could recursively read any folder on the host and overwrite any file.
+- **Images are validated before the decoder runs.** `ClassifyImage` rejects (`ArgumentException`) empty content, files larger than `ImageClassification:MaxImageBytes` (default 10 MB) and content without a JPEG/PNG signature.
+
+```json
+{
+  "ImageClassification": {
+    "ModelFilePath": "/var/app/models/current.zip",
+    "TrainingRoot": "/var/app/training-sets",
+    "ModelsRoot": "/var/app/models",
+    "MaxImageBytes": 10485760
+  }
+}
+```
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -161,4 +179,7 @@ var result = await _mediator.Send(new TrainImageClassificationModel
 - Folder treningowy: każdy podfolder = jedna klasa, nazwa folderu = etykieta
 - PredictionEnginePool jest thread-safe — bezpieczne współbieżne użycie
 - PredictedScore ∈ [0,1] — im bliżej 1, tym wyższe zaufanie modelu
+- Configure ImageClassification:TrainingRoot and ImageClassification:ModelsRoot - training rejects paths outside those directories
+- ClassifyImage accepts only JPEG/PNG up to MaxImageBytes (default 10 MB); larger or foreign files throw ArgumentException
+- Expose the training command to administrators only - it starts a long TensorFlow job on the given data
 ```

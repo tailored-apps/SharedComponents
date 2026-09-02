@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TailoredApps.Shared.Payments.Security;
 
 namespace TailoredApps.Shared.Payments.Provider.PayU;
 
@@ -193,7 +194,8 @@ public class PayUServiceCaller : IPayUServiceCaller
     {
         using var client = httpClientFactory.CreateClient("PayU");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await client.GetAsync($"{options.ServiceUrl}/api/v2_1/orders/{orderId}");
+        var safeOrderId = PaymentIdentifier.EnsureSafe(orderId, nameof(orderId));
+        var response = await client.GetAsync($"{options.ServiceUrl}/api/v2_1/orders/{safeOrderId}");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
         var json = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<PayUStatusResponse>(json);
@@ -212,23 +214,32 @@ public class PayUServiceCaller : IPayUServiceCaller
     /// <inheritdoc/>
     public bool VerifySignature(string body, string incomingSignature)
     {
+        // Fail closed: without the second key, hash(body) is computable by anyone.
+        if (!WebhookSignature.IsSecretConfigured(options.SignatureKey) || string.IsNullOrEmpty(incomingSignature))
+            return false;
+
         var parts = incomingSignature.Split(';')
             .Select(p => p.Split('=', 2))
             .Where(p => p.Length == 2)
-            .ToDictionary(p => p[0].Trim(), p => p[1].Trim());
+            .ToDictionary(p => p[0].Trim(), p => p[1].Trim(), StringComparer.OrdinalIgnoreCase);
 
-        if (!parts.TryGetValue("signature", out var receivedSig)) return false;
+        if (!parts.TryGetValue("signature", out var receivedSig) || string.IsNullOrEmpty(receivedSig)) return false;
         var algorithm = parts.GetValueOrDefault("algorithm", "MD5");
 
-        var data = body + options.SignatureKey;
-        string computed;
+        var data = Encoding.UTF8.GetBytes((body ?? string.Empty) + options.SignatureKey);
+        byte[] hash;
 
         if (algorithm.Equals("SHA256", StringComparison.OrdinalIgnoreCase) || algorithm.Equals("SHA-256", StringComparison.OrdinalIgnoreCase))
-            computed = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))).ToLowerInvariant();
+            hash = SHA256.HashData(data);
+        else if (algorithm.Equals("SHA1", StringComparison.OrdinalIgnoreCase) || algorithm.Equals("SHA-1", StringComparison.OrdinalIgnoreCase))
+            hash = SHA1.HashData(data);
+        else if (algorithm.Equals("MD5", StringComparison.OrdinalIgnoreCase))
+            hash = MD5.HashData(data);
         else
-            computed = Convert.ToHexString(MD5.HashData(Encoding.UTF8.GetBytes(data))).ToLowerInvariant();
+            return false;
 
-        return string.Equals(computed, receivedSig, StringComparison.OrdinalIgnoreCase);
+        var computed = Convert.ToHexString(hash).ToLowerInvariant();
+        return WebhookSignature.FixedTimeEqualsIgnoreCase(computed, receivedSig);
     }
 }
 
@@ -330,7 +341,7 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
                 return PaymentWebhookResult.Fail(msg);
         }
 
-        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+        if (response.PaymentStatus == PaymentStatusEnum.Processing)
             return PaymentWebhookResult.Ignore("Non-actionable event");
 
         return PaymentWebhookResult.Ok(response);
@@ -346,21 +357,26 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
             return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
 
         var status = PaymentStatusEnum.Processing;
+        string? paymentUniqueId = null;
         try
         {
-            var doc = JsonDocument.Parse(body);
-            if (doc.RootElement.TryGetProperty("order", out var orderEl) && orderEl.TryGetProperty("status", out var st))
-                status = st.GetString() switch
-                {
-                    "COMPLETED" => PaymentStatusEnum.Finished,
-                    "CANCELED" => PaymentStatusEnum.Rejected,
-                    "REJECTED" => PaymentStatusEnum.Rejected,
-                    _ => PaymentStatusEnum.Processing,
-                };
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("order", out var orderEl))
+            {
+                paymentUniqueId = orderEl.TryGetProperty("orderId", out var oid) ? oid.GetString() : null;
+                if (orderEl.TryGetProperty("status", out var st))
+                    status = st.GetString() switch
+                    {
+                        "COMPLETED" => PaymentStatusEnum.Finished,
+                        "CANCELED" => PaymentStatusEnum.Rejected,
+                        "REJECTED" => PaymentStatusEnum.Rejected,
+                        _ => PaymentStatusEnum.Processing,
+                    };
+            }
         }
         catch { /* ignore */ }
 
-        return Task.FromResult(new PaymentResponse { PaymentStatus = status, ResponseObject = "OK" });
+        return Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
     }
 }
 

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Hosting;
+using Moq;
 using TailoredApps.Shared.ExceptionHandling.Providers;
 using Xunit;
 
@@ -98,24 +100,25 @@ namespace TailoredApps.Shared.ExceptionHandling.Tests
         }
 
         [Fact]
-        public void When_Exception_Is_Not_ValidationException_Should_Return_Single_Error_With_Null_Field()
+        public void When_Exception_Is_Not_ValidationException_Should_Return_500_With_Generic_Message()
         {
             // arrange
-            var exception = new InvalidOperationException("Something went wrong");
+            var exception = new InvalidOperationException("Login failed for user 'app_user' on host db01.internal");
 
             // act
             var result = provider.Response(exception);
 
-            // assert
-            Assert.Equal("Something went wrong", result.Message);
-            Assert.Equal(400, result.ErrorCode);
+            // assert - the raw exception message must never reach the client by default
+            Assert.Equal(500, result.ErrorCode);
+            Assert.Equal(DefaultExceptionHandlingProvider.GenericErrorMessage, result.Message);
             var error = Assert.Single(result.Errors);
             Assert.Null(error.Field);
-            Assert.Equal("Something went wrong", error.Message);
+            Assert.Equal(DefaultExceptionHandlingProvider.GenericErrorMessage, error.Message);
+            Assert.DoesNotContain("db01.internal", result.ToString());
         }
 
         [Fact]
-        public void When_NonValidation_Exception_Is_Wrapped_Should_Use_Base_Exception_Message_Consistently()
+        public void When_NonValidation_Exception_Is_Wrapped_Should_Still_Hide_Root_Cause_Message()
         {
             // arrange
             var inner = new ArgumentException("inner failure");
@@ -124,11 +127,64 @@ namespace TailoredApps.Shared.ExceptionHandling.Tests
             // act
             var result = provider.Response(outer);
 
-            // assert - both the model message and the error entry report the root cause
+            // assert
+            Assert.Equal(500, result.ErrorCode);
+            Assert.Equal(DefaultExceptionHandlingProvider.GenericErrorMessage, result.Message);
+            Assert.DoesNotContain("inner failure", result.ToString());
+            Assert.DoesNotContain("outer failure", result.ToString());
+        }
+
+        [Fact]
+        public void When_Details_Are_Enabled_Should_Return_Root_Cause_Message_With_500()
+        {
+            // arrange
+            var detailed = new DefaultExceptionHandlingProvider(includeExceptionDetails: true);
+            var outer = new Exception("outer failure", new ArgumentException("inner failure"));
+
+            // act
+            var result = detailed.Response(outer);
+
+            // assert
+            Assert.Equal(500, result.ErrorCode);
             Assert.Equal("inner failure", result.Message);
             var error = Assert.Single(result.Errors);
-            Assert.Null(error.Field);
             Assert.Equal("inner failure", error.Message);
+        }
+
+        [Fact]
+        public void When_Host_Is_Development_Should_Include_Details()
+        {
+            // arrange
+            var env = new Mock<IHostEnvironment>();
+            env.SetupGet(e => e.EnvironmentName).Returns(Environments.Development);
+            var dev = new DefaultExceptionHandlingProvider(env.Object);
+
+            // act
+            var result = dev.Response(new InvalidOperationException("boom"));
+
+            // assert
+            Assert.Equal("boom", result.Message);
+        }
+
+        [Fact]
+        public void When_Host_Is_Production_Should_Hide_Details()
+        {
+            // arrange
+            var env = new Mock<IHostEnvironment>();
+            env.SetupGet(e => e.EnvironmentName).Returns(Environments.Production);
+            var prod = new DefaultExceptionHandlingProvider(env.Object);
+
+            // act
+            var result = prod.Response(new InvalidOperationException("boom"));
+
+            // assert
+            Assert.Equal(DefaultExceptionHandlingProvider.GenericErrorMessage, result.Message);
+        }
+
+        [Fact]
+        public void When_Exception_Is_Null_Should_Throw()
+        {
+            Assert.Throws<ArgumentNullException>(() => provider.Response((Exception)null));
         }
 
         [Fact]

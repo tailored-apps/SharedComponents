@@ -203,20 +203,32 @@ public class PayNowServiceCallerTests
 
 // ─── RevolutServiceCaller ─────────────────────────────────────────────────────
 
-/// <summary>Unit testy dla RevolutServiceCaller — czyste funkcje (bez HTTP).</summary>
+/// <summary>Unit tests for RevolutServiceCaller signature verification (no HTTP).</summary>
 public class RevolutServiceCallerTests
 {
-    private static RevolutServiceCaller Build(string webhookSecret) =>
+    private sealed class FixedTimeProvider : TimeProvider
+    {
+        private readonly DateTimeOffset now;
+        public FixedTimeProvider(DateTimeOffset now) => this.now = now;
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    private static readonly DateTimeOffset Now = new(2026, 9, 2, 12, 0, 0, TimeSpan.Zero);
+    private static string NowMillis => Now.ToUnixTimeMilliseconds().ToString();
+
+    private static RevolutServiceCaller Build(string webhookSecret, int toleranceSeconds = 300) =>
         new(Options.Create(new RevolutServiceOptions
         {
             WebhookSecret = webhookSecret,
             ApiKey = "sk_sandbox",
             ApiUrl = "https://sandbox-merchant.revolut.com/api",
-        }), CallerHelper.DummyFactory());
+            WebhookToleranceSeconds = toleranceSeconds,
+        }), CallerHelper.DummyFactory(), new FixedTimeProvider(Now));
 
+    // Revolut: payload_to_sign = "v1." + timestamp + "." + raw body; header "v1=<hex>"
     private static string ComputeRevolutSig(string secret, string timestamp, string payload)
     {
-        var signed = $"v1:{timestamp}.{payload}";
+        var signed = $"v1.{timestamp}.{payload}";
         var hex = Convert.ToHexString(HMACSHA256.HashData(
             Encoding.UTF8.GetBytes(secret),
             Encoding.UTF8.GetBytes(signed))).ToLowerInvariant();
@@ -227,8 +239,8 @@ public class RevolutServiceCallerTests
     public void VerifyWebhookSignature_Valid_ReturnsTrue()
     {
         const string secret = "revolut_webhook_secret";
-        const string ts = "1711234567";
         const string body = "{\"event\":\"ORDER_COMPLETED\"}";
+        var ts = NowMillis;
         var sig = ComputeRevolutSig(secret, ts, body);
         var caller = Build(secret);
         Assert.True(caller.VerifyWebhookSignature(body, ts, sig));
@@ -239,29 +251,29 @@ public class RevolutServiceCallerTests
     {
         const string secret = "revolut_webhook_secret";
         const string body = "{\"event\":\"ORDER_COMPLETED\"}";
-        var sig = ComputeRevolutSig(secret, "1111111111", body);
+        var signedTs = Now.AddSeconds(-10).ToUnixTimeMilliseconds().ToString();
+        var sig = ComputeRevolutSig(secret, signedTs, body);
         var caller = Build(secret);
-        Assert.False(caller.VerifyWebhookSignature(body, "9999999999", sig));
+        Assert.False(caller.VerifyWebhookSignature(body, NowMillis, sig));
     }
 
     [Fact]
     public void VerifyWebhookSignature_InvalidSignature_ReturnsFalse()
     {
         var caller = Build("secret");
-        Assert.False(caller.VerifyWebhookSignature("{}", "123", "v1=badhex"));
+        Assert.False(caller.VerifyWebhookSignature("{}", NowMillis, "v1=badhex"));
     }
 
     [Fact]
     public void VerifyWebhookSignature_NoV1Prefix_StillVerifies()
     {
         const string secret = "sec";
-        const string ts = "12345";
         const string body = "{\"test\":1}";
-        var signed = $"v1:{ts}.{body}";
+        var ts = NowMillis;
+        var signed = $"v1.{ts}.{body}";
         var hex = Convert.ToHexString(HMACSHA256.HashData(
             Encoding.UTF8.GetBytes(secret),
             Encoding.UTF8.GetBytes(signed))).ToLowerInvariant();
-        // Without v1= prefix
         var caller = Build(secret);
         Assert.True(caller.VerifyWebhookSignature(body, ts, hex));
     }
@@ -269,11 +281,64 @@ public class RevolutServiceCallerTests
     [Fact]
     public void VerifyWebhookSignature_WrongSecret_ReturnsFalse()
     {
-        const string ts = "1234";
         const string body = "{\"ev\":\"x\"}";
+        var ts = NowMillis;
         var sig = ComputeRevolutSig("correct_secret", ts, body);
         var caller = Build("wrong_secret");
         Assert.False(caller.VerifyWebhookSignature(body, ts, sig));
+    }
+
+    [Fact]
+    public void VerifyWebhookSignature_StaleTimestamp_ReturnsFalse()
+    {
+        const string secret = "revolut_webhook_secret";
+        const string body = "{}";
+        var stale = Now.AddMinutes(-10).ToUnixTimeMilliseconds().ToString();
+        var sig = ComputeRevolutSig(secret, stale, body);
+        var caller = Build(secret);
+        Assert.False(caller.VerifyWebhookSignature(body, stale, sig));
+    }
+
+    [Fact]
+    public void VerifyWebhookSignature_ToleranceDisabled_AcceptsOldTimestamp()
+    {
+        const string secret = "revolut_webhook_secret";
+        const string body = "{}";
+        var old = Now.AddDays(-2).ToUnixTimeMilliseconds().ToString();
+        var sig = ComputeRevolutSig(secret, old, body);
+        var caller = Build(secret, toleranceSeconds: 0);
+        Assert.True(caller.VerifyWebhookSignature(body, old, sig));
+    }
+
+    [Fact]
+    public void VerifyWebhookSignature_NonNumericTimestamp_ReturnsFalse()
+    {
+        const string secret = "revolut_webhook_secret";
+        var sig = ComputeRevolutSig(secret, "ts_123", "{}");
+        var caller = Build(secret);
+        Assert.False(caller.VerifyWebhookSignature("{}", "ts_123", sig));
+    }
+
+    [Fact]
+    public void VerifyWebhookSignature_MultipleSignaturesDuringRotation_AcceptsAnyMatch()
+    {
+        const string secret = "new_secret";
+        const string body = "{}";
+        var ts = NowMillis;
+        var oldSig = ComputeRevolutSig("old_secret", ts, body);
+        var newSig = ComputeRevolutSig(secret, ts, body);
+        var caller = Build(secret);
+        Assert.True(caller.VerifyWebhookSignature(body, ts, $"{oldSig},{newSig}"));
+    }
+
+    [Fact]
+    public void VerifyWebhookSignature_EmptySecret_FailsClosed()
+    {
+        const string body = "{}";
+        var ts = NowMillis;
+        var forged = ComputeRevolutSig(string.Empty, ts, body);
+        var caller = Build(string.Empty);
+        Assert.False(caller.VerifyWebhookSignature(body, ts, forged));
     }
 }
 
@@ -452,25 +517,36 @@ public class Przelewy24ServiceCallerTests
         const int orderId = 99;
         const long amount = 1000L;
         const string currency = "PLN";
+        const string statement = "Zamowienie 99";
 
+        // Documented P24 notification sign: SHA-384 over
+        // {"merchantId","posId","sessionId","amount","originAmount","currency","orderId","methodId","statement","crc"}
         var json = JsonSerializer.Serialize(new
         {
-            sessionId,
-            orderId,
             merchantId = merchant,
+            posId = merchant,
+            sessionId,
             amount,
+            originAmount = amount,
             currency,
+            orderId,
+            methodId = 154,
+            statement,
             crc,
         });
         var sign = Convert.ToHexString(SHA384.HashData(Encoding.UTF8.GetBytes(json))).ToLowerInvariant();
 
         var body = JsonSerializer.Serialize(new
         {
-            sessionId,
-            orderId,
             merchantId = merchant,
+            posId = merchant,
+            sessionId,
             amount,
+            originAmount = amount,
             currency,
+            orderId,
+            methodId = 154,
+            statement,
             sign,
         });
 

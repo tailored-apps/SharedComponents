@@ -17,5 +17,12 @@ namespace TailoredApps.Shared.Email.MailMessageBuilder
         /// within the <see cref="Location"/> directory (e.g., <c>"html"</c> or <c>"txt"</c>).
         /// </summary>
         public string FileExtension { get; set; }
+
+        /// <summary>
+        /// When <c>true</c> (default), values inserted through <c>{{token}}</c> placeholders are HTML-encoded
+        /// so that user-supplied text cannot inject markup into the HTML message body. Values inserted through
+        /// <c>{{{token}}}</c> are always inserted verbatim.
+        /// </summary>
+        public bool HtmlEncodeVariables { get; set; } = true;
     }
 }

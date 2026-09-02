@@ -146,12 +146,9 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Tests
         }
 
         [Fact]
-        public void When_Both_Commit_And_Rollback_Throw_Should_Propagate_Rollback_Exception()
+        public void When_Both_Commit_And_Rollback_Throw_Should_Report_Both_Without_Throwing()
         {
             // arrange
-            // Pins CURRENT behavior: a rollback failure after a failed commit is not swallowed
-            // by the filter - it escapes OnActionExecuted, and the commit exception is never
-            // written to the context.
             var context = FilterContextFactory.CreateExecutedContext();
             var commitException = new InvalidOperationException("commit failed");
             var rollbackException = new InvalidOperationException("rollback failed");
@@ -161,9 +158,67 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Tests
             // act
             var exception = Record.Exception(() => filter.OnActionExecuted(context));
 
+            // assert - the original commit failure stays visible, the rollback failure is attached
+            Assert.Null(exception);
+            var aggregate = Assert.IsType<AggregateException>(context.Exception);
+            Assert.Contains(commitException, aggregate.InnerExceptions);
+            Assert.Contains(rollbackException, aggregate.InnerExceptions);
+            Assert.Null(context.Result);
+        }
+
+        [Theory]
+        [InlineData(400)]
+        [InlineData(409)]
+        [InlineData(422)]
+        [InlineData(500)]
+        public void When_Action_Returned_Error_Status_Should_Rollback_And_Not_Commit(int statusCode)
+        {
+            // arrange
+            var context = FilterContextFactory.CreateExecutedContext();
+            var originalResult = new StatusCodeResult(statusCode);
+            context.Result = originalResult;
+
+            // act
+            filter.OnActionExecuted(context);
+
+            // assert - partial work behind an error response is never persisted
+            unitOfWorkMock.Verify(x => x.RollbackTransaction(), Times.Once);
+            unitOfWorkMock.Verify(x => x.CommitTransaction(), Times.Never);
+            Assert.Same(originalResult, context.Result);
+        }
+
+        [Theory]
+        [InlineData(200)]
+        [InlineData(201)]
+        [InlineData(204)]
+        [InlineData(302)]
+        public void When_Action_Returned_Non_Error_Status_Should_Commit(int statusCode)
+        {
+            // arrange
+            var context = FilterContextFactory.CreateExecutedContext();
+            context.Result = new StatusCodeResult(statusCode);
+
+            // act
+            filter.OnActionExecuted(context);
+
             // assert
-            Assert.Same(rollbackException, exception);
-            Assert.Null(context.Exception);
+            unitOfWorkMock.Verify(x => x.CommitTransaction(), Times.Once);
+            unitOfWorkMock.Verify(x => x.RollbackTransaction(), Times.Never);
+        }
+
+        [Fact]
+        public void When_Action_Returned_Object_Result_With_Error_Status_Should_Rollback()
+        {
+            // arrange
+            var context = FilterContextFactory.CreateExecutedContext();
+            context.Result = new ObjectResult("conflict") { StatusCode = 409 };
+
+            // act
+            filter.OnActionExecuted(context);
+
+            // assert
+            unitOfWorkMock.Verify(x => x.RollbackTransaction(), Times.Once);
+            unitOfWorkMock.Verify(x => x.CommitTransaction(), Times.Never);
         }
 
         #endregion

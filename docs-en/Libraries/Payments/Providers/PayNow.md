@@ -67,6 +67,14 @@ PayNow wysyła powiadomienia POST. Podpis weryfikowany przez SHA-256 HMAC z `Sig
 
 ---
 
+## 🔒 Security
+
+- Empty `SignatureKey` or an empty signature → rejected (fail-closed); constant-time comparison.
+- The `Idempotency-Key` header is stable for the same `AdditionalData` (externalId), so a retried request does not create a second payment.
+- `EXPIRED` maps to `Rejected`; the webhook result carries `PaymentUniqueId` (`paymentId`).
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -83,4 +91,5 @@ Kwota w API: grosze (int), np. 1999 = 19.99 PLN — biblioteka konwertuje automa
 Sandbox URL: https://api.sandbox.paynow.pl
 
 Rejestracja: builder.Services.AddPayments().RegisterPayNowProvider();
+- Pass a stable order identifier in AdditionalData - it doubles as the Idempotency-Key and externalId
 ```

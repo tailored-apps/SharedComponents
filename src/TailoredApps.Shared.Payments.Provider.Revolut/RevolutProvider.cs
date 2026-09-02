@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TailoredApps.Shared.Payments.Security;
 
 namespace TailoredApps.Shared.Payments.Provider.Revolut;
 
@@ -21,8 +22,15 @@ public class RevolutServiceOptions
     public string ApiUrl { get; set; } = "https://merchant.revolut.com/api";
     /// <summary>ReturnUrl.</summary>
     public string ReturnUrl { get; set; } = string.Empty;
-    /// <summary>WebhookSecret.</summary>
+    /// <summary>Webhook signing secret issued by Revolut when the webhook was registered.</summary>
     public string WebhookSecret { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Maximum accepted age (in seconds) of the <c>Revolut-Request-Timestamp</c> header, in either
+    /// direction. Protects against replaying a captured webhook. Default 300 s (Revolut's recommendation).
+    /// Set to <c>0</c> to disable the check (not recommended).
+    /// </summary>
+    public int WebhookToleranceSeconds { get; set; } = 300;
 }
 
 file class RevolutOrderRequest
@@ -57,12 +65,14 @@ public class RevolutServiceCaller : IRevolutServiceCaller
 {
     private readonly RevolutServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
+    private readonly TimeProvider timeProvider;
 
     /// <summary>Inicjalizuje instancję callera.</summary>
-    public RevolutServiceCaller(IOptions<RevolutServiceOptions> options, IHttpClientFactory httpClientFactory)
+    public RevolutServiceCaller(IOptions<RevolutServiceOptions> options, IHttpClientFactory httpClientFactory, TimeProvider? timeProvider = null)
     {
         this.options = options.Value;
         this.httpClientFactory = httpClientFactory;
+        this.timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     private HttpClient CreateClient()
@@ -96,7 +106,8 @@ public class RevolutServiceCaller : IRevolutServiceCaller
     public async Task<(string? state, string? id)> GetOrderAsync(string orderId)
     {
         using var client = CreateClient();
-        var response = await client.GetAsync($"{options.ApiUrl}/1.0/orders/{orderId}");
+        var safeOrderId = PaymentIdentifier.EnsureSafe(orderId, nameof(orderId));
+        var response = await client.GetAsync($"{options.ApiUrl}/1.0/orders/{safeOrderId}");
         if (!response.IsSuccessStatusCode) return (null, orderId);
         var json = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
@@ -105,17 +116,47 @@ public class RevolutServiceCaller : IRevolutServiceCaller
 
     /// <summary>
     /// Weryfikuje podpis webhooka Revolut.
-    /// Format: HMAC-SHA256("v1:{timestamp}.{payload}", webhookSecret).
+    /// Format: HMAC-SHA256("v1.{timestamp}.{payload}", webhookSecret), where timestamp is the
+    /// millisecond value of the Revolut-Request-Timestamp header.
     /// Nagłówek Revolut-Signature: v1=&lt;hex&gt;
     /// </summary>
     public bool VerifyWebhookSignature(string payload, string timestamp, string signature)
     {
-        var signedPayload = $"v1:{timestamp}.{payload}";
+        // Fail closed: HMAC with an empty key is computable by anyone.
+        if (!WebhookSignature.IsSecretConfigured(options.WebhookSecret) || string.IsNullOrEmpty(signature) || string.IsNullOrEmpty(timestamp))
+            return false;
+
+        if (!IsTimestampFresh(timestamp))
+            return false;
+
+        var signedPayload = $"v1.{timestamp}.{payload}";
         var keyBytes = Encoding.UTF8.GetBytes(options.WebhookSecret);
         var dataBytes = Encoding.UTF8.GetBytes(signedPayload);
         var computed = Convert.ToHexString(HMACSHA256.HashData(keyBytes, dataBytes)).ToLowerInvariant();
-        var receivedHex = signature.StartsWith("v1=") ? signature.Substring(3) : signature;
-        return string.Equals(computed, receivedHex, StringComparison.OrdinalIgnoreCase);
+
+        // During secret rotation Revolut sends several signatures: "v1=<a>,v1=<b>". Accept any match.
+        foreach (var candidate in signature.Split(','))
+        {
+            var trimmed = candidate.Trim();
+            var receivedHex = trimmed.StartsWith("v1=", StringComparison.Ordinal) ? trimmed.Substring(3) : trimmed;
+            if (WebhookSignature.FixedTimeEqualsIgnoreCase(computed, receivedHex))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool IsTimestampFresh(string timestamp)
+    {
+        if (options.WebhookToleranceSeconds <= 0)
+            return true;
+
+        if (!long.TryParse(timestamp, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var millis))
+            return false;
+
+        var now = timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
+        var toleranceMillis = (long)options.WebhookToleranceSeconds * 1000L;
+        return Math.Abs(now - millis) <= toleranceMillis;
     }
 }
 
@@ -209,7 +250,7 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
                 return PaymentWebhookResult.Fail(msg);
         }
 
-        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+        if (response.PaymentStatus == PaymentStatusEnum.Processing)
             return PaymentWebhookResult.Ignore("Non-actionable event");
 
         return PaymentWebhookResult.Ok(response);
@@ -226,9 +267,12 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
             return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
 
         var status = PaymentStatusEnum.Processing;
+        string? paymentUniqueId = null;
         try
         {
-            var doc = JsonDocument.Parse(body);
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("order_id", out var oid))
+                paymentUniqueId = oid.GetString();
             if (doc.RootElement.TryGetProperty("event", out var ev))
                 status = ev.GetString() switch
                 {
@@ -242,7 +286,7 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
         }
         catch { /* ignore */ }
 
-        return Task.FromResult(new PaymentResponse { PaymentStatus = status, ResponseObject = "OK" });
+        return Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
     }
 }
 
@@ -276,5 +320,6 @@ public class RevolutConfigureOptions : IConfigureOptions<RevolutServiceOptions>
         options.ApiUrl = s.ApiUrl;
         options.ReturnUrl = s.ReturnUrl;
         options.WebhookSecret = s.WebhookSecret;
+        options.WebhookToleranceSeconds = s.WebhookToleranceSeconds;
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
 using TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Attributes;
 
@@ -10,7 +11,9 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Filters
     /// <summary>
     /// ASP.NET Core action filter that automatically wraps each controller action
     /// in a Unit of Work transaction.
-    /// Commits on success and rolls back on exception.
+    /// Commits when the action succeeds; rolls back when the action threw or returned an error
+    /// status code (4xx/5xx), so partial work behind a <c>BadRequest</c>/<c>Conflict</c> result is
+    /// never persisted.
     /// The isolation level can be overridden per-action via <see cref="TransactionIsolationLevelAttribute"/>.
     /// </summary>
     public class TransactionFilterAttribute : ActionFilterAttribute
@@ -60,22 +63,41 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Filters
             // because we would obtain them from root container, not nested container (there is no way to get
             // nested container when creating a new TransactionFilter instance or via FilterProvider).
 
-            if (actionExecutedContext.Exception != null) _uow.RollbackTransaction();
+            if (actionExecutedContext.Exception != null || IsErrorResult(actionExecutedContext.Result))
+            {
+                _uow.RollbackTransaction();
+            }
             else
             {
                 try
                 {
                     _uow.CommitTransaction();
                 }
-                catch (Exception ex)
+                catch (Exception commitException)
                 {
-                    _uow.RollbackTransaction();
-                    actionExecutedContext.Exception = ex;
+                    Exception failure = commitException;
+                    try
+                    {
+                        _uow.RollbackTransaction();
+                    }
+                    catch (Exception rollbackException)
+                    {
+                        // Keep the original cause visible instead of replacing it with the rollback error.
+                        failure = new AggregateException(commitException, rollbackException);
+                    }
+
+                    actionExecutedContext.Exception = failure;
                     actionExecutedContext.Result = null;
                 }
             }
 
             base.OnActionExecuted(actionExecutedContext);
         }
+
+        /// <summary>
+        /// Returns <c>true</c> when the action produced a result with a 4xx or 5xx status code.
+        /// </summary>
+        internal static bool IsErrorResult(Microsoft.AspNetCore.Mvc.IActionResult result)
+            => result is IStatusCodeActionResult { StatusCode: >= 400 };
     }
 }

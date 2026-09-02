@@ -161,6 +161,16 @@ public class NotificationService
 
 ---
 
+## 🔒 Security
+
+- **Template variables are HTML-encoded.** Message bodies are sent as HTML and `{{token}}` values often come from users (display names, free text). `TokenReplacingMailMessageBuilder` and `DefaultMessageBuilder` encode values (`WebUtility.HtmlEncode`), so `<a href="https://evil">` cannot become a phishing link in a message from a trusted sender. Insert values that intentionally contain HTML with triple braces `{{{token}}}`; turn encoding off globally with `TokenReplacingMailMessageBuilderOptions.HtmlEncodeVariables = false` or `new DefaultMessageBuilder(htmlEncodeVariables: false)`.
+- **Single-pass replacement.** A value containing `{{OtherToken}}` is never expanded again.
+- **Exactly one recipient.** `SmtpEmailProvider.SendMail` accepts one address; a comma- or semicolon-separated list throws `FormatException` (previously `MailAddressCollection.Add` silently added extra recipients).
+- **TLS on by default.** `Mail:Providers:Smtp:EnableSsl` now defaults to `true`.
+- **`CatchAll` is required outside production.** With `IsProd = false` a missing `CatchAll` throws `InvalidOperationException` instead of sending nowhere.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -207,4 +217,7 @@ await _emailProvider.SendMail(email, subject, body, attachments);
 - The template key (`templateKey`) must equal the template file name including its extension, e.g. `template.html`; an unknown key → `KeyNotFoundException`
 - The "Mail:Providers:Smtp" configuration section is required — a missing section throws `InvalidOperationException`
 - Attachments: dictionary fileName → byte[]
+- {{token}} values are HTML-encoded; insert HTML deliberately through {{{token}}}
+- SendMail takes a single address - loop over recipients in the application
+- EnableSsl defaults to true; CatchAll is required when IsProd = false
 ```

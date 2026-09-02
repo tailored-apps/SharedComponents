@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using TailoredApps.Shared.Payments;
 using TailoredApps.Shared.Payments.Provider.CashBill.Models;
+using TailoredApps.Shared.Payments.Security;
 using static TailoredApps.Shared.Payments.Provider.CashBill.CashbillServiceCaller;
 
 namespace TailoredApps.Shared.Payments.Provider.CashBill
@@ -128,27 +129,61 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         /// <summary>
         /// Processes a legacy back-channel status-change notification from CashBill.
         /// Reads <c>cmd</c>, <c>args</c> (transaction ID) and <c>sign</c> from the query parameters,
-        /// then fetches the current payment status from the CashBill API.
+        /// verifies the MD5 signature and then fetches the current payment status from the CashBill API.
         /// </summary>
         /// <param name="payload">Payload containing query parameters sent by CashBill.</param>
-        /// <returns>Resolved <see cref="PaymentResponse"/> with the current payment status.</returns>
+        /// <returns>
+        /// Resolved <see cref="PaymentResponse"/> with the current payment status, or a response with
+        /// <see cref="PaymentStatusEnum.Rejected"/> and <c>ResponseObject = "Invalid signature."</c>
+        /// when the notification is not authentic.
+        /// </returns>
         public async Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
         {
+            if (payload is null) throw new ArgumentNullException(nameof(payload));
+
+            var qs = payload.QueryParameters ?? new Dictionary<string, StringValues>();
             var request = new TransactionStatusChanged
             {
-                Command = payload.QueryParameters["cmd"].ToString(),
-                TransactionId = payload.QueryParameters["args"].ToString(),
-                Sign = payload.QueryParameters["sign"].ToString(),
+                Command = qs.TryGetValue("cmd", out var c) ? c.ToString() : string.Empty,
+                TransactionId = qs.TryGetValue("args", out var a) ? a.ToString() : string.Empty,
+                Sign = qs.TryGetValue("sign", out var s) ? s.ToString() : string.Empty,
             };
-            //TODO: nie wiedząc czemu coś weryfikacja klucza kuleje.  trzeba sprawdzić na innym sklepie czy zadziała?
-            //var sign = await cashbillService.GetSignForNotificationService(request);
-            ////if (request.Sign == sign)
-            //{
+
+            if (string.IsNullOrEmpty(request.TransactionId))
+                return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Missing transactionId (args)" };
+
+            var verification = await VerifySignatureAsync(request);
+            if (verification is not null)
+                return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = verification };
+
             var status = await cashbillService.GetPaymentStatus(request.TransactionId);
 
             return new PaymentResponse { PaymentUniqueId = status.Id, RedirectUrl = status.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(status.Status), ResponseObject = "OK" };
-            // }
-            // return null;
+        }
+
+        /// <summary>
+        /// Verifies the MD5 notification signature. Returns <c>null</c> when the signature is valid,
+        /// otherwise a short, non-sensitive error message. The expected signature is never disclosed,
+        /// because returning it would give a caller an oracle for forging notifications.
+        /// </summary>
+        private async Task<string> VerifySignatureAsync(TransactionStatusChanged notification)
+        {
+            if (string.IsNullOrEmpty(notification.Sign))
+                return "Missing signature.";
+
+            string expectedSign;
+            try
+            {
+                expectedSign = await cashbillService.GetSignForNotificationService(notification);
+            }
+            catch (InvalidOperationException)
+            {
+                return "Signature verification is not configured.";
+            }
+
+            return WebhookSignature.FixedTimeEqualsIgnoreCase(expectedSign, notification.Sign)
+                ? null
+                : "Invalid signature.";
         }
 
         // ─── IWebhookPaymentProvider ─────────────────────────────────────────
@@ -177,11 +212,11 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             if (string.IsNullOrEmpty(transactionId))
                 return PaymentWebhookResult.Fail("Missing transactionId (args) in query string.");
 
-            // Verify MD5 signature: MD5(cmd + args + shopSecretPhrase)
+            // Verify MD5 signature: MD5(cmd + args + shopSecretPhrase), compared in constant time.
             var notification = new TransactionStatusChanged { Command = cmd, TransactionId = transactionId, Sign = sign };
-            var expectedSign = await cashbillService.GetSignForNotificationService(notification);
-            if (!string.Equals(expectedSign, sign, StringComparison.OrdinalIgnoreCase))
-                return PaymentWebhookResult.Fail($"Invalid signature. expected={expectedSign} got={sign}");
+            var verification = await VerifySignatureAsync(notification);
+            if (verification is not null)
+                return PaymentWebhookResult.Fail(verification);
 
             // Signature valid — poll the API for the actual payment status
             var statusResponse = await GetStatus(transactionId);

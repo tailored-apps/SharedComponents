@@ -27,12 +27,13 @@ jobs:
       DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: 10.0.x
 
@@ -64,15 +65,19 @@ jobs:
           ./scripts/New-BumpDocs.ps1 -RecordsPath $env:RECORDS_PATH -RunUrl $env:RUN_URL
           git --no-pager diff --stat -- docs docs-en
 
-      - name: Verify build
+      # PRs opened with GITHUB_TOKEN do not trigger the pull_request workflows, so the bump
+      # is verified here: restore, build and the full test suite must pass before a PR exists.
+      - name: Verify build and tests
         if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'
         run: |
+          dotnet workload restore
           dotnet restore TailoredApps.Shared.sln
           dotnet build TailoredApps.Shared.sln --no-restore --nologo
+          dotnet test TailoredApps.Shared.sln --no-build --nologo
 
       - name: Create pull request
         if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
         with:
           commit-message: 'chore(deps): automated dependency bump'
           title: 'chore(deps): automated dependency bump'
@@ -90,8 +95,8 @@ jobs:
             ### Test plan
             - [x] `dotnet restore` (workflow)
             - [x] `dotnet build` (workflow)
+            - [x] `dotnet test` (workflow)
             - [x] Dependency docs regenerated (`scripts/New-BumpDocs.ps1`)
-            - [ ] CI green
             - [ ] Spot-check API surface for any breaking changes
           branch: chore/auto-bump-deps
           base: master

@@ -87,6 +87,14 @@ public async Task<IActionResult> AdyenWebhook([FromBody] JsonElement body)
 
 ---
 
+## 🔒 Security
+
+- Empty `NotificationHmacKey` or an empty signature → rejected (fail-closed); constant-time comparison. A missing `success` field is treated as **failure**.
+- The webhook result carries `PaymentUniqueId` (`merchantReference`, falling back to `pspReference`).
+- ⚠️ **Known limitation.** Adyen computes the HMAC over the fields `pspReference:originalReference:merchantAccountCode:merchantReference:amount.value:amount.currency:eventCode:success` and delivers it in `additionalData.hmacSignature`, not in a header. The current verification therefore rejects genuine notifications (safe, but not functional) - do not bypass it with a stub returning `true`.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -103,4 +111,5 @@ Webhook: HMAC-SHA256, klucz NotificationHmacKey
 Rejestracja: builder.Services.AddPayments().RegisterAdyenProvider();
 
 Środowisko testowe: Environment = "test" (checkout-test.adyen.com)
+- Do not replace VerifyNotificationHmac with a stub returning true - implement Adyen's HMAC scheme (colon-separated fields, additionalData.hmacSignature)
 ```

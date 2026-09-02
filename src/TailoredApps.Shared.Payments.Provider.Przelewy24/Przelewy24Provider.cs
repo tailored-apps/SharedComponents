@@ -2,11 +2,13 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TailoredApps.Shared.Payments.Security;
 
 namespace TailoredApps.Shared.Payments.Provider.Przelewy24;
 
@@ -100,6 +102,10 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
     private readonly Przelewy24ServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
 
+    // Przelewy24 computes its signatures over JSON with unescaped unicode and slashes
+    // (PHP JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); mirror that here.
+    private static readonly JsonSerializerOptions SignJson = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
     /// <summary>Inicjalizuje instancję callera.</summary>
     public Przelewy24ServiceCaller(IOptions<Przelewy24ServiceOptions> options, IHttpClientFactory httpClientFactory)
     {
@@ -121,7 +127,8 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
     {
         using var client = CreateClient();
         var amount = (long)(request.Amount * 100);
-        var sign = ComputeSign(sessionId, options.MerchantId, amount, request.Currency);
+        var currency = request.Currency.ToUpperInvariant();
+        var sign = ComputeSign(sessionId, options.MerchantId, amount, currency);
 
         var body = new P24RegisterRequest
         {
@@ -129,7 +136,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
             PosId = options.PosId,
             SessionId = sessionId,
             Amount = amount,
-            Currency = request.Currency.ToUpperInvariant(),
+            Currency = currency,
             Description = request.Title ?? request.Description ?? "Order",
             Email = request.Email ?? string.Empty,
             UrlReturn = options.ReturnUrl,
@@ -148,14 +155,15 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
     public async Task<PaymentStatusEnum> VerifyTransactionAsync(string sessionId, long amount, string currency, int orderId)
     {
         using var client = CreateClient();
-        var sign = ComputeVerifySign(sessionId, orderId, options.MerchantId, amount, currency);
+        var normalisedCurrency = currency.ToUpperInvariant();
+        var sign = ComputeVerifySign(sessionId, orderId, amount, normalisedCurrency);
         var body = new P24VerifyRequest
         {
             MerchantId = options.MerchantId,
             PosId = options.PosId,
             SessionId = sessionId,
             Amount = amount,
-            Currency = currency.ToUpperInvariant(),
+            Currency = normalisedCurrency,
             OrderId = orderId,
             Sign = sign,
         };
@@ -167,47 +175,70 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
     /// <inheritdoc/>
     public string ComputeSign(string sessionId, int merchantId, long amount, string currency)
     {
-        var json = JsonSerializer.Serialize(new { sessionId, merchantId, amount, currency, crc = options.CrcKey });
-        var bytes = SHA384.HashData(System.Text.Encoding.UTF8.GetBytes(json));
-        return Convert.ToHexString(bytes).ToLowerInvariant();
+        // Register sign: {"sessionId","merchantId","amount","currency","crc"} (P24 field order).
+        var json = JsonSerializer.Serialize(new { sessionId, merchantId, amount, currency, crc = options.CrcKey }, SignJson);
+        return Sha384Hex(json);
     }
 
-    private string ComputeVerifySign(string sessionId, int orderId, int merchantId, long amount, string currency)
+    /// <summary>
+    /// Verify sign as documented by Przelewy24 for <c>PUT /api/v1/transaction/verify</c>:
+    /// <c>{"sessionId","orderId","amount","currency","crc"}</c>.
+    /// </summary>
+    private string ComputeVerifySign(string sessionId, int orderId, long amount, string currency)
     {
-        var json = JsonSerializer.Serialize(new { sessionId, orderId, merchantId, amount, currency, crc = options.CrcKey });
+        var json = JsonSerializer.Serialize(new { sessionId, orderId, amount, currency, crc = options.CrcKey }, SignJson);
+        return Sha384Hex(json);
+    }
+
+    private static string Sha384Hex(string json)
+    {
         var bytes = SHA384.HashData(System.Text.Encoding.UTF8.GetBytes(json));
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// The notification sign is SHA-384 over
+    /// <c>{"merchantId","posId","sessionId","amount","originAmount","currency","orderId","methodId","statement","crc"}</c>
+    /// in exactly that order, as documented by Przelewy24. Verification fails closed when the CRC key
+    /// is not configured or the notification is missing the <c>sign</c> field.
+    /// </remarks>
     public bool VerifyNotification(string body)
     {
+        if (!WebhookSignature.IsSecretConfigured(options.CrcKey) || string.IsNullOrEmpty(body))
+            return false;
+
         try
         {
-            var doc = JsonDocument.Parse(body);
-            if (!doc.RootElement.TryGetProperty("sign", out var signEl)) return false;
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("sign", out var signEl)) return false;
             var receivedSign = signEl.GetString() ?? string.Empty;
-
-            doc.RootElement.TryGetProperty("sessionId", out var sid);
-            doc.RootElement.TryGetProperty("orderId", out var oid);
-            doc.RootElement.TryGetProperty("merchantId", out var mid);
-            doc.RootElement.TryGetProperty("amount", out var amt);
-            doc.RootElement.TryGetProperty("currency", out var cur);
 
             var json = JsonSerializer.Serialize(new
             {
-                sessionId = sid.GetString(),
-                orderId = oid.GetInt32(),
-                merchantId = mid.GetInt32(),
-                amount = amt.GetInt64(),
-                currency = cur.GetString(),
+                merchantId = GetInt64(root, "merchantId"),
+                posId = GetInt64(root, "posId"),
+                sessionId = GetString(root, "sessionId"),
+                amount = GetInt64(root, "amount"),
+                originAmount = GetInt64(root, "originAmount"),
+                currency = GetString(root, "currency"),
+                orderId = GetInt64(root, "orderId"),
+                methodId = GetInt64(root, "methodId"),
+                statement = GetString(root, "statement"),
                 crc = options.CrcKey,
-            });
-            var expected = Convert.ToHexString(SHA384.HashData(System.Text.Encoding.UTF8.GetBytes(json))).ToLowerInvariant();
-            return string.Equals(expected, receivedSign, StringComparison.OrdinalIgnoreCase);
+            }, SignJson);
+            var expected = Sha384Hex(json);
+            return WebhookSignature.FixedTimeEqualsIgnoreCase(expected, receivedSign);
         }
         catch { return false; }
     }
+
+    private static long GetInt64(JsonElement root, string name)
+        => root.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.Number ? el.GetInt64() : 0L;
+
+    private static string GetString(JsonElement root, string name)
+        => root.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.String ? el.GetString() ?? string.Empty : string.Empty;
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -292,7 +323,7 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
                 return PaymentWebhookResult.Fail(msg);
         }
 
-        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+        if (response.PaymentStatus == PaymentStatusEnum.Processing)
             return PaymentWebhookResult.Ignore("Non-actionable event");
 
         return PaymentWebhookResult.Ok(response);
@@ -307,7 +338,7 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
 
         try
         {
-            var doc = JsonDocument.Parse(body);
+            using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
 
             if (!root.TryGetProperty("sessionId", out var sid) ||
@@ -316,13 +347,14 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
                 !root.TryGetProperty("orderId", out var oid))
                 return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Missing fields" };
 
+            var sessionId = sid.GetString()!;
             var status = await caller.VerifyTransactionAsync(
-                sid.GetString()!,
+                sessionId,
                 amt.GetInt64(),
                 cur.GetString()!,
                 oid.GetInt32());
 
-            return new PaymentResponse { PaymentStatus = status, ResponseObject = "OK" };
+            return new PaymentResponse { PaymentUniqueId = sessionId, PaymentStatus = status, ResponseObject = "OK" };
         }
         catch
         {

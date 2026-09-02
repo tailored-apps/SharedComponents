@@ -81,7 +81,7 @@ namespace TailoredApps.Shared.MediatR.ML.Tests
             classificationServiceMock
                 .Setup(s => s.Predict(It.IsAny<byte[]>(), It.IsAny<string>()))
                 .Returns((ImagePrediction)null);
-            var request = new ClassifyImage { FileByteArray = new byte[] { 1 }, FileName = "a.png" };
+            var request = new ClassifyImage { FileByteArray = new byte[] { 137, 80, 78, 71, 1 }, FileName = "a.png" };
 
             // act
             var response = await sut.Handle(request, CancellationToken.None);
@@ -92,42 +92,50 @@ namespace TailoredApps.Shared.MediatR.ML.Tests
         }
 
         [Fact]
-        public async Task When_Handle_Receives_Null_Image_Should_Forward_Null_To_Service()
+        public async Task When_Handle_Receives_Null_Image_Should_Reject_Before_Calling_Service()
         {
             // arrange
-            // Pins current behavior: the handler performs no input validation itself
-            // (ImageValidationExtension is not invoked by the handler), so a null byte
-            // array is passed straight through to the classification service.
-            var prediction = new ImagePrediction();
-            classificationServiceMock
-                .Setup(s => s.Predict(null, "empty.png"))
-                .Returns(prediction);
             var request = new ClassifyImage { FileByteArray = null, FileName = "empty.png" };
 
-            // act
-            var response = await sut.Handle(request, CancellationToken.None);
-
-            // assert
-            Assert.Same(prediction, response.ImagePrediction);
-            classificationServiceMock.Verify(s => s.Predict(null, "empty.png"), Times.Once);
+            // act & assert
+            await Assert.ThrowsAsync<ArgumentException>(() => sut.Handle(request, CancellationToken.None));
+            classificationServiceMock.VerifyNoOtherCalls();
         }
 
         [Fact]
-        public async Task When_Handle_Receives_Empty_Image_Should_Forward_Empty_Array_To_Service()
+        public async Task When_Handle_Receives_Empty_Image_Should_Reject_Before_Calling_Service()
         {
             // arrange
-            var emptyBytes = Array.Empty<byte>();
-            classificationServiceMock
-                .Setup(s => s.Predict(emptyBytes, "zero.png"))
-                .Returns(new ImagePrediction());
-            var request = new ClassifyImage { FileByteArray = emptyBytes, FileName = "zero.png" };
+            var request = new ClassifyImage { FileByteArray = Array.Empty<byte>(), FileName = "zero.png" };
 
-            // act
-            var response = await sut.Handle(request, CancellationToken.None);
+            // act & assert
+            await Assert.ThrowsAsync<ArgumentException>(() => sut.Handle(request, CancellationToken.None));
+            classificationServiceMock.VerifyNoOtherCalls();
+        }
 
-            // assert
-            Assert.NotNull(response);
-            classificationServiceMock.Verify(s => s.Predict(emptyBytes, "zero.png"), Times.Once);
+        [Fact]
+        public async Task When_Handle_Receives_Non_Image_Bytes_Should_Reject_Before_Calling_Service()
+        {
+            // arrange
+            var request = new ClassifyImage { FileByteArray = new byte[] { 0x4D, 0x5A, 0x90, 0x00 }, FileName = "evil.png" };
+
+            // act & assert
+            await Assert.ThrowsAsync<ArgumentException>(() => sut.Handle(request, CancellationToken.None));
+            classificationServiceMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task When_Image_Exceeds_Configured_Limit_Should_Reject_Before_Calling_Service()
+        {
+            // arrange
+            var limited = new ClassifyImageCommandHandler(
+                classificationServiceMock.Object,
+                Microsoft.Extensions.Options.Options.Create(new TailoredApps.Shared.MediatR.ImageClassification.Infrastructure.ImageClassificationOptions { MaxImageBytes = 8 }));
+            var request = new ClassifyImage { FileByteArray = new byte[] { 137, 80, 78, 71, 1, 2, 3, 4, 5, 6 }, FileName = "big.png" };
+
+            // act & assert
+            await Assert.ThrowsAsync<ArgumentException>(() => limited.Handle(request, CancellationToken.None));
+            classificationServiceMock.VerifyNoOtherCalls();
         }
 
         [Fact]
@@ -137,7 +145,7 @@ namespace TailoredApps.Shared.MediatR.ML.Tests
             classificationServiceMock
                 .Setup(s => s.Predict(It.IsAny<byte[]>(), It.IsAny<string>()))
                 .Throws(new InvalidOperationException("model not loaded"));
-            var request = new ClassifyImage { FileByteArray = new byte[] { 1, 2, 3 }, FileName = "broken.png" };
+            var request = new ClassifyImage { FileByteArray = new byte[] { 137, 80, 78, 71, 1, 2, 3 }, FileName = "broken.png" };
 
             // act
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(

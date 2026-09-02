@@ -103,6 +103,14 @@ Jeśli akcja rzuci wyjątek, `TransactionFilterAttribute` automatycznie wywoła 
 
 ---
 
+## 🔒 Spójność transakcji
+
+- **Rollback przy odpowiedzi błędu.** Filtr wycofuje transakcję nie tylko po wyjątku, ale też gdy akcja zwróciła wynik ze statusem 4xx/5xx (`BadRequest`, `Conflict`, `StatusCode(500)`). Częściowe zapisy sprzed `return Conflict(...)` nie są już utrwalane.
+- **Błąd commitu nie ginie.** Gdy commit i rollback zawiodą, do `ActionExecutedContext.Exception` trafia `AggregateException` z oboma wyjątkami (wcześniej wyjątek rollbacku zastępował pierwotną przyczynę i wypadał z filtra).
+- `UnitOfWork` zwalnia transakcję w `finally`, więc nieudany commit nie zostawia otwartej transakcji na połączeniu.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -132,4 +140,5 @@ public async Task<IActionResult> CriticalOperation() { ... }
 - Nie wywołuj ręcznie CommitTransaction/RollbackTransaction w kontrolerach — filter to robi
 - TransactionIsolationLevelAttribute można stosować na klasie kontrolera lub na metodzie
 - Domyślny poziom izolacji pochodzi z konfiguracji UoW
+- Zwracaj kody 4xx/5xx dla niepowodzeń biznesowych — filtr traktuje je jak wyjątek i wycofuje transakcję
 ```

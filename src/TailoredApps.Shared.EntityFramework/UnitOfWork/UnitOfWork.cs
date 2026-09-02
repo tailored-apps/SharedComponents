@@ -65,9 +65,15 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork
 
             if (_transaction != null)
             {
-                _transaction.Commit();
-                _transaction.Dispose();
-                _transaction = null;
+                try
+                {
+                    _transaction.Commit();
+                }
+                finally
+                {
+                    _transaction.Dispose();
+                    _transaction = null;
+                }
             }
 
             _hooksManager.ExecuteTransactionCommitHooks();
@@ -84,15 +90,26 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork
         /// <inheritdoc/>
         public void RollbackTransaction()
         {
-            _context.DiscardChanges();
-            _hooksManager.ExecuteTransactionRollbackHooks();
-
-            if (_transaction == null)
-                return;
-
-            _transaction.Rollback();
-            _transaction.Dispose();
-            _transaction = null;
+            try
+            {
+                if (_transaction != null)
+                {
+                    try
+                    {
+                        _transaction.Rollback();
+                    }
+                    finally
+                    {
+                        _transaction.Dispose();
+                        _transaction = null;
+                    }
+                }
+            }
+            finally
+            {
+                _context.DiscardChanges();
+                _hooksManager.ExecuteTransactionRollbackHooks();
+            }
         }
 
         /// <inheritdoc/>

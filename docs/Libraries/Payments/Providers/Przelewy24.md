@@ -71,6 +71,14 @@ Przelewy24 weryfikuje płatność przez endpoint `/transaction/verify`. Podpis t
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+- Podpis notyfikacji jest liczony jako SHA-384 z JSON `{"merchantId","posId","sessionId","amount","originAmount","currency","orderId","methodId","statement","crc"}` w tej kolejności (dokumentacja P24), z niezmienionymi znakami unicode i ukośnikami. Podpis wywołania `verify` to `{"sessionId","orderId","amount","currency","crc"}`.
+- Pusty `CrcKey` lub brak pola `sign` → odrzucenie (fail-closed); porównanie w stałym czasie.
+- `PaymentUniqueId` w wyniku webhooka to `sessionId`.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -87,4 +95,5 @@ Kwota: grosze (int) — biblioteka konwertuje automatycznie
 Sandbox: ServiceUrl = "https://sandbox.przelewy24.pl"
 
 Rejestracja: builder.Services.AddPayments().RegisterPrzelewy24Provider();
+- Nie modyfikuj kolejności pól w podpisie — P24 liczy hash z JSON dokładnie w udokumentowanej kolejności
 ```

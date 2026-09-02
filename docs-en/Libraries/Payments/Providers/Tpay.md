@@ -77,6 +77,13 @@ Tpay wysyła powiadomienia POST z podpisem weryfikowanym przez MD5 z `SecurityCo
 
 ---
 
+## 🔒 Security
+
+- Empty `SecurityCode` or an empty signature → rejected (fail-closed); constant-time comparison.
+- ⚠️ **Known limitation.** The current verification (`SHA256(body + SecurityCode)` from an `X-Signature` header) does not match the Tpay protocol (an `application/x-www-form-urlencoded` form with `md5sum = md5(id + tr_id + tr_amount + tr_crc + SecurityCode)` plus an RS256 `X-JWS-Signature` header). Genuine notifications are therefore rejected - the provider fails safe, but the webhook is not production-usable until verification is rewritten.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -93,4 +100,5 @@ Autoryzacja: OAuth2 — automatyczna, token cache'owany
 Sandbox: ServiceUrl = "https://openapi.sandbox.tpay.com"
 
 Rejestracja: builder.Services.AddPayments().RegisterTpayProvider();
+- Until md5sum + X-JWS-Signature verification is implemented, do not rely on the Tpay webhook in production - poll GetStatus instead
 ```

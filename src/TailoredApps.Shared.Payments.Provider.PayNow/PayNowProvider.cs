@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TailoredApps.Shared.Payments.Security;
 
 namespace TailoredApps.Shared.Payments.Provider.PayNow;
 
@@ -96,13 +97,16 @@ public class PayNowServiceCaller : IPayNowServiceCaller
     public async Task<(string? paymentId, string? redirectUrl)> CreatePaymentAsync(PaymentRequest request)
     {
         using var client = CreateClient();
-        client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+        // The idempotency key must be stable for the same order so that a retried request
+        // does not create a second payment; fall back to a random key when no external id exists.
+        var externalId = request.AdditionalData ?? Guid.NewGuid().ToString("N");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", externalId);
 
         var body = new PayNowPaymentRequest
         {
             Amount = (long)(request.Amount * 100),
             Currency = request.Currency.ToUpperInvariant(),
-            ExternalId = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
+            ExternalId = externalId,
             Description = request.Title ?? request.Description ?? "Order",
             Buyer = new PayNowBuyer { Email = request.Email ?? string.Empty },
             ContinueUrl = options.ContinueUrl,
@@ -120,7 +124,8 @@ public class PayNowServiceCaller : IPayNowServiceCaller
     public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId)
     {
         using var client = CreateClient();
-        var response = await client.GetAsync($"{options.ServiceUrl}/v2/payments/{paymentId}/status");
+        var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
+        var response = await client.GetAsync($"{options.ServiceUrl}/v2/payments/{safePaymentId}/status");
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
         var json = await response.Content.ReadAsStringAsync();
         var status = JsonSerializer.Deserialize<PayNowStatusResponse>(json)?.Status;
@@ -133,6 +138,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
             "ERROR" => PaymentStatusEnum.Rejected,
             "REJECTED" => PaymentStatusEnum.Rejected,
             "ABANDONED" => PaymentStatusEnum.Rejected,
+            "EXPIRED" => PaymentStatusEnum.Rejected,
             _ => PaymentStatusEnum.Created,
         };
     }
@@ -140,10 +146,14 @@ public class PayNowServiceCaller : IPayNowServiceCaller
     /// <inheritdoc/>
     public bool VerifySignature(string body, string signature)
     {
+        // Fail closed: HMAC with an empty key is computable by anyone.
+        if (!WebhookSignature.IsSecretConfigured(options.SignatureKey) || string.IsNullOrEmpty(signature))
+            return false;
+
         var keyBytes = Encoding.UTF8.GetBytes(options.SignatureKey);
-        var dataBytes = Encoding.UTF8.GetBytes(body);
+        var dataBytes = Encoding.UTF8.GetBytes(body ?? string.Empty);
         var computed = Convert.ToBase64String(HMACSHA256.HashData(keyBytes, dataBytes));
-        return string.Equals(computed, signature, StringComparison.Ordinal);
+        return WebhookSignature.FixedTimeEquals(computed, signature);
     }
 }
 
@@ -227,7 +237,7 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
                 return PaymentWebhookResult.Fail(msg);
         }
 
-        if (response.PaymentStatus == PaymentStatusEnum.Processing && string.IsNullOrEmpty(response.PaymentUniqueId))
+        if (response.PaymentStatus == PaymentStatusEnum.Processing)
             return PaymentWebhookResult.Ignore("Non-actionable event");
 
         return PaymentWebhookResult.Ok(response);
@@ -243,9 +253,12 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
             return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
 
         var status = PaymentStatusEnum.Processing;
+        string? paymentUniqueId = null;
         try
         {
-            var doc = JsonDocument.Parse(body);
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("paymentId", out var pid))
+                paymentUniqueId = pid.GetString();
             if (doc.RootElement.TryGetProperty("status", out var st))
                 status = st.GetString() switch
                 {
@@ -253,12 +266,13 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
                     "ERROR" => PaymentStatusEnum.Rejected,
                     "REJECTED" => PaymentStatusEnum.Rejected,
                     "ABANDONED" => PaymentStatusEnum.Rejected,
+                    "EXPIRED" => PaymentStatusEnum.Rejected,
                     _ => PaymentStatusEnum.Processing,
                 };
         }
         catch { /* ignore */ }
 
-        return Task.FromResult(new PaymentResponse { PaymentStatus = status, ResponseObject = "OK" });
+        return Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
     }
 }
 

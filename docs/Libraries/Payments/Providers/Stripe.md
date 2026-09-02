@@ -98,6 +98,13 @@ public async Task<IActionResult> StripeWebhook()
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+- Brak `WebhookSecret` lub nagłówka `Stripe-Signature` kończy się `Fail` — Stripe.net nie jest już wywoływany z pustym kluczem.
+- Zdarzenia `checkout.session.expired`, `checkout.session.async_payment_succeeded/failed` oraz `payment_intent.succeeded/payment_failed` niosą `PaymentUniqueId` (id sesji lub payment intentu).
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -116,4 +123,5 @@ Webhook: wymaga raw body (nie [FromBody]) + nagłówek Stripe-Signature
 Sandbox: IsTest = true, SecretKey = "sk_test_..."
 
 Rejestracja: builder.Services.AddPayments().RegisterStripeProvider();
+- WebhookSecret jest obowiązkowy — bez niego każdy webhook zwraca Fail
 ```

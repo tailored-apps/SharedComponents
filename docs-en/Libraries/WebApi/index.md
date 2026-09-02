@@ -137,6 +137,16 @@ app.MapPrometheusScrapingEndpoint(); // /metrics
 
 ---
 
+## 🔒 Security
+
+- **Retries only for idempotent methods.** The standard resilience handler (`AddStandardResilienceHandler`) used to retry `POST`/`PATCH` as well. A retried `POST /charge` whose first attempt reached the server is a duplicate charge. Retrying non-idempotent methods is now **disabled** (`HttpClientSettings.RetryUnsafeHttpMethods = false`). Enable it only when every HTTP client in the host uses idempotency keys.
+
+```json
+{ "WebApiDefaults": { "HttpClient": { "EnableStandardResilience": true, "RetryUnsafeHttpMethods": false } } }
+```
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -168,4 +178,5 @@ app.MapTailoredWebApiDefaults(); // /health + /alive
 - Do not register OpenTelemetry or health checks manually — the library does it for you
 - Use /alive as the liveness probe and /health as the readiness probe
 - To expose Prometheus /metrics, use the Observability.ConfigureMetrics hook
+- Do not enable `HttpClient:RetryUnsafeHttpMethods` without idempotency keys - a retried POST can duplicate a payment or order
 ```

@@ -5,21 +5,26 @@ using TailoredApps.Shared.ExceptionHandling.Model;
 
 namespace TailoredApps.Shared.ExceptionHandling.HttpResult
 {
-    /// <summary>Wynik HTTP 400 zwracany gdy wystąpi wyjątek lub błąd walidacji.</summary>
+    /// <summary>HTTP result returned when an exception or a model validation error occurred.</summary>
     public class ExceptionOccuredResult : ObjectResult
     {
-        /// <summary>Inicjalizuje wynik 400 z błędami walidacji modelu.</summary>
+        /// <summary>Initialises a 400 result carrying the model-state validation errors.</summary>
         public ExceptionOccuredResult(ModelStateDictionary modelState)
             : base(modelState)
         {
             StatusCode = StatusCodes.Status400BadRequest;
         }
 
-        /// <summary>Inicjalizuje wynik 400 z modelem odpowiedzi wyjątku.</summary>
+        /// <summary>
+        /// Initialises a result carrying the exception response model. The HTTP status code is taken
+        /// from <see cref="ExceptionHandlingResultModel.ErrorCode"/> when it is a valid error code
+        /// (400-599); otherwise 400 is used.
+        /// </summary>
         public ExceptionOccuredResult(ExceptionHandlingResultModel modelState)
             : base(modelState)
         {
-            StatusCode = StatusCodes.Status400BadRequest;
+            var code = modelState?.ErrorCode ?? StatusCodes.Status400BadRequest;
+            StatusCode = code >= 400 && code <= 599 ? code : StatusCodes.Status400BadRequest;
         }
     }
 }

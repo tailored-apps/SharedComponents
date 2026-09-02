@@ -155,6 +155,19 @@ public class AuditLogHook : IHook
 
 ---
 
+## 🔒 Bezpieczeństwo zapytań
+
+- **Rozmiar strony jest ograniczony.** `PagingQuery<T>` odrzuca (`ArgumentOutOfRangeException`) `Page < 1`, `Count < 1`, `Count > PagingQuery<T>.MaxPageSize` (domyślnie 1000, ustawiane globalnie lub przez konstruktor) oraz przepełnienie `Skip`. Żądanie `?count=2147483647` nie zmaterializuje już całej tabeli.
+- **Pole sortowania jest walidowane.** `ApplySorting` przyjmuje wyłącznie pojedynczą nazwę właściwości (`^[A-Za-z_][A-Za-z0-9_]*$`) — `Owner.PasswordHash`, `Name, Id desc` czy wyrażenia kończą się `ArgumentException`, a komunikat nie zdradza nazw typów i kolumn. Przeciążenie `ApplySorting(sorting, allowedSortFields)` ogranicza sortowanie do jawnej listy właściwości — używaj go dla encji z wrażliwymi kolumnami.
+
+```csharp
+var page = await db.Users
+    .ApplySorting(request, allowedSortFields: new[] { "Name", "CreatedDateUtc" })
+    .PagingAsync(request);
+```
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -190,4 +203,6 @@ try {
 - Domyślnie transakcja jest otwierana przy pierwszym SaveChanges i commitowana automatycznie przez TransactionFilter (jeśli używasz WebApiCore)
 - Dla testów: użyj InMemory provider — UnitOfWorkContext automatycznie to obsługuje
 - HasOpenTransaction sprawdza, czy jest otwarta transakcja
+- Dla encji z wrażliwymi kolumnami zawsze podawaj allowedSortFields w ApplySorting
+- Nie podnoś PagingQuery<T>.MaxPageSize bez potrzeby — limit chroni przed zrzutem całej tabeli jednym żądaniem
 ```

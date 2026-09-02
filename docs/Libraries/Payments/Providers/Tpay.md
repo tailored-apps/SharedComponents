@@ -77,6 +77,13 @@ Tpay wysyła powiadomienia POST z podpisem weryfikowanym przez MD5 z `SecurityCo
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+- Pusty `SecurityCode` lub pusty podpis → odrzucenie (fail-closed); porównanie w stałym czasie.
+- ⚠️ **Znane ograniczenie.** Obecna weryfikacja (`SHA256(body + SecurityCode)` z nagłówka `X-Signature`) nie odpowiada protokołowi Tpay (formularz `application/x-www-form-urlencoded` z `md5sum = md5(id + tr_id + tr_amount + tr_crc + SecurityCode)` oraz nagłówek `X-JWS-Signature` z podpisem RS256). Prawdziwe powiadomienia są więc odrzucane — provider zachowuje się bezpiecznie, ale webhook nie działa produkcyjnie do czasu przepisania weryfikacji.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -93,4 +100,5 @@ Autoryzacja: OAuth2 — automatyczna, token cache'owany
 Sandbox: ServiceUrl = "https://openapi.sandbox.tpay.com"
 
 Rejestracja: builder.Services.AddPayments().RegisterTpayProvider();
+- Do czasu implementacji md5sum + X-JWS-Signature nie polegaj na webhooku Tpay w produkcji — sprawdzaj status przez GetStatus
 ```

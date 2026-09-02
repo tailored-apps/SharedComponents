@@ -18,10 +18,34 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         /// </summary>
         public const string ModelFilePathConfig = "ImageClassification:ModelFilePath";
 
+        /// <summary>Default upper bound for the size of an image submitted for classification (10 MB).</summary>
+        public const int DefaultMaxImageBytes = 10 * 1024 * 1024;
+
         /// <summary>
         /// Gets or sets the file system path to the ML model file.
         /// </summary>
         public string ModelFilePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the directory under which training sets must live. The
+        /// <c>TrainImageClassificationModel</c> command only accepts a <c>Source</c> that resolves inside
+        /// this directory, so a request cannot make the host enumerate and read arbitrary folders.
+        /// Required for training.
+        /// </summary>
+        public string TrainingRoot { get; set; }
+
+        /// <summary>
+        /// Gets or sets the directory under which trained models may be written. The
+        /// <c>TrainImageClassificationModel</c> command only accepts a <c>ModelDestFolderPath</c> that
+        /// resolves inside this directory, so a request cannot overwrite arbitrary files. Required for training.
+        /// </summary>
+        public string ModelsRoot { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum accepted size, in bytes, of an image submitted to <c>ClassifyImage</c>.
+        /// Defaults to <see cref="DefaultMaxImageBytes"/>. Set to <c>0</c> to disable the limit.
+        /// </summary>
+        public int MaxImageBytes { get; set; } = DefaultMaxImageBytes;
 
         /// <summary>
         /// Implements <see cref="IConfigureOptions{TOptions}"/> to populate <see cref="ImageClassificationOptions"/>
@@ -53,6 +77,9 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
                 }
 
                 options.ModelFilePath = section.ModelFilePath;
+                options.TrainingRoot = section.TrainingRoot;
+                options.ModelsRoot = section.ModelsRoot;
+                options.MaxImageBytes = section.MaxImageBytes;
             }
         }
     }

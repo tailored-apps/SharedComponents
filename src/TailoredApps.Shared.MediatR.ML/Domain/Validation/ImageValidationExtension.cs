@@ -16,6 +16,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Validation
         /// <returns><c>true</c> if the image is a valid JPEG or PNG; otherwise, <c>false</c>.</returns>
         public static bool IsValidImage(this byte[] image)
         {
+            if (image == null) throw new ArgumentNullException(nameof(image));
             var imageFormat = GetImageFormat(image);
             return imageFormat == ImageFormat.jpeg || imageFormat == ImageFormat.png;
         }
@@ -33,8 +34,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Validation
             var png = new byte[] { 137, 80, 78, 71 };    // PNG
             var tiff = new byte[] { 73, 73, 42 };         // TIFF
             var tiff2 = new byte[] { 77, 77, 42 };         // TIFF
-            var jpeg = new byte[] { 255, 216, 255, 224 }; // jpeg
-            var jpeg2 = new byte[] { 255, 216, 255, 225 }; // jpeg canon
+            var jpeg = new byte[] { 255, 216, 255 };      // any JPEG (SOI marker followed by an APPn/DQT/... marker)
 
 
             if (bmp.SequenceEqual(bytes.Take(bmp.Length)))
@@ -53,9 +53,6 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Validation
                 return ImageFormat.tiff;
 
             if (jpeg.SequenceEqual(bytes.Take(jpeg.Length)))
-                return ImageFormat.jpeg;
-
-            if (jpeg2.SequenceEqual(bytes.Take(jpeg2.Length)))
                 return ImageFormat.jpeg;
 
             return ImageFormat.unknown;

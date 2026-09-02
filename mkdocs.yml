@@ -51,6 +51,7 @@ nav:
       - Querying: Libraries/Querying/index.md
       - WebApi: Libraries/WebApi/index.md
   - Zależności: Dependencies/index.md
+  - Bezpieczeństwo: Security/index.md
   - Contributing: contributing.md
   - Changelog: Libraries/Readme.md
 

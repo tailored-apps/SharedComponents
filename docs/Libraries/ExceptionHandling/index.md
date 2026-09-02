@@ -7,14 +7,14 @@
 
 ## Opis
 
-Biblioteka standaryzuje obsługę wyjątków w aplikacjach ASP.NET Core Web API. Rozwiązuje problem niespójnych odpowiedzi błędów — zamiast nieobrobionych stack traces lub przypadkowych formatów JSON, każdy błąd jest konwertowany na ujednoliconą strukturę `ExceptionOrValidationError`.
+Biblioteka standaryzuje obsługę wyjątków w aplikacjach ASP.NET Core Web API. Rozwiązuje problem niespójnych odpowiedzi błędów — zamiast nieobrobionych stack traces lub przypadkowych formatów JSON każdy błąd jest konwertowany na ujednoliconą strukturę `ExceptionHandlingResultModel` (`errorCode`, `message`, `errors[]`).
 
 Dostarcza dwa mechanizmy:
 
-- **Middleware** (`ConfigureExceptionHandler`) — globalny handler przechwytujący wyjątki dla całej aplikacji
-- **Action Filter** (`HandleExceptionAttribute`) — dekoracyjne podejście na poziomie kontrolera/akcji
+- **Middleware** (`ConfigureExceptionHandler`) — globalny handler przechwytujący nieobsłużone wyjątki dla całej aplikacji
+- **Action Filter** (`HandleExceptionAttribute` + `AddExceptionHandlingFilterAttribute`) — zwraca tę samą strukturę dla nieprawidłowego `ModelState` na poziomie kontrolera/akcji
 
-Możesz zdefiniować własny `IExceptionHandlingProvider`, który mapuje konkretne typy wyjątków na kody HTTP i komunikaty błędów.
+Wbudowany `DefaultExceptionHandlingProvider` mapuje `ValidationException` (FluentValidation) na **400** z błędami per pole, a każdy inny wyjątek na **500** z ogólnym komunikatem. Możesz zaimplementować własny `IExceptionHandlingProvider`, który mapuje wyjątki domenowe na inne kody HTTP.
 
 ---
 
@@ -30,19 +30,24 @@ dotnet add package TailoredApps.Shared.ExceptionHandling
 
 ```csharp
 // Program.cs
+using TailoredApps.Shared.ExceptionHandling.Interfaces;
+using TailoredApps.Shared.ExceptionHandling.Providers;
 using TailoredApps.Shared.ExceptionHandling.WebApiCore;
+using TailoredApps.Shared.ExceptionHandling.WebApiCore.Middleware;
 
-// Rejestracja serwisu + własnego handlera
+// Wbudowany provider (400 dla walidacji, 500 + ogólny komunikat dla reszty)
 builder.Services
-    .AddExceptionHandlingForWebApi<IExceptionHandlingProvider, MyExceptionHandlingProvider>();
+    .AddExceptionHandlingForWebApi<IExceptionHandlingProvider, DefaultExceptionHandlingProvider>();
+// ...lub własny provider:
+// .AddExceptionHandlingForWebApi<IExceptionHandlingProvider, MyExceptionHandlingProvider>();
 
-// Opcja A: Globalny filter MVC
+// Opcja A: globalny filter MVC (nieprawidłowy ModelState -> ustrukturyzowane 400)
 builder.Services.AddControllers(options =>
 {
     options.Filters.AddExceptionHandlingFilterAttribute();
 });
 
-// Opcja B: Middleware (preferowane dla globalnej obsługi)
+// Opcja B: middleware (preferowane dla globalnej obsługi nieobsłużonych wyjątków)
 var app = builder.Build();
 app.ConfigureExceptionHandler();
 ```
@@ -51,45 +56,43 @@ app.ConfigureExceptionHandler();
 
 ## Przykład użycia
 
-### Własny provider mapujący wyjątki
+### Własny provider mapujący wyjątki domenowe
 
 ```csharp
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
 using TailoredApps.Shared.ExceptionHandling.Model;
 
 public class MyExceptionHandlingProvider : IExceptionHandlingProvider
 {
-    public ExceptionHandlingResponse Response(Exception exception)
+    private readonly bool includeDetails;
+
+    public MyExceptionHandlingProvider(IHostEnvironment env) => includeDetails = env.IsDevelopment();
+
+    public ExceptionHandlingResultModel Response(Exception exception)
     {
-        return exception switch
+        var root = exception.GetBaseException();
+        return root switch
         {
-            ValidationException validationEx => new ExceptionHandlingResponse
-            {
-                ErrorCode = 422,
-                Errors = validationEx.Errors
-                    .Select(e => new ExceptionOrValidationError(e.PropertyName, e.ErrorMessage))
-                    .ToList()
-            },
+            ValidationException ve => new ExceptionHandlingResultModel(400, ve.Message,
+                ve.Errors.Select(e => new ExceptionOrValidationError(e.PropertyName, e.ErrorMessage))),
 
-            NotFoundException notFoundEx => new ExceptionHandlingResponse
-            {
-                ErrorCode = 404,
-                Errors = new[] { new ExceptionOrValidationError("", notFoundEx.Message) }
-            },
+            NotFoundException nf => new ExceptionHandlingResultModel(404, nf.Message,
+                new[] { new ExceptionOrValidationError("", nf.Message) }),
 
-            UnauthorizedException => new ExceptionHandlingResponse
-            {
-                ErrorCode = 401,
-                Errors = new[] { new ExceptionOrValidationError("", "Unauthorized") }
-            },
+            UnauthorizedAccessException => new ExceptionHandlingResultModel(401, "Unauthorized",
+                new[] { new ExceptionOrValidationError("", "Unauthorized") }),
 
-            _ => new ExceptionHandlingResponse
-            {
-                ErrorCode = 500,
-                Errors = new[] { new ExceptionOrValidationError("", "Internal server error") }
-            }
+            // Nigdy nie zwracaj root.Message poza Development: może zawierać connection string, ścieżki lub SQL.
+            _ => new ExceptionHandlingResultModel(500,
+                includeDetails ? root.Message : "An unexpected error occurred.",
+                new[] { new ExceptionOrValidationError("", includeDetails ? root.Message : "An unexpected error occurred.") }),
         };
     }
+
+    public ExceptionHandlingResultModel Response(ModelStateDictionary modelState)
+        => new ExceptionHandlingResultModel(modelState);   // 400 "Validation Failed" + błędy pól
 }
 ```
 
@@ -97,19 +100,24 @@ public class MyExceptionHandlingProvider : IExceptionHandlingProvider
 
 ```json
 {
+  "message": "Validation Failed",
+  "errorCode": 400,
   "errors": [
-    {
-      "field": "Email",
-      "message": "Email address is required"
-    },
-    {
-      "message": "Name must not be empty"
-    }
+    { "field": "Email", "message": "Email address is required" },
+    { "message": "Name must not be empty" }
   ]
 }
 ```
 
-Właściwość `field` jest pomijana (serializacja `WhenWritingNull`) gdy błąd nie dotyczy konkretnego pola.
+Właściwość `field` jest pomijana (serializacja `WhenWritingNull`), gdy błąd nie dotyczy konkretnego pola.
+
+---
+
+## 🔒 Bezpieczeństwo
+
+- **Szczegóły wyjątków nie wyciekają domyślnie.** `DefaultExceptionHandlingProvider` zwraca `500` z komunikatem `"An unexpected error occurred."` dla wszystkiego, co nie jest błędem walidacji. Komunikat pierwotnego wyjątku jest dołączany tylko wtedy, gdy provider został utworzony z `IHostEnvironment` w środowisku *Development*, lub jawnie przez `new DefaultExceptionHandlingProvider(includeExceptionDetails: true)`. Wcześniej komunikat najgłębszego wyjątku (błędy SQL, nazwy hostów, ścieżki plików) trafiał do każdego anonimowego klienta jako HTTP 400.
+- **Poprawne kody statusu.** Awarie serwera to 5xx, więc alerty, load balancery i polityki retry klientów widzą je jako awarie. Middleware ogranicza `ErrorCode` providera do zakresu 400–599, a `ExceptionOccuredResult` honoruje kod z modelu zamiast wymuszać 400.
+- **Głośny błąd konfiguracji.** Middleware rozwiązuje `IExceptionHandlingService` przez `GetRequiredService`, więc pominięcie `AddExceptionHandlingForWebApi` daje czytelny wyjątek zamiast pustego 500.
 
 ---
 
@@ -117,13 +125,16 @@ Właściwość `field` jest pomijana (serializacja `WhenWritingNull`) gdy błąd
 
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
+| `ExceptionHandlingResultModel` | Klasa | Wynikowy obiekt: `ErrorCode` (HTTP), `Message`, `Errors` (lista); konstruktory `(int code, string message, IEnumerable<ExceptionOrValidationError>)`, `(string message, IEnumerable<...>)` = 400, `(ModelStateDictionary)` = 400 |
 | `ExceptionOrValidationError` | Klasa | Model błędu: `Field` (nullable) + `Message` |
-| `IExceptionHandlingProvider` | Interfejs | Mapuje `Exception` na `ExceptionHandlingResponse` |
+| `IExceptionHandlingProvider` | Interfejs | Mapuje `Exception` i `ModelStateDictionary` na `ExceptionHandlingResultModel` |
+| `DefaultExceptionHandlingProvider` | Klasa | Wbudowany provider: walidacja → 400, reszta → 500 z ogólnym komunikatem; szczegóły tylko w Development |
 | `IExceptionHandlingService` | Interfejs | Wyższy poziom — wywołuje provider i zwraca response |
-| `ExceptionHandlingConfiguration.AddExceptionHandlingForWebApi` | Metoda ext. | Rejestruje handler + filter w DI |
+| `ExceptionHandlingConfiguration.AddExceptionHandlingForWebApi` | Metoda ext. | Rejestruje serwis + provider w DI |
+| `ExceptionHandlingConfiguration.AddExceptionHandlingFilterAttribute` | Metoda ext. | Dodaje filtr ModelState do MVC |
 | `ExceptionMiddlewareExtensions.ConfigureExceptionHandler` | Metoda ext. | Dodaje middleware do pipeline |
-| `HandleExceptionAttribute` | Action Filter | Dekoracyjna obsługa wyjątku na poziomie akcji |
-| `ExceptionHandlingResponse` | Klasa | Wynikowy obiekt: `ErrorCode` (HTTP) + `Errors` (lista) |
+| `HandleExceptionAttribute` | Atrybut | Oznacza akcje/kontrolery, których nieprawidłowy ModelState konwertuje filtr |
+| `ExceptionOccuredResult` | ObjectResult | Wynik HTTP z modelem; status z `ErrorCode` |
 
 ---
 
@@ -136,37 +147,44 @@ Używasz biblioteki TailoredApps.Shared.ExceptionHandling do standaryzacji błę
 
 ### Rejestracja
 ```csharp
-builder.Services.AddExceptionHandlingForWebApi<IExceptionHandlingProvider, MyProvider>();
+builder.Services.AddExceptionHandlingForWebApi<IExceptionHandlingProvider, DefaultExceptionHandlingProvider>();
 // Opcja A - middleware (globalnie):
 app.ConfigureExceptionHandler();
-// Opcja B - filter MVC:
+// Opcja B - filter MVC (nieprawidłowy ModelState):
 builder.Services.AddControllers(o => o.Filters.AddExceptionHandlingFilterAttribute());
 ```
 
-### Implementacja własnego providera
+### Co zostaje skonfigurowane
+- IExceptionHandlingService + provider (transient), middleware zapisujący JSON z ErrorCode providera
+- DefaultExceptionHandlingProvider: ValidationException -> 400 z błędami pól; wszystko inne -> 500 "An unexpected error occurred."
+
+### Własny provider (rzeczywiste API)
 ```csharp
 public class MyProvider : IExceptionHandlingProvider
 {
-    public ExceptionHandlingResponse Response(Exception ex) => ex switch
+    public ExceptionHandlingResultModel Response(Exception ex) => ex.GetBaseException() switch
     {
-        NotFoundException => new() { ErrorCode = 404, Errors = [new("", ex.Message)] },
-        ValidationException ve => new() { ErrorCode = 422, Errors = ve.Errors
-            .Select(e => new ExceptionOrValidationError(e.PropertyName, e.ErrorMessage)).ToList() },
-        _ => new() { ErrorCode = 500, Errors = [new("", "Internal server error")] }
+        NotFoundException nf => new ExceptionHandlingResultModel(404, nf.Message, [new ExceptionOrValidationError("", nf.Message)]),
+        ValidationException ve => new ExceptionHandlingResultModel(400, ve.Message,
+            ve.Errors.Select(e => new ExceptionOrValidationError(e.PropertyName, e.ErrorMessage))),
+        _ => new ExceptionHandlingResultModel(500, "An unexpected error occurred.", [new ExceptionOrValidationError("", "An unexpected error occurred.")])
     };
+    public ExceptionHandlingResultModel Response(ModelStateDictionary ms) => new(ms);
 }
 ```
 
 ### Format odpowiedzi
 ```json
-{ "errors": [{ "field": "Email", "message": "Required" }, { "message": "Global error" }] }
+{ "message": "Validation Failed", "errorCode": 400, "errors": [{ "field": "Email", "message": "Required" }, { "message": "Global error" }] }
 ```
 
 ### Zasady
+- Nigdy nie zwracaj exception.Message dla nieoczekiwanych błędów poza Development — użyj ogólnego komunikatu i statusu 500
+- ErrorCode musi być z zakresu 400–599; middleware mapuje inne wartości na 500
 - ExceptionOrValidationError z pustym field (string.Empty) → pole Field = null w JSON (pomijane)
-- Zawsze implementuj własny IExceptionHandlingProvider mapujący domeny wyjątki
-- Middleware ConfigureExceptionHandler obsługuje WSZYSTKIE wyjątki — filter tylko opakowane
+- Provider musi implementować OBA przeciążenia: Response(Exception) i Response(ModelStateDictionary)
+- ConfigureExceptionHandler obsługuje WSZYSTKIE nieobsłużone wyjątki — filter konwertuje tylko nieprawidłowy ModelState
 - [HandleException] działa na poziomie akcji ORAZ klasy kontrolera
-- Dla zagnieżdżonych wyjątków komunikat pochodzi z wyjątku bazowego (GetBaseException)
-- AddExceptionHAndlingFilterAttribute (literówka) jest oznaczone [Obsolete] — używaj AddExceptionHandlingFilterAttribute
+- Dla zagnieżdżonych wyjątków użyj GetBaseException(), by znaleźć pierwotną przyczynę
+- AddExceptionHAndlingFilterAttribute (literówka) jest [Obsolete] — używaj AddExceptionHandlingFilterAttribute
 ```

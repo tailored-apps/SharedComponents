@@ -129,7 +129,7 @@ namespace TailoredApps.Shared.Email.Tests
             var exception = Assert.Throws<KeyNotFoundException>(() => sut.Build("unknown", new Dictionary<string, string>(), templates));
 
             // assert
-            Assert.Equal("templateKey", exception.Message);
+            Assert.Contains("was not found", exception.Message);
         }
 
         [Fact]
@@ -142,7 +142,7 @@ namespace TailoredApps.Shared.Email.Tests
             var exception = Assert.Throws<KeyNotFoundException>(() => sut.Build("any", new Dictionary<string, string>(), null));
 
             // assert
-            Assert.Equal("templateKey", exception.Message);
+            Assert.Contains("was not found", exception.Message);
         }
 
         [Fact]

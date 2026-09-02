@@ -21,8 +21,11 @@ dotnet add package TailoredApps.Shared.Payments.Provider.CashBill
 using TailoredApps.Shared.Payments.Provider.CashBill;
 
 builder.Services
+    .RegisterCashbillProvider();
+
+builder.Services
     .AddPayments()
-    .RegisterCashBillProvider();
+    .RegisterPaymentProvider<CashBillProvider>();
 ```
 
 ---
@@ -63,7 +66,16 @@ CashBill zwraca dynamiczną listę kanałów pobraną z API dla danej waluty (PL
 
 ## Webhook
 
-CashBill wysyła powiadomienia GET/POST na `NotifyUrl`. Podpis weryfikowany przez SHA-1 + sekret.
+CashBill wysyła powiadomienia GET/POST na `NotifyUrl`. Podpis weryfikowany przez MD5 + sekret.
+
+---
+
+## 🔒 Bezpieczeństwo
+
+- Podpis notyfikacji to `MD5(cmd + args + ShopSecretPhrase)`, porównywany w stałym czasie. Zarówno `HandleWebhookAsync`, jak i starsze `TransactionStatusChange` **weryfikują** podpis — nieprawidłowy podpis kończy się `Fail("Invalid signature.")` / `Rejected` bez odpytywania API CashBill.
+- Komunikat błędu nie zawiera już oczekiwanego podpisu (wcześniej stanowił wyrocznię pozwalającą sfałszować dowolne powiadomienie).
+- Brak `ShopSecretPhrase` → `Fail("Signature verification is not configured.")`.
+- `GetStatus(paymentId)` odrzuca identyfikatory ze znakami specjalnymi (`PaymentIdentifier.EnsureSafe`).
 
 ---
 
@@ -72,11 +84,13 @@ CashBill wysyła powiadomienia GET/POST na `NotifyUrl`. Podpis weryfikowany prze
 ```markdown
 ## CashBill Provider — Instrukcja dla agenta AI
 
-Provider key: "CashBill"
+Provider key: "Cashbill"
 
 Sekcja konfiguracji: "Payments:Providers:Cashbill" (małe "b" w Cashbill!)
 
 Wymagane pola: ShopId, ShopSecretPhrase, ServiceUrl, ReturnUrl, NegativeReturnUrl
 
-Rejestracja: builder.Services.AddPayments().RegisterCashBillProvider();
+Rejestracja: builder.Services.RegisterCashbillProvider(); builder.Services.AddPayments().RegisterPaymentProvider<CashBillProvider>();
+- Nigdy nie zwracaj ErrorMessage webhooka klientowi; loguj po stronie serwera
+- Sekret sklepu trzymaj w user-secrets/zmiennych środowiskowych — nigdy w repozytorium
 ```

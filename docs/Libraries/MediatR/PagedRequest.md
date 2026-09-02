@@ -134,6 +134,12 @@ public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query)
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+`Page`, `Count` i `SortField` pochodzą wprost z żądania HTTP. Warstwa EF (`PagingQuery<T>`, `ApplySorting`) egzekwuje limity: `Page >= 1`, `1 <= Count <= PagingQuery<T>.MaxPageSize` (domyślnie 1000) oraz pojedynczą nazwę właściwości jako pole sortowania; naruszenie kończy się `ArgumentException`/`ArgumentOutOfRangeException`. Dla encji z wrażliwymi kolumnami przekaż do `ApplySorting` listę dozwolonych pól.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -174,4 +180,5 @@ if (request.IsSortingSpecified)
 - TResponse musi implementować IPagedResult<TModel>
 - IsPagingSpecified = Page i Count mają wartość — sprawdzaj przed Skip/Take
 - IsSortBy("Name") — sprawdza case-insensitive
+- Nie przekazuj SortField do Dynamic LINQ samodzielnie — używaj ApplySorting z listą dozwolonych pól
 ```

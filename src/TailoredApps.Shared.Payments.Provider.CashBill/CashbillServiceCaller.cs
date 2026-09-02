@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using TailoredApps.Shared.Payments.Provider.CashBill.Models;
+using TailoredApps.Shared.Payments.Security;
 
 namespace TailoredApps.Shared.Payments.Provider.CashBill
 {
@@ -148,12 +149,13 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         /// <inheritdoc/>
         public async Task<PaymentStatus> GetPaymentStatus(string paymentId)
         {
+            var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
             var shopId = options.Value.ShopId;
             var secretPhrase = options.Value.ShopSecretPhrase;
             var mainUrl = new Uri(options.Value.ServiceUrl);
 
             var signStatus = Hash(paymentId + secretPhrase);
-            var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{paymentId}?sign={signStatus}").ToString(), "GET", null);
+            var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{safePaymentId}?sign={signStatus}").ToString(), "GET", null);
 
             return status;
         }
@@ -163,6 +165,9 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             return await Task.Run(() =>
             {
                 var secretPhrase = options.Value.ShopSecretPhrase;
+                if (!WebhookSignature.IsSecretConfigured(secretPhrase))
+                    throw new InvalidOperationException("CashBill ShopSecretPhrase is not configured; notification signatures cannot be verified.");
+
                 var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
                 // BUG FIX: CashBill wysyła sign MD5(cmd + args + secret), nie SHA1.
                 // Zweryfikowane empirycznie na podstawie rzeczywistych webhook logów (2026-03-20).
