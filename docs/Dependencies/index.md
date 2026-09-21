@@ -45,6 +45,32 @@ pwsh ./scripts/New-BumpDocs.ps1 -RecordsPath ./bump-records.json
 
 <!-- BUMP-LOG:START -->
 
+## 2026-09-21
+
+Zaktualizowano **5** referencji pakietów w **3** projektach.
+
+Źródło: [przebieg workflow](https://github.com/tailored-apps/SharedComponents/actions/runs/35598552811).
+
+**`src/TailoredApps.Shared.Email.Office365/TailoredApps.Shared.Email.Office365.csproj`**
+
+| Pakiet | Z wersji | Na wersję | Licencja |
+|---|---|---|---|
+| `MailKit` | `4.17.0` | `4.18.0` | `MIT` |
+| `Microsoft.Identity.Web` | `4.14.2` | `4.15.0` | `MIT` |
+| `MimeKit` | `4.17.0` | `4.18.1` | `MIT` |
+
+**`src/TailoredApps.Shared.MediatR.ML/TailoredApps.Shared.MediatR.ML.csproj`**
+
+| Pakiet | Z wersji | Na wersję | Licencja |
+|---|---|---|---|
+| `Microsoft.Bcl.Memory` | `10.0.11` | `10.0.12` | `MIT` |
+
+**`tests/TailoredApps.Shared.Email.Tests/TailoredApps.Shared.Email.Tests.csproj`**
+
+| Pakiet | Z wersji | Na wersję | Licencja |
+|---|---|---|---|
+| `MimeKit` | `4.17.0` | `4.18.1` | `MIT` |
+
 ## 2026-08-31
 
 Zaktualizowano **1** referencję pakietu w **1** projekcie.
