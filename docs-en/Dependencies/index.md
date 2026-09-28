@@ -45,6 +45,78 @@ pwsh ./scripts/New-BumpDocs.ps1 -RecordsPath ./bump-records.json
 
 <!-- BUMP-LOG:START -->
 
+## 2026-09-28
+
+Updated **10** package references across **10** projects.
+
+Source: [workflow run](https://github.com/tailored-apps/SharedComponents/actions/runs/36426941881).
+
+**`src/TailoredApps.Shared.Email.Office365/TailoredApps.Shared.Email.Office365.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `MailKit` | `4.18.0` | `4.18.1` | `MIT` |
+
+**`tests/TailoredApps.Shared.DateTime.Tests/TailoredApps.Shared.DateTime.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.0.1` | `10.1.0` | `MIT` |
+
+**`tests/TailoredApps.Shared.Email.Tests/TailoredApps.Shared.Email.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.0.1` | `10.1.0` | `MIT` |
+
+**`tests/TailoredApps.Shared.EntityFramework.Tests/TailoredApps.Shared.EntityFramework.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.0.1` | `10.1.0` | `MIT` |
+
+**`tests/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Tests/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.0.1` | `10.1.0` | `MIT` |
+
+**`tests/TailoredApps.Shared.ExceptionHandling.Tests/TailoredApps.Shared.ExceptionHandling.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.0.1` | `10.1.0` | `MIT` |
+
+**`tests/TailoredApps.Shared.MediatR.ML.Tests/TailoredApps.Shared.MediatR.ML.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.0.1` | `10.1.0` | `MIT` |
+
+**`tests/TailoredApps.Shared.MediatR.Tests/TailoredApps.Shared.MediatR.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.0.1` | `10.1.0` | `MIT` |
+
+**`tests/TailoredApps.Shared.Payments.Tests/TailoredApps.Shared.Payments.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.0.1` | `10.1.0` | `MIT` |
+
+**`tests/TailoredApps.Shared.Querying.Tests/TailoredApps.Shared.Querying.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.0.1` | `10.1.0` | `MIT` |
+
+**Skipped (1):**
+
+| Project | Package | Candidate | Reason |
+|---|---|---|---|
+| `src/TailoredApps.Shared.MediatR.ML/TailoredApps.Shared.MediatR.ML.csproj` | `Microsoft.Extensions.ML` | — | no nuget metadata |
+
 ## 2026-09-21
 
 Updated **5** package references across **3** projects.
