@@ -45,6 +45,18 @@ pwsh ./scripts/New-BumpDocs.ps1 -RecordsPath ./bump-records.json
 
 <!-- BUMP-LOG:START -->
 
+## 2026-10-05
+
+Zaktualizowano **1** referencję pakietu w **1** projekcie.
+
+Źródło: [przebieg workflow](https://github.com/tailored-apps/SharedComponents/actions/runs/37320495658).
+
+**`src/TailoredApps.Shared.Email.Office365/TailoredApps.Shared.Email.Office365.csproj`**
+
+| Pakiet | Z wersji | Na wersję | Licencja |
+|---|---|---|---|
+| `Microsoft.Identity.Web` | `4.15.0` | `4.16.0` | `MIT` |
+
 ## 2026-09-28
 
 Zaktualizowano **10** referencji pakietów w **10** projektach.
