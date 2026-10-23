@@ -45,6 +45,29 @@ pwsh ./scripts/New-BumpDocs.ps1 -RecordsPath ./bump-records.json
 
 <!-- BUMP-LOG:START -->
 
+## 2026-10-19
+
+Updated **7** package references across **2** projects.
+
+Source: [workflow run](https://github.com/tailored-apps/SharedComponents/actions/runs/39252318737).
+
+**`src/TailoredApps.Shared.Email.Office365/TailoredApps.Shared.Email.Office365.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `Microsoft.Identity.Web` | `4.16.0` | `4.16.1` | `MIT` |
+
+**`src/TailoredApps.Shared.MediatR.ML/TailoredApps.Shared.MediatR.ML.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `Microsoft.Bcl.Memory` | `10.0.12` | `10.0.13` | `MIT` |
+| `Microsoft.Extensions.ML` | `5.0.0` | `5.0.1` | `MIT` |
+| `Microsoft.ML` | `5.0.0` | `5.0.1` | `MIT` |
+| `Microsoft.ML.AutoML` | `0.23.0` | `0.23.1` | `MIT` |
+| `Microsoft.ML.ImageAnalytics` | `5.0.0` | `5.0.1` | `MIT` |
+| `Microsoft.ML.Vision` | `5.0.0` | `5.0.1` | `MIT` |
+
 ## 2026-10-05
 
 Updated **1** package reference across **1** project.
