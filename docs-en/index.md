@@ -38,6 +38,12 @@ Welcome to the documentation of **TailoredApps Shared Components** — a set of 
 
 ---
 
+## Target frameworks
+
+The libraries ship for `net8.0`, `net9.0`, `net10.0` and `net11.0` (four of them as `netstandard2.0` / `netstandard2.1`). The `net11.0` assets are compiled with **runtime async**. Details, limitations and how to switch it off: [Target frameworks and runtime async](Platform/index.md).
+
+---
+
 ## Quick Start
 
 ```bash
