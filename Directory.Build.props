@@ -16,4 +16,14 @@
 		<UseArtifactsOutput>true</UseArtifactsOutput>
 	</PropertyGroup>
 
+	<!--
+		One C# version for every target framework. Without this each framework compiles with its own
+		default (net10.0 as C# 14, net11.0 as C# 15), so shared source could only use the older one.
+		Language features that need runtime support on net10.0 (union types, closed hierarchies) are
+		not part of the public API - see docs/Platform/index.md.
+	-->
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+
 </Project>

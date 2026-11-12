@@ -40,7 +40,7 @@ Witaj w dokumentacji **TailoredApps Shared Components** — zestawu wielokrotneg
 
 ## Platformy docelowe
 
-Biblioteki są wydawane dla `net8.0`, `net9.0`, `net10.0` i `net11.0` (cztery z nich jako `netstandard2.0` / `netstandard2.1`). Assety `net11.0` są kompilowane z użyciem **runtime async**. Szczegóły, ograniczenia i sposób wyłączenia: [Platformy docelowe i runtime async](Platform/index.md).
+Od wersji 2.0 biblioteki są wydawane dla `net10.0` i `net11.0`; starsze platformy obsługują paczki 1.x (`1.6.x`). Assety `net11.0` są kompilowane z użyciem **runtime async**. Szczegóły, ograniczenia i sposób wyłączenia: [Platformy docelowe i runtime async](Platform/index.md).
 
 ---
 

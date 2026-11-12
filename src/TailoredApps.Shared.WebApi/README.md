@@ -90,4 +90,4 @@ app.MapPrometheusScrapingEndpoint(); // /metrics
 
 ## Target frameworks
 
-`net8.0`, `net9.0`, `net10.0`, `net11.0`.
+`net10.0`, `net11.0` (from version 2.0; use the 1.x packages for `net8.0` and `net9.0`).

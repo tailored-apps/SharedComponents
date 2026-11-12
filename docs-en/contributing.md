@@ -16,7 +16,7 @@ Thank you for your interest in contributing to **TailoredApps Shared Components*
 
 ## Local Setup
 
-**.NET SDK 11.0.100 or newer** is required — it builds every target framework (`net8.0`–`net11.0`). The tests run on `net10.0` and `net11.0`, so both runtimes are needed. The conventions for target frameworks and runtime async are described on the [Target frameworks and runtime async](Platform/index.md) page.
+**.NET SDK 11.0.100 or newer** is required — it builds both target frameworks (`net10.0` and `net11.0`). The tests run on `net10.0` and `net11.0`, so both runtimes are needed. The conventions for target frameworks and runtime async are described on the [Target frameworks and runtime async](Platform/index.md) page.
 
 ```bash
 git clone https://github.com/tailored-apps/SharedComponents.git
