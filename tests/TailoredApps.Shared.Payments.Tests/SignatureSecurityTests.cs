@@ -147,8 +147,10 @@ public class PayUCreateOrderRedirectTests
         {
             listener.Start();
 
-            // Not Task.Run: the first accept has to be pending before the constructor returns.
-            loop = AcceptLoopAsync();
+            // On the thread pool, not on the test's synchronization context: xUnit limits how many
+            // continuations run there, and a server waiting for a slot stops answering its client. A test that
+            // never connects may stop the listener before the first accept; the loop treats that as the end.
+            loop = Task.Run(AcceptLoopAsync);
         }
 
         public int Requests { get; private set; }
@@ -170,6 +172,7 @@ public class PayUCreateOrderRedirectTests
                 }
 
                 using (client)
+                try
                 {
                     var stream = client.GetStream();
                     await ReadRequestAsync(stream);
@@ -185,6 +188,11 @@ public class PayUCreateOrderRedirectTests
                     await stream.WriteAsync(head);
                     await stream.WriteAsync(body);
                     await stream.FlushAsync();
+                }
+                catch (Exception e) when (e is IOException or SocketException)
+                {
+                    // One broken connection must not stop the server: the next request would then wait
+                    // for an answer until the HTTP client's timeout.
                 }
             }
         }

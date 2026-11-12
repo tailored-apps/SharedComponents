@@ -507,6 +507,9 @@ public class AdyenConfigureOptions : IConfigureOptions<AdyenServiceOptions>
         options.ClientKey = s.ClientKey;
         options.ReturnUrl = s.ReturnUrl;
         options.NotificationHmacKey = s.NotificationHmacKey;
-        options.IsTest = s.IsTest;
+        // Environment also carries IsTest, which is derived from it. CheckoutUrl was documented but never
+        // read from configuration, so a configured address had no effect.
+        options.Environment = s.Environment;
+        options.CheckoutUrl = s.CheckoutUrl;
     }
 }

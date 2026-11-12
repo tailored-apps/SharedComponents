@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Moq;
 using TailoredApps.Shared.Payments.Provider.Adyen;
@@ -93,6 +94,27 @@ public class AdyenSessionTests
         Assert.Equal("https://shop.example/return", root.GetProperty("returnUrl").GetString());
         Assert.Equal(4999, root.GetProperty("amount").GetProperty("value").GetInt64());
         Assert.Equal("PLN", root.GetProperty("amount").GetProperty("currency").GetString());
+    }
+
+    [Theory]
+    [InlineData("live", null, false, null)]
+    [InlineData("test", "https://checkout.example/v71", true, "https://checkout.example/v71")]
+    public void When_Options_Are_Bound_Should_Read_The_Environment_And_The_Checkout_Address(string environment, string checkoutUrl, bool isTest, string expectedUrl)
+    {
+        // arrange
+        var settings = new Dictionary<string, string> { ["Payments:Providers:Adyen:Environment"] = environment };
+        if (checkoutUrl is not null)
+            settings["Payments:Providers:Adyen:CheckoutUrl"] = checkoutUrl;
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
+        var options = new AdyenServiceOptions();
+
+        // act
+        new AdyenConfigureOptions(configuration).Configure(options);
+
+        // assert
+        Assert.Equal(environment, options.Environment);
+        Assert.Equal(isTest, options.IsTest);
+        Assert.Equal(expectedUrl, options.CheckoutUrl);
     }
 
     // ─── Reading the outcome ─────────────────────────────────────────────────

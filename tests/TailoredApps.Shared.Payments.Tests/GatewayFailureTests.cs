@@ -179,6 +179,21 @@ public class GatewayFailureTests
         Assert.Contains("reference", Assert.IsType<string>(response.ResponseObject), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task When_HotPay_Refuses_The_Payment_Should_Report_Rejected_Not_A_Created_Payment()
+    {
+        // arrange
+        var provider = new HotPayProvider(HotPay(Gateway(HttpStatusCode.BadRequest, """{"STATUS":"ERROR","WIADOMOSC":"Invalid hash"}""")));
+
+        // act
+        var response = await provider.RequestPayment(Request("HotPay"));
+
+        // assert
+        Assert.Equal(PaymentStatusEnum.Rejected, response.PaymentStatus);
+        Assert.Null(response.PaymentUniqueId);
+        Assert.Null(response.RedirectUrl);
+    }
+
     [Theory]
     [InlineData("Tpay")]
     [InlineData("PayU")]

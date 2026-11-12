@@ -237,9 +237,10 @@ internal sealed class LoopbackHttpServer : IDisposable
     {
         listener.Start();
 
-        // Not Task.Run: the first accept has to be pending before the constructor returns, so a test
-        // that never connects cannot stop the listener ahead of it.
-        loop = AcceptAsync();
+        // On the thread pool, not on the test's synchronization context: xUnit limits how many
+        // continuations run there, and a server waiting for a slot stops answering its client. A test that
+        // never connects may stop the listener before the first accept; the loop treats that as the end.
+        loop = Task.Run(AcceptAsync);
     }
 
     public sealed record Request(string Method, string Path, string ContentType, string Body);
