@@ -68,6 +68,45 @@ builder.Services
 
 ---
 
+## Payment and reading the outcome
+
+The provider creates a **Hosted Checkout** session (`POST /sessions` with `mode: hosted`): `RegisterPayment` returns the session id
+in `PaymentUniqueId` and the address of Adyen's payment page in `RedirectUrl`.
+
+```csharp
+// 1. create the payment and send the shopper to the Adyen page
+var response = await _payments.RegisterPayment(new PaymentRequest("Adyen", 49.99m, "PLN")
+{
+    AdditionalData = orderNumber,   // comes back as merchantReference in the webhook
+}, cancellationToken);
+await _orders.SavePaymentSessionAsync(orderNumber, response.PaymentUniqueId, cancellationToken);
+return Redirect(response.RedirectUrl);
+
+// 2. the shopper returns to ReturnUrl; Adyen appends sessionId and sessionResult to the address
+[HttpGet("payment/return")]
+public async Task<IActionResult> Return(string sessionId, string sessionResult, CancellationToken cancellationToken)
+{
+    var payment = await _payments.GetStatus("Adyen", AdyenProvider.SessionResultId(sessionId, sessionResult), cancellationToken);
+    return payment.PaymentStatus == PaymentStatusEnum.Finished ? View("Paid") : View("Pending");
+}
+```
+
+| Adyen session status | `PaymentStatus` |
+|----------------------|-----------------|
+| `completed` | `Finished` |
+| `paymentPending` | `Processing` |
+| `refused`, `canceled`, `expired` | `Rejected` |
+| `active` (the shopper has not paid yet) | `Created` |
+
+- Adyen reports the outcome of a session **only** together with the `sessionResult` value it appends to the return address. `GetStatus`
+  with a bare session id fails with `ArgumentException` - apart from the shopper's return, the [webhook](#webhook) is the only source of the outcome.
+- The outcome read on return is for showing a thank-you page; settle the order on the webhook.
+- What was verified: the request and the response follow the Checkout OpenAPI v71 specification (the `mode` and `url` fields,
+  `GET /sessions/{sessionId}?sessionResult=`); the names of the parameters appended to the return address come from the Hosted Checkout
+  documentation and - like the whole provider - have not been exercised in the Adyen test environment.
+
+---
+
 ## Webhook
 
 A standard Adyen webhook is JSON with a `notificationItems` array; each `NotificationRequestItem` carries its own signature in
@@ -118,8 +157,6 @@ public async Task<IActionResult> AdyenWebhook(CancellationToken cancellationToke
 - The first item of `notificationItems` is handled (Adyen sends one item per request).
 - What was verified: the implementation reproduces the example in Adyen's documentation (the key, the signed text and the expected signature are in the tests);
   send a test notification from the Adyen Customer Area before going live.
-- ⚠️ **Known limitation (outside the webhook).** `/sessions` returns `sessionData` for Drop-in/Components, not a redirect address -
-  `RequestPayment` therefore returns no `RedirectUrl` for a plain session.
 
 ---
 
@@ -141,6 +178,8 @@ Rejestracja: builder.Services.AddPayments().RegisterAdyenProvider();
 Środowisko testowe: Environment = "test" (checkout-test.adyen.com)
 
 Rules:
+- RegisterPayment returns RedirectUrl (the Hosted Checkout page) and PaymentUniqueId (the session id)
+- Status after the shopper returns: GetStatus("Adyen", AdyenProvider.SessionResultId(sessionId, sessionResult)) - both parameters are in the return address; the session id alone is not enough
 - Pass the raw JSON body in PaymentWebhookRequest.Body; the signature is in additionalData.hmacSignature, not in a header
 - Answer HTTP 200 with the body "[accepted]" (AdyenProvider.Acknowledgement), for ignored events too
 - Base decisions on the signed fields (references, amount, eventCode, success)

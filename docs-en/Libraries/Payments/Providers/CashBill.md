@@ -72,6 +72,7 @@ CashBill wysyła powiadomienia GET/POST na `NotifyUrl`. Podpis weryfikowany prze
 
 ## 🔒 Security
 
+- API calls go through `HttpClient` - the named client `CashBill` (`CashbillHttpClient.HttpClientName`) from `IHttpClientFactory`, so the handlers, resilience and timeouts configured in the host apply. An answer outside 2xx throws `PaymentGatewayException` (up to 2.0.1: `WebException`) - catch `HttpRequestException`. Failures are logged with the address but without the query string, which carries the request signature.
 - The notification signature is `MD5(cmd + args + ShopSecretPhrase)`, compared in constant time. Both `HandleWebhookAsync` and the legacy `TransactionStatusChange` **verify** it - an invalid signature yields `Fail("Invalid signature.")` / `Rejected` without polling the CashBill API.
 - The error message no longer contains the expected signature (it used to be an oracle for forging arbitrary notifications).
 - Missing `ShopSecretPhrase` → `Fail("Signature verification is not configured.")`.

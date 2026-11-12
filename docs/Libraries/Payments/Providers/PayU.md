@@ -92,6 +92,7 @@ public async Task<IActionResult> PayUWebhook([FromBody] JsonElement body)
 
 ## 🔒 Bezpieczeństwo
 
+- Zamówienia są tworzone przez nazwanego klienta HTTP `PayU.Orders` (`PayUServiceCaller.OrdersClientName`), pozostałe wywołania przez `PayU`. `RegisterPayUProvider()` konfiguruje `PayU.Orders` bez podążania za przekierowaniami i bez ciasteczek: PayU odpowiada na zamówienie kodem 302, a identyfikator zamówienia jest w treści tej odpowiedzi. Jeśli konfigurujesz tego klienta samodzielnie, zostaw `AllowAutoRedirect = false` — inaczej provider zgłosi `InvalidOperationException` zamiast zgubić identyfikator.
 - Pusty `SignatureKey` lub brak `signature=` w nagłówku `OpenPayU-Signature` → odrzucenie (fail-closed); porównanie w stałym czasie.
 - Obsługiwane algorytmy: `MD5`, `SHA-1`, `SHA-256` (zgodnie z ustawieniem POS w panelu PayU); inne wartości `algorithm=` są odrzucane. Zalecany SHA-256.
 - Wynik webhooka niesie `PaymentUniqueId` (`order.orderId`).
