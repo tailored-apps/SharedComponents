@@ -10,12 +10,7 @@
 		<Title>Shared.WebApi</Title>
 		<PackageId>TailoredApps.Shared.WebApi</PackageId>
 		<PackageTags>aspnetcore;webapi;opentelemetry;metrics;tracing;healthchecks;observability;resilience;servicediscovery;otlp</PackageTags>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<None Include="README.md" Pack="true" PackagePath="\" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />

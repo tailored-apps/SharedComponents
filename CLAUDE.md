@@ -144,7 +144,8 @@ tells an AI coding agent how to wire the library into a project. It must state:
 - **Rules** — the dos and don'ts the agent must follow.
 
 ## Package- and IDE-facing docs
-- A `README.md` in the library project, packed into the NuGet package via `<PackageReadmeFile>`.
+- A `README.md` next to the library csproj. It is packed into the NuGet package automatically (`src/Directory.Build.props`) and is
+  the page nuget.org shows; nothing goes into the csproj.
 - XML doc comments on every public type and member (`<GenerateDocumentationFile>True</GenerateDocumentationFile>`).
 
 When in doubt, mirror an existing page such as `docs/Libraries/EntityFramework/UnitOfWork.WebApiCore.md`.
