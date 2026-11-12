@@ -102,8 +102,9 @@ public class CatalogTests(DemoApplication app) : IClassFixture<DemoApplication>
         Assert.DoesNotContain(written, e => e.Level >= LogLevel.Warning);
         var rejected = Assert.Single(written, e => e.Message.Contains("rejected by validation"));
         Assert.Equal(LogLevel.Information, rejected.Level);
-        Assert.Contains("invalid: Id", rejected.Message);
-        Assert.DoesNotContain("-5", rejected.Message);   // names of the invalid properties, never the values
+        // The entry ends with the names of the invalid properties and nothing else: no validation message, no value.
+        // (Searching the text for the value would be flaky: the entry also holds a random correlation id.)
+        Assert.EndsWith("; invalid: Id", rejected.Message);
     }
 
     [Fact]
