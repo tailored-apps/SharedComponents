@@ -11,6 +11,7 @@ Dziękujemy za zainteresowanie współtworzeniem **TailoredApps Shared Component
 3. Jeden PR = jedna zmiana merytoryczna
 4. Wszystkie testy muszą przechodzić przed otwarciem PR
 5. Kod musi posiadać XML docs (summary) dla publicznych typów i metod
+6. Jedna przestrzeń nazw na plik, deklarowana bez bloku (`namespace TailoredApps.Shared.Xxx;`). Styl wymusza `.editorconfig`; istniejący kod poprawisz poleceniem `dotnet format style TailoredApps.Shared.slnx --diagnostics IDE0161 --severity info`
 
 ---
 

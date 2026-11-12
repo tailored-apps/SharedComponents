@@ -97,6 +97,7 @@ together under a single version taken from the git tag.
 
 ## Code Organization
 - Use namespaces that match directory structure
+- One file-scoped namespace per file (`namespace X;`), as `.editorconfig` requires
 - Group related functionality in dedicated projects
 - XML documentation on public interfaces and classes
 

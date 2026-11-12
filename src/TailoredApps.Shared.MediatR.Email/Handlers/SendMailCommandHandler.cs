@@ -7,48 +7,47 @@ using TailoredApps.Shared.MediatR.Email.Interfaces.Handlers.Commands;
 using TailoredApps.Shared.MediatR.Email.Messages.Commands;
 using TailoredApps.Shared.MediatR.Email.Responses;
 
-namespace TailoredApps.Shared.MediatR.Email.Handlers
+namespace TailoredApps.Shared.MediatR.Email.Handlers;
+
+/// <summary>
+/// MediatR request handler that processes a <see cref="SendMail"/> command by building
+/// the email body from a template and dispatching the message via the configured
+/// <see cref="IEmailProvider"/>.
+/// </summary>
+public class SendMailCommandHandler : ISendMailCommandHandler
 {
+    private readonly IEmailProvider emailService;
+    private readonly IMailMessageBuilder mailMessageBuilder;
+
     /// <summary>
-    /// MediatR request handler that processes a <see cref="SendMail"/> command by building
-    /// the email body from a template and dispatching the message via the configured
-    /// <see cref="IEmailProvider"/>.
+    /// Initializes a new instance of <see cref="SendMailCommandHandler"/>.
     /// </summary>
-    public class SendMailCommandHandler : ISendMailCommandHandler
+    /// <param name="emailService">The email provider used to send messages.</param>
+    /// <param name="mailMessageBuilder">The builder used to render the email body from a template.</param>
+    public SendMailCommandHandler(IEmailProvider emailService, IMailMessageBuilder mailMessageBuilder)
     {
-        private readonly IEmailProvider emailService;
-        private readonly IMailMessageBuilder mailMessageBuilder;
+        this.emailService = emailService;
+        this.mailMessageBuilder = mailMessageBuilder;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of <see cref="SendMailCommandHandler"/>.
-        /// </summary>
-        /// <param name="emailService">The email provider used to send messages.</param>
-        /// <param name="mailMessageBuilder">The builder used to render the email body from a template.</param>
-        public SendMailCommandHandler(IEmailProvider emailService, IMailMessageBuilder mailMessageBuilder)
-        {
-            this.emailService = emailService;
-            this.mailMessageBuilder = mailMessageBuilder;
-        }
+    /// <summary>
+    /// Handles the <see cref="SendMail"/> command: renders the email body and sends the message.
+    /// </summary>
+    /// <param name="request">The send-mail command containing recipient, subject, template, and attachments.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// A <see cref="SendMailResponse"/> containing the provider-assigned message identifier.
+    /// </returns>
+    public async Task<SendMailResponse> Handle(SendMail request, CancellationToken cancellationToken)
+    {
 
-        /// <summary>
-        /// Handles the <see cref="SendMail"/> command: renders the email body and sends the message.
-        /// </summary>
-        /// <param name="request">The send-mail command containing recipient, subject, template, and attachments.</param>
-        /// <param name="cancellationToken">A token to cancel the operation.</param>
-        /// <returns>
-        /// A <see cref="SendMailResponse"/> containing the provider-assigned message identifier.
-        /// </returns>
-        public async Task<SendMailResponse> Handle(SendMail request, CancellationToken cancellationToken)
-        {
+        var template = request.Template ?? throw new ArgumentException("Template is required.", nameof(request));
+        var recipient = request.Recipent ?? throw new ArgumentException("Recipent is required.", nameof(request));
 
-            var template = request.Template ?? throw new ArgumentException("Template is required.", nameof(request));
-            var recipient = request.Recipent ?? throw new ArgumentException("Recipent is required.", nameof(request));
-
-            var body = mailMessageBuilder.Build(template, request.TemplateVariables, request.Templates);
-            var messageId = await emailService.SendMail(recipient, request.Subject ?? string.Empty, body, request.Attachments);
-            return new SendMailResponse() { MessageId = messageId };
+        var body = mailMessageBuilder.Build(template, request.TemplateVariables, request.Templates);
+        var messageId = await emailService.SendMail(recipient, request.Subject ?? string.Empty, body, request.Attachments);
+        return new SendMailResponse() { MessageId = messageId };
 
 
-        }
     }
 }

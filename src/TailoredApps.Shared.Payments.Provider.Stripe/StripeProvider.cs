@@ -1,6 +1,6 @@
-using System.Threading;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using global::Stripe;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

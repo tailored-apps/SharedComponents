@@ -5,43 +5,42 @@ using System.Threading.Tasks;
 using FluentValidation;
 using MediatR;
 
-namespace TailoredApps.Shared.MediatR.PipelineBehaviours
+namespace TailoredApps.Shared.MediatR.PipelineBehaviours;
+
+/// <summary>
+/// MediatR pipeline behavior that executes all registered FluentValidation validators
+/// before the request is forwarded to its handler. Throws a <see cref="ValidationException"/>
+/// if any validation failures are found.
+/// </summary>
+/// <typeparam name="TRequest">The type of the MediatR request.</typeparam>
+/// <typeparam name="TResponse">The type of the response.</typeparam>
+public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
 {
+    private readonly IEnumerable<IValidator<TRequest>> _validators;
+
     /// <summary>
-    /// MediatR pipeline behavior that executes all registered FluentValidation validators
-    /// before the request is forwarded to its handler. Throws a <see cref="ValidationException"/>
-    /// if any validation failures are found.
+    /// Initializes a new instance of <see cref="ValidationBehavior{TRequest, TResponse}"/>.
     /// </summary>
-    /// <typeparam name="TRequest">The type of the MediatR request.</typeparam>
-    /// <typeparam name="TResponse">The type of the response.</typeparam>
-    public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
+    /// <param name="validators">The collection of FluentValidation validators registered for the request type.</param>
+    public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)
     {
-        private readonly IEnumerable<IValidator<TRequest>> _validators;
+        _validators = validators;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of <see cref="ValidationBehavior{TRequest, TResponse}"/>.
-        /// </summary>
-        /// <param name="validators">The collection of FluentValidation validators registered for the request type.</param>
-        public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)
+    /// <inheritdoc/>
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    {
+        var failures = _validators
+            .Select(v => v.Validate(new ValidationContext<TRequest>(request)))
+            .SelectMany(result => result.Errors)
+            .Where(f => f != null)
+            .ToList();
+
+        if (failures.Count != 0)
         {
-            _validators = validators;
+            throw new ValidationException(failures);
         }
 
-        /// <inheritdoc/>
-        public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
-        {
-            var failures = _validators
-                .Select(v => v.Validate(new ValidationContext<TRequest>(request)))
-                .SelectMany(result => result.Errors)
-                .Where(f => f != null)
-                .ToList();
-
-            if (failures.Count != 0)
-            {
-                throw new ValidationException(failures);
-            }
-
-            return await next();
-        }
+        return await next();
     }
 }

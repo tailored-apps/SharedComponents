@@ -1,7 +1,7 @@
-using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,286 +12,285 @@ using TailoredApps.Shared.Payments.Provider.CashBill.Models;
 using TailoredApps.Shared.Payments.Security;
 using static TailoredApps.Shared.Payments.Provider.CashBill.CashbillServiceCaller;
 
-namespace TailoredApps.Shared.Payments.Provider.CashBill
+namespace TailoredApps.Shared.Payments.Provider.CashBill;
+
+/// <summary>
+/// Payment provider implementation for CashBill.
+/// Supports both polling-based status checks and back-channel webhook notifications
+/// via <see cref="IWebhookPaymentProvider"/>.
+/// </summary>
+public class CashBillProvider : IPaymentProvider, IWebhookPaymentProvider
+{
+    private readonly ICashbillServiceCaller cashbillService;
+    /// <inheritdoc/>
+    public CashBillProvider(ICashbillServiceCaller cashbillService)
+    {
+        this.cashbillService = cashbillService;
+    }
+    private static string CashBillProviderKey = "Cashbill";
+    /// <inheritdoc/>
+    public string Key => CashBillProviderKey;
+
+    /// <inheritdoc/>
+    public string Name => CashBillProviderKey;
+
+    /// <inheritdoc/>
+    public string Description => "Polski operator płatności jednorazowych.";
+
+    /// <inheritdoc/>
+    public string Url => "https://cashbill.pl";
+
+    /// <summary>
+    /// Returns available payment channels from CashBill filtered by the requested currency.
+    /// </summary>
+    /// <param name="currency">ISO 4217 currency code (e.g. "PLN").</param>
+    /// <param name="cancellationToken">Token that cancels the operation.</param>
+    /// <returns>Collection of <see cref="PaymentChannel"/> objects supported for the given currency.</returns>
+    public async Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
+    {
+        var channels = await cashbillService.GetPaymentChannels(currency, cancellationToken);
+        return channels.Select(x => new PaymentChannel
+        {
+            AvailableCurrencies = x.AvailableCurrencies,
+            Id = x.Id,
+            Description = x.Description,
+            LogoUrl = x.LogoUrl,
+            Name = x.Name,
+            PaymentModel = PaymentModel.OneTime
+        }
+        ).ToList();
+    }
+
+    /// <summary>
+    /// Initiates a new CashBill payment transaction and returns the provider redirect URL.
+    /// </summary>
+    /// <param name="request">Payment details including amount, currency, and payer data.</param>
+    /// <param name="cancellationToken">Token that cancels the operation.</param>
+    /// <returns>
+    /// <see cref="PaymentResponse"/> with <see cref="PaymentResponse.RedirectUrl"/> pointing to
+    /// the CashBill hosted payment page and the initial payment status.
+    /// </returns>
+    public async Task<PaymentResponse> RequestPayment(Payments.PaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        var payment = await cashbillService.GeneratePayment(new PaymentRequest
+        {
+            Referer = request.Referer,
+            AdditionalData = request.AdditionalData,
+            Amount = request.Amount,
+            City = request.City,
+            Country = request.Country,
+            Currency = request.Currency,
+            Description = request.Description,
+            Email = request.Email,
+            FirstName = request.FirstName,
+            Flat = request.Flat,
+            House = request.House,
+            PaymentChannel = request.PaymentChannel,
+            PostCode = request.PostCode,
+            Street = request.Street,
+            Surname = request.Surname,
+            Title = request.Title
+        }, cancellationToken);
+
+        return new PaymentResponse { PaymentUniqueId = payment.Id, RedirectUrl = payment.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(payment.Status) };
+    }
+
+
+    /// <summary>
+    /// Retrieves the current status of a CashBill payment by its transaction ID.
+    /// </summary>
+    /// <param name="paymentId">CashBill transaction identifier.</param>
+    /// <param name="cancellationToken">Token that cancels the operation.</param>
+    /// <returns>Current <see cref="PaymentResponse"/> including the normalised payment status.</returns>
+    public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
+    {
+        var payment = await cashbillService.GetPaymentStatus(paymentId, cancellationToken);
+
+        return new PaymentResponse { PaymentUniqueId = payment.Id, RedirectUrl = payment.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(payment.Status) };
+    }
+
+    private PaymentStatusEnum GetPaymentStatus(string? status)
+    {
+
+        IDictionary<PaymentStatusEnum, IList<string>> statuses = new Dictionary<PaymentStatusEnum, IList<string>>
+        {
+            { PaymentStatusEnum.Created, new List<string> { PaymentStatusConst.Start, PaymentStatusConst.PreStart } },
+            { PaymentStatusEnum.Processing, new List<string> { PaymentStatusConst.PositiveAuthorization , PaymentStatusConst.NegativeAuthorization} },
+            { PaymentStatusEnum.Finished, new List<string> { PaymentStatusConst.PositiveFinish } },
+            { PaymentStatusEnum.Rejected, new List<string> {
+                                                             PaymentStatusConst.NegativeFinish,
+                                                             PaymentStatusConst.CriticalError,
+                                                             PaymentStatusConst.Abort,
+                                                             PaymentStatusConst.Fraud,
+                                                             PaymentStatusConst.TimeExceeded
+                                                            } }
+        };
+
+        var key = statuses.Single(x => x.Value.Any(z => z == status)).Key;
+        return key;
+    }
+
+    /// <summary>
+    /// Processes a legacy back-channel status-change notification from CashBill.
+    /// Reads <c>cmd</c>, <c>args</c> (transaction ID) and <c>sign</c> from the query parameters,
+    /// verifies the MD5 signature and then fetches the current payment status from the CashBill API.
+    /// </summary>
+    /// <param name="payload">Payload containing query parameters sent by CashBill.</param>
+    /// <param name="cancellationToken">Token that cancels the operation.</param>
+    /// <returns>
+    /// Resolved <see cref="PaymentResponse"/> with the current payment status, or a response with
+    /// <see cref="PaymentStatusEnum.Rejected"/> and <c>ResponseObject = "Invalid signature."</c>
+    /// when the notification is not authentic.
+    /// </returns>
+    public async Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
+    {
+        if (payload is null) throw new ArgumentNullException(nameof(payload));
+
+        var qs = payload.QueryParameters ?? new Dictionary<string, StringValues>();
+        var request = new TransactionStatusChanged
+        {
+            Command = qs.TryGetValue("cmd", out var c) ? c.ToString() : string.Empty,
+            TransactionId = qs.TryGetValue("args", out var a) ? a.ToString() : string.Empty,
+            Sign = qs.TryGetValue("sign", out var s) ? s.ToString() : string.Empty,
+        };
+
+        if (string.IsNullOrEmpty(request.TransactionId))
+            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Missing transactionId (args)" };
+
+        var verification = await VerifySignatureAsync(request, cancellationToken);
+        if (verification is not null)
+            return verification.ToPaymentResponse();
+
+        var status = await cashbillService.GetPaymentStatus(request.TransactionId, cancellationToken);
+
+        return new PaymentResponse { PaymentUniqueId = status.Id, RedirectUrl = status.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(status.Status), ResponseObject = "OK" };
+    }
+
+    /// <summary>
+    /// Verifies the MD5 notification signature. Returns <c>null</c> when the signature is valid,
+    /// otherwise a short, non-sensitive error message. The expected signature is never disclosed,
+    /// because returning it would give a caller an oracle for forging notifications.
+    /// </summary>
+    private async Task<PaymentWebhookRejected?> VerifySignatureAsync(TransactionStatusChanged notification, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(notification.Sign))
+            return new PaymentWebhookRejected(PaymentWebhookRejection.InvalidSignature, "Missing signature.");
+
+        string expectedSign;
+        try
+        {
+            expectedSign = await cashbillService.GetSignForNotificationService(notification, cancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+            return new PaymentWebhookRejected(PaymentWebhookRejection.NotConfigured, "Signature verification is not configured.");
+        }
+
+        return WebhookSignature.FixedTimeEqualsIgnoreCase(expectedSign, notification.Sign)
+            ? null
+            : new PaymentWebhookRejected(PaymentWebhookRejection.InvalidSignature, "Invalid signature.");
+    }
+
+    // ─── IWebhookPaymentProvider ─────────────────────────────────────────
+
+    /// <summary>
+    /// Handles an incoming CashBill back-channel HTTP notification.
+    /// </summary>
+    /// <remarks>
+    /// CashBill sends a GET/POST with query-string parameters:
+    /// <c>cmd</c> (event type), <c>args</c> (transaction ID), <c>sign</c> (MD5 signature).<br/>
+    /// The method:
+    /// <list type="number">
+    ///   <item>Validates that <c>args</c> (transaction ID) is present.</item>
+    ///   <item>Verifies the MD5 signature via <c>GetSignForNotificationService</c>.</item>
+    ///   <item>Fetches the current payment status from CashBill API.</item>
+    ///   <item>Returns a normalised <see cref="PaymentWebhookResult"/>.</item>
+    /// </list>
+    /// </remarks>
+    /// <param name="request">Unified HTTP webhook request containing query parameters.</param>
+    /// <param name="cancellationToken">Token that cancels the operation.</param>
+    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
+    {
+        var cmd = request.Query.TryGetValue("cmd", out var c) ? c.ToString() : string.Empty;
+        var transactionId = request.Query.TryGetValue("args", out var a) ? a.ToString() : string.Empty;
+        var sign = request.Query.TryGetValue("sign", out var s) ? s.ToString() : string.Empty;
+
+        if (string.IsNullOrEmpty(transactionId))
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.MalformedPayload, "Missing transactionId (args) in query string.");
+
+        // Verify MD5 signature: MD5(cmd + args + shopSecretPhrase), compared in constant time.
+        var notification = new TransactionStatusChanged { Command = cmd, TransactionId = transactionId, Sign = sign };
+        var verification = await VerifySignatureAsync(notification, cancellationToken);
+        if (verification is not null)
+            return verification;
+
+        // Signature valid — poll the API for the actual payment status
+        var statusResponse = await GetStatus(transactionId, cancellationToken);
+        return PaymentWebhookResult.Ok(statusResponse);
+    }
+}
+
+/// <summary>DI extension methods for the CashBill payment provider.</summary>
+public static class CashBillProviderExtensions
 {
     /// <summary>
-    /// Payment provider implementation for CashBill.
-    /// Supports both polling-based status checks and back-channel webhook notifications
-    /// via <see cref="IWebhookPaymentProvider"/>.
+    /// Registers the CashBill provider and its dependencies.
+    /// The provider is exposed as both <see cref="IPaymentProvider"/>
+    /// (used by the <c>PaymentService</c> aggregator)
+    /// and <see cref="IWebhookPaymentProvider"/>
+    /// (used for back-channel webhook dispatch).
     /// </summary>
-    public class CashBillProvider : IPaymentProvider, IWebhookPaymentProvider
+    /// <param name="services">The DI service collection.</param>
+    public static void RegisterCashbillProvider(this IServiceCollection services)
     {
-        private readonly ICashbillServiceCaller cashbillService;
-        /// <inheritdoc/>
-        public CashBillProvider(ICashbillServiceCaller cashbillService)
-        {
-            this.cashbillService = cashbillService;
-        }
-        private static string CashBillProviderKey = "Cashbill";
-        /// <inheritdoc/>
-        public string Key => CashBillProviderKey;
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<CashbillServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ServiceUrl), $"'{CashbillServiceOptions.ConfigurationKey}:ServiceUrl' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ShopId), $"'{CashbillServiceOptions.ConfigurationKey}:ShopId' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ShopSecretPhrase), $"'{CashbillServiceOptions.ConfigurationKey}:ShopSecretPhrase' is not configured.")
+            .ValidateOnStart();
+        services.ConfigureOptions<CashbillConfigureOptions>();
+        services.AddTransient<ICashbillServiceCaller, CashbillServiceCaller>();
+        services.AddTransient<ICashbillHttpClient, CashbillHttpClient>();
 
-        /// <inheritdoc/>
-        public string Name => CashBillProviderKey;
-
-        /// <inheritdoc/>
-        public string Description => "Polski operator płatności jednorazowych.";
-
-        /// <inheritdoc/>
-        public string Url => "https://cashbill.pl";
-
-        /// <summary>
-        /// Returns available payment channels from CashBill filtered by the requested currency.
-        /// </summary>
-        /// <param name="currency">ISO 4217 currency code (e.g. "PLN").</param>
-        /// <param name="cancellationToken">Token that cancels the operation.</param>
-        /// <returns>Collection of <see cref="PaymentChannel"/> objects supported for the given currency.</returns>
-        public async Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
-        {
-            var channels = await cashbillService.GetPaymentChannels(currency, cancellationToken);
-            return channels.Select(x => new PaymentChannel
-            {
-                AvailableCurrencies = x.AvailableCurrencies,
-                Id = x.Id,
-                Description = x.Description,
-                LogoUrl = x.LogoUrl,
-                Name = x.Name,
-                PaymentModel = PaymentModel.OneTime
-            }
-            ).ToList();
-        }
-
-        /// <summary>
-        /// Initiates a new CashBill payment transaction and returns the provider redirect URL.
-        /// </summary>
-        /// <param name="request">Payment details including amount, currency, and payer data.</param>
-        /// <param name="cancellationToken">Token that cancels the operation.</param>
-        /// <returns>
-        /// <see cref="PaymentResponse"/> with <see cref="PaymentResponse.RedirectUrl"/> pointing to
-        /// the CashBill hosted payment page and the initial payment status.
-        /// </returns>
-        public async Task<PaymentResponse> RequestPayment(Payments.PaymentRequest request, CancellationToken cancellationToken = default)
-        {
-            var payment = await cashbillService.GeneratePayment(new PaymentRequest
-            {
-                Referer = request.Referer,
-                AdditionalData = request.AdditionalData,
-                Amount = request.Amount,
-                City = request.City,
-                Country = request.Country,
-                Currency = request.Currency,
-                Description = request.Description,
-                Email = request.Email,
-                FirstName = request.FirstName,
-                Flat = request.Flat,
-                House = request.House,
-                PaymentChannel = request.PaymentChannel,
-                PostCode = request.PostCode,
-                Street = request.Street,
-                Surname = request.Surname,
-                Title = request.Title
-            }, cancellationToken);
-
-            return new PaymentResponse { PaymentUniqueId = payment.Id, RedirectUrl = payment.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(payment.Status) };
-        }
-
-
-        /// <summary>
-        /// Retrieves the current status of a CashBill payment by its transaction ID.
-        /// </summary>
-        /// <param name="paymentId">CashBill transaction identifier.</param>
-        /// <param name="cancellationToken">Token that cancels the operation.</param>
-        /// <returns>Current <see cref="PaymentResponse"/> including the normalised payment status.</returns>
-        public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
-        {
-            var payment = await cashbillService.GetPaymentStatus(paymentId, cancellationToken);
-
-            return new PaymentResponse { PaymentUniqueId = payment.Id, RedirectUrl = payment.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(payment.Status) };
-        }
-
-        private PaymentStatusEnum GetPaymentStatus(string? status)
-        {
-
-            IDictionary<PaymentStatusEnum, IList<string>> statuses = new Dictionary<PaymentStatusEnum, IList<string>>
-            {
-                { PaymentStatusEnum.Created, new List<string> { PaymentStatusConst.Start, PaymentStatusConst.PreStart } },
-                { PaymentStatusEnum.Processing, new List<string> { PaymentStatusConst.PositiveAuthorization , PaymentStatusConst.NegativeAuthorization} },
-                { PaymentStatusEnum.Finished, new List<string> { PaymentStatusConst.PositiveFinish } },
-                { PaymentStatusEnum.Rejected, new List<string> {
-                                                                 PaymentStatusConst.NegativeFinish,
-                                                                 PaymentStatusConst.CriticalError,
-                                                                 PaymentStatusConst.Abort,
-                                                                 PaymentStatusConst.Fraud,
-                                                                 PaymentStatusConst.TimeExceeded
-                                                                } }
-            };
-
-            var key = statuses.Single(x => x.Value.Any(z => z == status)).Key;
-            return key;
-        }
-
-        /// <summary>
-        /// Processes a legacy back-channel status-change notification from CashBill.
-        /// Reads <c>cmd</c>, <c>args</c> (transaction ID) and <c>sign</c> from the query parameters,
-        /// verifies the MD5 signature and then fetches the current payment status from the CashBill API.
-        /// </summary>
-        /// <param name="payload">Payload containing query parameters sent by CashBill.</param>
-        /// <param name="cancellationToken">Token that cancels the operation.</param>
-        /// <returns>
-        /// Resolved <see cref="PaymentResponse"/> with the current payment status, or a response with
-        /// <see cref="PaymentStatusEnum.Rejected"/> and <c>ResponseObject = "Invalid signature."</c>
-        /// when the notification is not authentic.
-        /// </returns>
-        public async Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
-        {
-            if (payload is null) throw new ArgumentNullException(nameof(payload));
-
-            var qs = payload.QueryParameters ?? new Dictionary<string, StringValues>();
-            var request = new TransactionStatusChanged
-            {
-                Command = qs.TryGetValue("cmd", out var c) ? c.ToString() : string.Empty,
-                TransactionId = qs.TryGetValue("args", out var a) ? a.ToString() : string.Empty,
-                Sign = qs.TryGetValue("sign", out var s) ? s.ToString() : string.Empty,
-            };
-
-            if (string.IsNullOrEmpty(request.TransactionId))
-                return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Missing transactionId (args)" };
-
-            var verification = await VerifySignatureAsync(request, cancellationToken);
-            if (verification is not null)
-                return verification.ToPaymentResponse();
-
-            var status = await cashbillService.GetPaymentStatus(request.TransactionId, cancellationToken);
-
-            return new PaymentResponse { PaymentUniqueId = status.Id, RedirectUrl = status.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(status.Status), ResponseObject = "OK" };
-        }
-
-        /// <summary>
-        /// Verifies the MD5 notification signature. Returns <c>null</c> when the signature is valid,
-        /// otherwise a short, non-sensitive error message. The expected signature is never disclosed,
-        /// because returning it would give a caller an oracle for forging notifications.
-        /// </summary>
-        private async Task<PaymentWebhookRejected?> VerifySignatureAsync(TransactionStatusChanged notification, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrEmpty(notification.Sign))
-                return new PaymentWebhookRejected(PaymentWebhookRejection.InvalidSignature, "Missing signature.");
-
-            string expectedSign;
-            try
-            {
-                expectedSign = await cashbillService.GetSignForNotificationService(notification, cancellationToken);
-            }
-            catch (InvalidOperationException)
-            {
-                return new PaymentWebhookRejected(PaymentWebhookRejection.NotConfigured, "Signature verification is not configured.");
-            }
-
-            return WebhookSignature.FixedTimeEqualsIgnoreCase(expectedSign, notification.Sign)
-                ? null
-                : new PaymentWebhookRejected(PaymentWebhookRejection.InvalidSignature, "Invalid signature.");
-        }
-
-        // ─── IWebhookPaymentProvider ─────────────────────────────────────────
-
-        /// <summary>
-        /// Handles an incoming CashBill back-channel HTTP notification.
-        /// </summary>
-        /// <remarks>
-        /// CashBill sends a GET/POST with query-string parameters:
-        /// <c>cmd</c> (event type), <c>args</c> (transaction ID), <c>sign</c> (MD5 signature).<br/>
-        /// The method:
-        /// <list type="number">
-        ///   <item>Validates that <c>args</c> (transaction ID) is present.</item>
-        ///   <item>Verifies the MD5 signature via <c>GetSignForNotificationService</c>.</item>
-        ///   <item>Fetches the current payment status from CashBill API.</item>
-        ///   <item>Returns a normalised <see cref="PaymentWebhookResult"/>.</item>
-        /// </list>
-        /// </remarks>
-        /// <param name="request">Unified HTTP webhook request containing query parameters.</param>
-        /// <param name="cancellationToken">Token that cancels the operation.</param>
-        public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
-        {
-            var cmd = request.Query.TryGetValue("cmd", out var c) ? c.ToString() : string.Empty;
-            var transactionId = request.Query.TryGetValue("args", out var a) ? a.ToString() : string.Empty;
-            var sign = request.Query.TryGetValue("sign", out var s) ? s.ToString() : string.Empty;
-
-            if (string.IsNullOrEmpty(transactionId))
-                return PaymentWebhookResult.Reject(PaymentWebhookRejection.MalformedPayload, "Missing transactionId (args) in query string.");
-
-            // Verify MD5 signature: MD5(cmd + args + shopSecretPhrase), compared in constant time.
-            var notification = new TransactionStatusChanged { Command = cmd, TransactionId = transactionId, Sign = sign };
-            var verification = await VerifySignatureAsync(notification, cancellationToken);
-            if (verification is not null)
-                return verification;
-
-            // Signature valid — poll the API for the actual payment status
-            var statusResponse = await GetStatus(transactionId, cancellationToken);
-            return PaymentWebhookResult.Ok(statusResponse);
-        }
+        // Register as both IPaymentProvider and IWebhookPaymentProvider
+        services.AddTransient<CashBillProvider>();
+        services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<CashBillProvider>());
     }
-
-    /// <summary>DI extension methods for the CashBill payment provider.</summary>
-    public static class CashBillProviderExtensions
-    {
-        /// <summary>
-        /// Registers the CashBill provider and its dependencies.
-        /// The provider is exposed as both <see cref="IPaymentProvider"/>
-        /// (used by the <c>PaymentService</c> aggregator)
-        /// and <see cref="IWebhookPaymentProvider"/>
-        /// (used for back-channel webhook dispatch).
-        /// </summary>
-        /// <param name="services">The DI service collection.</param>
-        public static void RegisterCashbillProvider(this IServiceCollection services)
-        {
-            // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
-            services.AddOptions<CashbillServiceOptions>()
-                .Validate(o => !string.IsNullOrWhiteSpace(o.ServiceUrl), $"'{CashbillServiceOptions.ConfigurationKey}:ServiceUrl' is not configured.")
-                .Validate(o => !string.IsNullOrWhiteSpace(o.ShopId), $"'{CashbillServiceOptions.ConfigurationKey}:ShopId' is not configured.")
-                .Validate(o => !string.IsNullOrWhiteSpace(o.ShopSecretPhrase), $"'{CashbillServiceOptions.ConfigurationKey}:ShopSecretPhrase' is not configured.")
-                .ValidateOnStart();
-            services.ConfigureOptions<CashbillConfigureOptions>();
-            services.AddTransient<ICashbillServiceCaller, CashbillServiceCaller>();
-            services.AddTransient<ICashbillHttpClient, CashbillHttpClient>();
-
-            // Register as both IPaymentProvider and IWebhookPaymentProvider
-            services.AddTransient<CashBillProvider>();
-            services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<CashBillProvider>());
-        }
-    }
+}
 
 
+
+/// <summary>
+/// Binds <see cref="CashbillServiceOptions"/> from the application configuration
+/// at the section defined by <see cref="CashbillServiceOptions.ConfigurationKey"/>.
+/// </summary>
+public class CashbillConfigureOptions : IConfigureOptions<CashbillServiceOptions>
+{
+    private readonly IConfiguration configuration;
 
     /// <summary>
-    /// Binds <see cref="CashbillServiceOptions"/> from the application configuration
-    /// at the section defined by <see cref="CashbillServiceOptions.ConfigurationKey"/>.
+    /// Initializes a new instance of <see cref="CashbillConfigureOptions"/>.
     /// </summary>
-    public class CashbillConfigureOptions : IConfigureOptions<CashbillServiceOptions>
+    /// <param name="configuration">Application configuration instance.</param>
+    public CashbillConfigureOptions(IConfiguration configuration)
     {
-        private readonly IConfiguration configuration;
+        this.configuration = configuration;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of <see cref="CashbillConfigureOptions"/>.
-        /// </summary>
-        /// <param name="configuration">Application configuration instance.</param>
-        public CashbillConfigureOptions(IConfiguration configuration)
+    /// <inheritdoc/>
+    public void Configure(CashbillServiceOptions options)
+    {
+        var section = configuration.GetSection(CashbillServiceOptions.ConfigurationKey).Get<CashbillServiceOptions>();
+        if (section is null)
         {
-            this.configuration = configuration;
+            return;
         }
 
-        /// <inheritdoc/>
-        public void Configure(CashbillServiceOptions options)
-        {
-            var section = configuration.GetSection(CashbillServiceOptions.ConfigurationKey).Get<CashbillServiceOptions>();
-            if (section is null)
-            {
-                return;
-            }
-
-            options.ServiceUrl = section.ServiceUrl;
-            options.NegativeReturnUrl = section.NegativeReturnUrl;
-            options.ShopId = section.ShopId;
-            options.ShopSecretPhrase = section.ShopSecretPhrase;
-            options.ReturnUrl = section.ReturnUrl;
-        }
+        options.ServiceUrl = section.ServiceUrl;
+        options.NegativeReturnUrl = section.NegativeReturnUrl;
+        options.ShopId = section.ShopId;
+        options.ShopSecretPhrase = section.ShopSecretPhrase;
+        options.ReturnUrl = section.ReturnUrl;
     }
 }

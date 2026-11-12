@@ -11,6 +11,7 @@ Thank you for your interest in contributing to **TailoredApps Shared Components*
 3. One PR = one substantive change
 4. All tests must pass before opening a PR
 5. Code must have XML docs (summary) for public types and methods
+6. One namespace per file, declared without a block (`namespace TailoredApps.Shared.Xxx;`). `.editorconfig` enforces the style; fix existing code with `dotnet format style TailoredApps.Shared.slnx --diagnostics IDE0161 --severity info`
 
 ---
 

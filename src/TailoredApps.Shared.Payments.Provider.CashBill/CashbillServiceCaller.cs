@@ -11,217 +11,216 @@ using Microsoft.Extensions.Options;
 using TailoredApps.Shared.Payments.Provider.CashBill.Models;
 using TailoredApps.Shared.Payments.Security;
 
-namespace TailoredApps.Shared.Payments.Provider.CashBill
+namespace TailoredApps.Shared.Payments.Provider.CashBill;
+
+/// <summary>
+/// Concrete implementation of <see cref="ICashbillServiceCaller"/>.
+/// Handles all communication with the CashBill REST API including
+/// payment creation, status polling, return URL updates, and signature computation.
+/// </summary>
+public class CashbillServiceCaller : ICashbillServiceCaller
 {
+
+    private readonly ICashbillHttpClient cashbillCaller;
+    private readonly IOptions<CashbillServiceOptions> options;
+
     /// <summary>
-    /// Concrete implementation of <see cref="ICashbillServiceCaller"/>.
-    /// Handles all communication with the CashBill REST API including
-    /// payment creation, status polling, return URL updates, and signature computation.
+    /// Initializes a new instance of <see cref="CashbillServiceCaller"/>.
     /// </summary>
-    public class CashbillServiceCaller : ICashbillServiceCaller
+    /// <param name="cashbillCaller">Low-level HTTP client for CashBill API requests.</param>
+    /// <param name="options">Bound configuration options for the CashBill provider.</param>
+    public CashbillServiceCaller(ICashbillHttpClient cashbillCaller, IOptions<CashbillServiceOptions> options)
     {
+        this.cashbillCaller = cashbillCaller;
+        this.options = options;
+    }
 
-        private readonly ICashbillHttpClient cashbillCaller;
-        private readonly IOptions<CashbillServiceOptions> options;
+    private string Hash(string input)
+    {
+        var enc = Encoding.GetEncoding("UTF-8");
 
-        /// <summary>
-        /// Initializes a new instance of <see cref="CashbillServiceCaller"/>.
-        /// </summary>
-        /// <param name="cashbillCaller">Low-level HTTP client for CashBill API requests.</param>
-        /// <param name="options">Bound configuration options for the CashBill provider.</param>
-        public CashbillServiceCaller(ICashbillHttpClient cashbillCaller, IOptions<CashbillServiceOptions> options)
+        byte[] buffer = enc.GetBytes(input);
+        var sha1 = SHA1.Create();
+        var hash = BitConverter.ToString(sha1.ComputeHash(buffer)).Replace("-", "").ToLower();
+        return hash;
+    }
+
+    /// <summary>
+    /// Oblicza MD5 stringa UTF-8.
+    /// CashBill wysyła w notyfikacjach backchannel sign oparty na MD5 (nie SHA1).
+    /// Formuła: MD5(cmd + transactionId + shopSecretPhrase)
+    /// </summary>
+    private static string HashMd5(string input)
+    {
+        var buffer = Encoding.UTF8.GetBytes(input);
+        using var md5 = MD5.Create();
+        return BitConverter.ToString(md5.ComputeHash(buffer)).Replace("-", "").ToLower();
+    }
+
+    /// <inheritdoc/>
+    public async Task<ICollection<PaymentChannels>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
+    {
+        var shopId = options.Value.ShopId;
+        var mainUrl = options.Value.ServiceUrl;
+
+        List<PaymentChannels> paymentChannels = await cashbillCaller.MakeFormRequest<List<PaymentChannels>>(Path.Combine(mainUrl, "paymentchannels", shopId), "GET", null, cancellationToken);
+        return paymentChannels.Where(x => x.AvailableCurrencies?.Any(c => string.Equals(c, currency, StringComparison.InvariantCultureIgnoreCase)) == true).ToList();
+    }
+
+    /// <inheritdoc/>
+    public async Task<PaymentStatus> GeneratePayment(PaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        var shopId = options.Value.ShopId;
+        var secretPhrase = options.Value.ShopSecretPhrase;
+        var mainUrl = new Uri(options.Value.ServiceUrl);
+        var returnUrl = new Uri(options.Value.ReturnUrl);
+        var negativeReturnUrl = options.Value.NegativeReturnUrl;
+
+        var languageCode = "PL";
+        var amountString = request.Amount.ToString().Replace(",", ".").Replace(" ", "");
+
+        var sign = Hash(request.Title
+            + amountString
+            + request.Currency
+            + returnUrl
+            + request.Description
+            + negativeReturnUrl
+            + request.AdditionalData
+            + request.PaymentChannel
+            + languageCode
+            + request.Referer
+            + request.FirstName
+            + request.Surname
+            + request.Email
+            + request.Country
+            + request.City
+            + request.PostCode
+            + request.Street
+            + request.House
+            + request.Flat
+            + secretPhrase);
+
+
+
+        var requestContent = new FormUrlEncodedContent(new[]
         {
-            this.cashbillCaller = cashbillCaller;
-            this.options = options;
-        }
+            new KeyValuePair<string, string?>( "title", request.Title ),
+            new KeyValuePair<string, string?>( "amount.value", amountString ),
+            new KeyValuePair<string, string?>( "amount.currencyCode", request.Currency ),
+            new KeyValuePair<string, string?>( "returnUrl", returnUrl.ToString() ),
+            new KeyValuePair<string, string?>( "description", request.Description ),
+            new KeyValuePair<string, string?>( "negativeReturnUrl", negativeReturnUrl ),
+            new KeyValuePair<string, string?>( "additionalData", request.AdditionalData ),
+            new KeyValuePair<string, string?>( "paymentChannel", request.PaymentChannel ),
+            new KeyValuePair<string, string?>( "languageCode", languageCode ),
+            new KeyValuePair<string, string?>( "referer", request.Referer ),
+            new KeyValuePair<string, string?>( "personalData.firstName", request.FirstName ),
+            new KeyValuePair<string, string?>( "personalData.surname", request.Surname ),
+            new KeyValuePair<string, string?>( "personalData.email", request.Email ),
+            new KeyValuePair<string, string?>( "personalData.country", request.Country ),
+            new KeyValuePair<string, string?>( "personalData.city", request.City ),
+            new KeyValuePair<string, string?>( "personalData.postcode", request.PostCode ),
+            new KeyValuePair<string, string?>( "personalData.street", request.Street ),
+            new KeyValuePair<string, string?>( "personalData.house", request.House ),
+            new KeyValuePair<string, string?>( "personalData.flat", request.Flat ),
+            new KeyValuePair<string, string?>( "sign", sign )
+        });
 
-        private string Hash(string input)
+
+        Payment payment = await cashbillCaller.MakeFormRequest<Payment>(new Uri(mainUrl, $"payment/{shopId}").ToString(), "POST", requestContent, cancellationToken);
+        returnUrl = new Uri($"{returnUrl}/{payment.Id}");
+
+        // return url
+        var signReturn = Hash(payment.Id + returnUrl + negativeReturnUrl + secretPhrase);
+        var requestReturnBrowserContent = new FormUrlEncodedContent(new[]
         {
-            var enc = Encoding.GetEncoding("UTF-8");
+            new KeyValuePair<string, string?>( "returnUrl", returnUrl.ToString() ),
+            new KeyValuePair<string, string?>( "negativeReturnUrl", negativeReturnUrl ),
+            new KeyValuePair<string, string?>( "sign", signReturn )
+        });
+        await cashbillCaller.MakeFormRequest(new Uri(mainUrl, $"payment/{shopId}/{payment.Id}").ToString(), "PUT", requestReturnBrowserContent, cancellationToken);
 
-            byte[] buffer = enc.GetBytes(input);
-            var sha1 = SHA1.Create();
-            var hash = BitConverter.ToString(sha1.ComputeHash(buffer)).Replace("-", "").ToLower();
-            return hash;
-        }
+        //status 
+        var signStatus = Hash(payment.Id + secretPhrase);
+        var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{payment.Id}?sign={signStatus}").ToString(), "GET", null, cancellationToken);
 
-        /// <summary>
-        /// Oblicza MD5 stringa UTF-8.
-        /// CashBill wysyła w notyfikacjach backchannel sign oparty na MD5 (nie SHA1).
-        /// Formuła: MD5(cmd + transactionId + shopSecretPhrase)
-        /// </summary>
-        private static string HashMd5(string input)
+        status.PaymentProviderRedirectUrl = payment.RedirectUrl;
+        return status;
+    }
+    /// <inheritdoc/>
+    public async Task<PaymentStatus> GetPaymentStatus(string paymentId, CancellationToken cancellationToken = default)
+    {
+        var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
+        var shopId = options.Value.ShopId;
+        var secretPhrase = options.Value.ShopSecretPhrase;
+        var mainUrl = new Uri(options.Value.ServiceUrl);
+
+        var signStatus = Hash(paymentId + secretPhrase);
+        var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{safePaymentId}?sign={signStatus}").ToString(), "GET", null, cancellationToken);
+
+        return status;
+    }
+    /// <inheritdoc/>
+    public async Task<string> GetSignForNotificationService(TransactionStatusChanged transactionStatusChanged, CancellationToken cancellationToken = default)
+    {
+        return await Task.Run(() =>
         {
-            var buffer = Encoding.UTF8.GetBytes(input);
-            using var md5 = MD5.Create();
-            return BitConverter.ToString(md5.ComputeHash(buffer)).Replace("-", "").ToLower();
-        }
-
-        /// <inheritdoc/>
-        public async Task<ICollection<PaymentChannels>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
-        {
-            var shopId = options.Value.ShopId;
-            var mainUrl = options.Value.ServiceUrl;
-
-            List<PaymentChannels> paymentChannels = await cashbillCaller.MakeFormRequest<List<PaymentChannels>>(Path.Combine(mainUrl, "paymentchannels", shopId), "GET", null, cancellationToken);
-            return paymentChannels.Where(x => x.AvailableCurrencies?.Any(c => string.Equals(c, currency, StringComparison.InvariantCultureIgnoreCase)) == true).ToList();
-        }
-
-        /// <inheritdoc/>
-        public async Task<PaymentStatus> GeneratePayment(PaymentRequest request, CancellationToken cancellationToken = default)
-        {
-            var shopId = options.Value.ShopId;
             var secretPhrase = options.Value.ShopSecretPhrase;
-            var mainUrl = new Uri(options.Value.ServiceUrl);
-            var returnUrl = new Uri(options.Value.ReturnUrl);
-            var negativeReturnUrl = options.Value.NegativeReturnUrl;
+            if (!WebhookSignature.IsSecretConfigured(secretPhrase))
+                throw new InvalidOperationException("CashBill ShopSecretPhrase is not configured; notification signatures cannot be verified.");
 
-            var languageCode = "PL";
-            var amountString = request.Amount.ToString().Replace(",", ".").Replace(" ", "");
-
-            var sign = Hash(request.Title
-                + amountString
-                + request.Currency
-                + returnUrl
-                + request.Description
-                + negativeReturnUrl
-                + request.AdditionalData
-                + request.PaymentChannel
-                + languageCode
-                + request.Referer
-                + request.FirstName
-                + request.Surname
-                + request.Email
-                + request.Country
-                + request.City
-                + request.PostCode
-                + request.Street
-                + request.House
-                + request.Flat
-                + secretPhrase);
+            var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
+            // BUG FIX: CashBill wysyła sign MD5(cmd + args + secret), nie SHA1.
+            // Zweryfikowane empirycznie na podstawie rzeczywistych webhook logów (2026-03-20).
+            var signStatus = HashMd5(toCalc);
+            return signStatus;
+        });
+    }
 
 
+    /// <summary>Well-known CashBill payment status string constants.</summary>
+    public static class PaymentStatusConst
+    {
+        /// <summary>
+        /// Płatność została rozpoczęta, klient nie wybrał jeszcze kanału płatności.
+        /// </summary>
+        public static readonly string PreStart = "PreStart";
+        /// <summary>
+        /// Płatość została rozpoczęta, klient nie dokonał jeszcze wpłaty.
+        /// </summary>
+        public static readonly string Start = "Start";
+        /// <summary>
+        /// Operator płatności odmówił autoryzacji płatności.
+        /// </summary>
+        public static readonly string NegativeAuthorization = "NegativeAuthorization";
+        /// <summary>
+        ///  Klient zrezygnował z dokonania płatności, status jest ostateczny i nie może ulec zmianie.
+        /// </summary>
+        public static readonly string Abort = "Abort";
+        /// <summary>
+        /// Operator płatności określił transakcje jako próbę wyłudzenia, jej realizacja zostaje wstrzymana. Status jest ostateczny i nie może ulec zmianie.
+        /// </summary>
+        public static readonly string Fraud = "Fraud";
+        /// <summary>
+        /// Transakcja została wstępnie pozytywnie autoryzowana przez operatora płatności, jej ostateczny status zostanie określony w późniejszym okresie.
+        /// </summary>
+        public static readonly string PositiveAuthorization = "PositiveAuthorization";
+        /// <summary>
+        /// Operator płatności ostatecznie pozytywnie potwierdził poprawność przeprowadzonej płatności, status jest ostateczny i nie może ulec zmianie.
+        /// </summary>
+        public static readonly string PositiveFinish = "PositiveFinish";
+        /// <summary>
+        /// Operator płatności ostatecznie nie potwierdził poprawności przeprowadzonej płatności, status jest ostateczny i nie może ulec zmianie.
+        /// </summary>
+        public static readonly string NegativeFinish = "NegativeFinish";
+        /// <summary>
+        /// Czas na wykonanie transakcji , status jest ostateczny i nie może ulec zmianie.
+        /// </summary>
+        public static readonly string TimeExceeded = "TimeExceeded";
+        /// <summary>
+        ///  Błąd krytyczny, status jest ostateczny i nie może ulec zmianie.
+        /// </summary>
+        public static readonly string CriticalError = "CriticalError";
 
-            var requestContent = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string?>( "title", request.Title ),
-                new KeyValuePair<string, string?>( "amount.value", amountString ),
-                new KeyValuePair<string, string?>( "amount.currencyCode", request.Currency ),
-                new KeyValuePair<string, string?>( "returnUrl", returnUrl.ToString() ),
-                new KeyValuePair<string, string?>( "description", request.Description ),
-                new KeyValuePair<string, string?>( "negativeReturnUrl", negativeReturnUrl ),
-                new KeyValuePair<string, string?>( "additionalData", request.AdditionalData ),
-                new KeyValuePair<string, string?>( "paymentChannel", request.PaymentChannel ),
-                new KeyValuePair<string, string?>( "languageCode", languageCode ),
-                new KeyValuePair<string, string?>( "referer", request.Referer ),
-                new KeyValuePair<string, string?>( "personalData.firstName", request.FirstName ),
-                new KeyValuePair<string, string?>( "personalData.surname", request.Surname ),
-                new KeyValuePair<string, string?>( "personalData.email", request.Email ),
-                new KeyValuePair<string, string?>( "personalData.country", request.Country ),
-                new KeyValuePair<string, string?>( "personalData.city", request.City ),
-                new KeyValuePair<string, string?>( "personalData.postcode", request.PostCode ),
-                new KeyValuePair<string, string?>( "personalData.street", request.Street ),
-                new KeyValuePair<string, string?>( "personalData.house", request.House ),
-                new KeyValuePair<string, string?>( "personalData.flat", request.Flat ),
-                new KeyValuePair<string, string?>( "sign", sign )
-            });
-
-
-            Payment payment = await cashbillCaller.MakeFormRequest<Payment>(new Uri(mainUrl, $"payment/{shopId}").ToString(), "POST", requestContent, cancellationToken);
-            returnUrl = new Uri($"{returnUrl}/{payment.Id}");
-
-            // return url
-            var signReturn = Hash(payment.Id + returnUrl + negativeReturnUrl + secretPhrase);
-            var requestReturnBrowserContent = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string?>( "returnUrl", returnUrl.ToString() ),
-                new KeyValuePair<string, string?>( "negativeReturnUrl", negativeReturnUrl ),
-                new KeyValuePair<string, string?>( "sign", signReturn )
-            });
-            await cashbillCaller.MakeFormRequest(new Uri(mainUrl, $"payment/{shopId}/{payment.Id}").ToString(), "PUT", requestReturnBrowserContent, cancellationToken);
-
-            //status 
-            var signStatus = Hash(payment.Id + secretPhrase);
-            var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{payment.Id}?sign={signStatus}").ToString(), "GET", null, cancellationToken);
-
-            status.PaymentProviderRedirectUrl = payment.RedirectUrl;
-            return status;
-        }
-        /// <inheritdoc/>
-        public async Task<PaymentStatus> GetPaymentStatus(string paymentId, CancellationToken cancellationToken = default)
-        {
-            var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
-            var shopId = options.Value.ShopId;
-            var secretPhrase = options.Value.ShopSecretPhrase;
-            var mainUrl = new Uri(options.Value.ServiceUrl);
-
-            var signStatus = Hash(paymentId + secretPhrase);
-            var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{safePaymentId}?sign={signStatus}").ToString(), "GET", null, cancellationToken);
-
-            return status;
-        }
-        /// <inheritdoc/>
-        public async Task<string> GetSignForNotificationService(TransactionStatusChanged transactionStatusChanged, CancellationToken cancellationToken = default)
-        {
-            return await Task.Run(() =>
-            {
-                var secretPhrase = options.Value.ShopSecretPhrase;
-                if (!WebhookSignature.IsSecretConfigured(secretPhrase))
-                    throw new InvalidOperationException("CashBill ShopSecretPhrase is not configured; notification signatures cannot be verified.");
-
-                var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
-                // BUG FIX: CashBill wysyła sign MD5(cmd + args + secret), nie SHA1.
-                // Zweryfikowane empirycznie na podstawie rzeczywistych webhook logów (2026-03-20).
-                var signStatus = HashMd5(toCalc);
-                return signStatus;
-            });
-        }
-
-
-        /// <summary>Well-known CashBill payment status string constants.</summary>
-        public static class PaymentStatusConst
-        {
-            /// <summary>
-            /// Płatność została rozpoczęta, klient nie wybrał jeszcze kanału płatności.
-            /// </summary>
-            public static readonly string PreStart = "PreStart";
-            /// <summary>
-            /// Płatość została rozpoczęta, klient nie dokonał jeszcze wpłaty.
-            /// </summary>
-            public static readonly string Start = "Start";
-            /// <summary>
-            /// Operator płatności odmówił autoryzacji płatności.
-            /// </summary>
-            public static readonly string NegativeAuthorization = "NegativeAuthorization";
-            /// <summary>
-            ///  Klient zrezygnował z dokonania płatności, status jest ostateczny i nie może ulec zmianie.
-            /// </summary>
-            public static readonly string Abort = "Abort";
-            /// <summary>
-            /// Operator płatności określił transakcje jako próbę wyłudzenia, jej realizacja zostaje wstrzymana. Status jest ostateczny i nie może ulec zmianie.
-            /// </summary>
-            public static readonly string Fraud = "Fraud";
-            /// <summary>
-            /// Transakcja została wstępnie pozytywnie autoryzowana przez operatora płatności, jej ostateczny status zostanie określony w późniejszym okresie.
-            /// </summary>
-            public static readonly string PositiveAuthorization = "PositiveAuthorization";
-            /// <summary>
-            /// Operator płatności ostatecznie pozytywnie potwierdził poprawność przeprowadzonej płatności, status jest ostateczny i nie może ulec zmianie.
-            /// </summary>
-            public static readonly string PositiveFinish = "PositiveFinish";
-            /// <summary>
-            /// Operator płatności ostatecznie nie potwierdził poprawności przeprowadzonej płatności, status jest ostateczny i nie może ulec zmianie.
-            /// </summary>
-            public static readonly string NegativeFinish = "NegativeFinish";
-            /// <summary>
-            /// Czas na wykonanie transakcji , status jest ostateczny i nie może ulec zmianie.
-            /// </summary>
-            public static readonly string TimeExceeded = "TimeExceeded";
-            /// <summary>
-            ///  Błąd krytyczny, status jest ostateczny i nie może ulec zmianie.
-            /// </summary>
-            public static readonly string CriticalError = "CriticalError";
-
-        }
     }
 }

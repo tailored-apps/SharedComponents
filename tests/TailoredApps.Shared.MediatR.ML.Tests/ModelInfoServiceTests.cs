@@ -5,88 +5,87 @@ using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
 using Xunit;
 
-namespace TailoredApps.Shared.MediatR.ML.Tests
+namespace TailoredApps.Shared.MediatR.ML.Tests;
+
+public class ModelInfoServiceTests
 {
-    public class ModelInfoServiceTests
+    // Built with Path.Combine so Path.GetFileName splits it on every OS (CI runs on Linux).
+    private static readonly string ModelFilePath = Path.Combine("models", "image.zip");
+
+    private readonly Mock<IModelHelper> modelHelperMock;
+    private readonly ModelInfoService sut;
+
+    public ModelInfoServiceTests()
     {
-        // Built with Path.Combine so Path.GetFileName splits it on every OS (CI runs on Linux).
-        private static readonly string ModelFilePath = Path.Combine("models", "image.zip");
+        modelHelperMock = new Mock<IModelHelper>(MockBehavior.Strict);
+        var options = Options.Create(new ImageClassificationOptions { ModelFilePath = ModelFilePath });
+        sut = new ModelInfoService(options, modelHelperMock.Object);
+    }
 
-        private readonly Mock<IModelHelper> modelHelperMock;
-        private readonly ModelInfoService sut;
+    [Fact]
+    public void When_ModelFilePath_Is_Read_Should_Return_Configured_Path()
+    {
+        // arrange - done in constructor
 
-        public ModelInfoServiceTests()
-        {
-            modelHelperMock = new Mock<IModelHelper>(MockBehavior.Strict);
-            var options = Options.Create(new ImageClassificationOptions { ModelFilePath = ModelFilePath });
-            sut = new ModelInfoService(options, modelHelperMock.Object);
-        }
+        // act
+        var result = sut.ModelFilePath;
 
-        [Fact]
-        public void When_ModelFilePath_Is_Read_Should_Return_Configured_Path()
-        {
-            // arrange - done in constructor
+        // assert
+        Assert.Equal(ModelFilePath, result);
+    }
 
-            // act
-            var result = sut.ModelFilePath;
+    [Fact]
+    public void When_ModelFileName_Is_Read_Should_Return_File_Name_Without_Directory()
+    {
+        // arrange - done in constructor
 
-            // assert
-            Assert.Equal(ModelFilePath, result);
-        }
+        // act
+        var result = sut.ModelFileName;
 
-        [Fact]
-        public void When_ModelFileName_Is_Read_Should_Return_File_Name_Without_Directory()
-        {
-            // arrange - done in constructor
+        // assert
+        Assert.Equal("image.zip", result);
+    }
 
-            // act
-            var result = sut.ModelFileName;
+    [Fact]
+    public void When_ModelChecksum_Is_Read_Should_Delegate_To_Model_Helper_With_Configured_Path()
+    {
+        // arrange
+        modelHelperMock.Setup(m => m.GetChecksum(ModelFilePath)).Returns("abc123");
 
-            // assert
-            Assert.Equal("image.zip", result);
-        }
+        // act
+        var result = sut.ModelChecksum;
 
-        [Fact]
-        public void When_ModelChecksum_Is_Read_Should_Delegate_To_Model_Helper_With_Configured_Path()
-        {
-            // arrange
-            modelHelperMock.Setup(m => m.GetChecksum(ModelFilePath)).Returns("abc123");
+        // assert
+        Assert.Equal("abc123", result);
+        modelHelperMock.Verify(m => m.GetChecksum(ModelFilePath), Times.Once);
+    }
 
-            // act
-            var result = sut.ModelChecksum;
+    [Fact]
+    public void When_ModelVersion_Is_Read_Should_Delegate_To_Model_Helper_With_Configured_Path()
+    {
+        // arrange
+        modelHelperMock.Setup(m => m.GetVersion(ModelFilePath)).Returns("20260820.101010");
 
-            // assert
-            Assert.Equal("abc123", result);
-            modelHelperMock.Verify(m => m.GetChecksum(ModelFilePath), Times.Once);
-        }
+        // act
+        var result = sut.ModelVersion;
 
-        [Fact]
-        public void When_ModelVersion_Is_Read_Should_Delegate_To_Model_Helper_With_Configured_Path()
-        {
-            // arrange
-            modelHelperMock.Setup(m => m.GetVersion(ModelFilePath)).Returns("20260820.101010");
+        // assert
+        Assert.Equal("20260820.101010", result);
+        modelHelperMock.Verify(m => m.GetVersion(ModelFilePath), Times.Once);
+    }
 
-            // act
-            var result = sut.ModelVersion;
+    [Fact]
+    public void When_Labels_Is_Read_Should_Delegate_To_Model_Helper_With_Configured_Path()
+    {
+        // arrange
+        var labels = new[] { "red", "green", "blue" };
+        modelHelperMock.Setup(m => m.GetLabels(ModelFilePath)).Returns(labels);
 
-            // assert
-            Assert.Equal("20260820.101010", result);
-            modelHelperMock.Verify(m => m.GetVersion(ModelFilePath), Times.Once);
-        }
+        // act
+        var result = sut.Labels;
 
-        [Fact]
-        public void When_Labels_Is_Read_Should_Delegate_To_Model_Helper_With_Configured_Path()
-        {
-            // arrange
-            var labels = new[] { "red", "green", "blue" };
-            modelHelperMock.Setup(m => m.GetLabels(ModelFilePath)).Returns(labels);
-
-            // act
-            var result = sut.Labels;
-
-            // assert
-            Assert.Same(labels, result);
-            modelHelperMock.Verify(m => m.GetLabels(ModelFilePath), Times.Once);
-        }
+        // assert
+        Assert.Same(labels, result);
+        modelHelperMock.Verify(m => m.GetLabels(ModelFilePath), Times.Once);
     }
 }
