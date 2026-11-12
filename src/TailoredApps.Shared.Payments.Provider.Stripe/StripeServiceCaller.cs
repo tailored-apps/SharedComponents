@@ -1,3 +1,4 @@
+using System.Threading;
 using global::Stripe;
 using global::Stripe.Checkout;
 using Microsoft.Extensions.Configuration;
@@ -29,7 +30,7 @@ public class StripeServiceCaller : IStripeServiceCaller
     private RequestOptions RequestOptions => new() { ApiKey = options.SecretKey };
 
     /// <inheritdoc/>
-    public async Task<Session> CreateCheckoutSessionAsync(Payments.PaymentRequest request)
+    public async Task<Session> CreateCheckoutSessionAsync(Payments.PaymentRequest request, CancellationToken cancellationToken = default)
     {
         var currency = request.Currency ?? throw new ArgumentException("Currency is required.", nameof(request));
 
@@ -74,18 +75,18 @@ public class StripeServiceCaller : IStripeServiceCaller
             },
         };
 
-        return await sessionService.CreateAsync(createOptions, RequestOptions);
+        return await sessionService.CreateAsync(createOptions, RequestOptions, cancellationToken);
     }
 
     /// <inheritdoc/>
-    public async Task<Session> GetCheckoutSessionAsync(string sessionId)
+    public async Task<Session> GetCheckoutSessionAsync(string sessionId, CancellationToken cancellationToken = default)
     {
         var getOptions = new SessionGetOptions
         {
             Expand = ["payment_intent"],
         };
 
-        return await sessionService.GetAsync(sessionId, getOptions, RequestOptions);
+        return await sessionService.GetAsync(sessionId, getOptions, RequestOptions, cancellationToken);
     }
 
     /// <inheritdoc/>

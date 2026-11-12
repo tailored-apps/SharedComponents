@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Threading;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,7 +71,7 @@ public class MockedIntegrationTests
     public async Task CashBill_RegisterPayment_ReturnsCreated()
     {
         var caller = new Mock<ICashbillServiceCaller>();
-        caller.Setup(c => c.GeneratePayment(It.IsAny<Provider.CashBill.PaymentRequest>()))
+        caller.Setup(c => c.GeneratePayment(It.IsAny<Provider.CashBill.PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(new PaymentStatus
               {
                   Id = "CB_TEST_001",
@@ -90,7 +91,7 @@ public class MockedIntegrationTests
     public async Task CashBill_GetStatus_ReturnsCompleted()
     {
         var caller = new Mock<ICashbillServiceCaller>();
-        caller.Setup(c => c.GetPaymentStatus("CB_TEST_001"))
+        caller.Setup(c => c.GetPaymentStatus("CB_TEST_001", It.IsAny<CancellationToken>()))
               .ReturnsAsync(new PaymentStatus { Id = "CB_TEST_001", Status = "PositiveFinish" });
 
         var svc = BuildCashBillHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -103,7 +104,7 @@ public class MockedIntegrationTests
     public async Task CashBill_GetChannels_ReturnsList()
     {
         var caller = new Mock<ICashbillServiceCaller>();
-        caller.Setup(c => c.GetPaymentChannels("PLN"))
+        caller.Setup(c => c.GetPaymentChannels("PLN", It.IsAny<CancellationToken>()))
               .ReturnsAsync(new List<PaymentChannels>
               {
                   new() { Id = "blik_pbl", AvailableCurrencies = ["PLN"], Name = "BLIK" },
@@ -121,7 +122,7 @@ public class MockedIntegrationTests
     public async Task CashBill_GetStatus_Negative_ReturnsFailed()
     {
         var caller = new Mock<ICashbillServiceCaller>();
-        caller.Setup(c => c.GetPaymentStatus("CB_FAIL"))
+        caller.Setup(c => c.GetPaymentStatus("CB_FAIL", It.IsAny<CancellationToken>()))
               .ReturnsAsync(new PaymentStatus { Id = "CB_FAIL", Status = "NegativeFinish" });
 
         var svc = BuildCashBillHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -134,9 +135,9 @@ public class MockedIntegrationTests
     public async Task CashBill_TransactionStatusChange_ValidSign_ReturnsStatus()
     {
         var caller = new Mock<ICashbillServiceCaller>();
-        caller.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>()))
+        caller.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync("expectedsign");
-        caller.Setup(c => c.GetPaymentStatus("TX_001"))
+        caller.Setup(c => c.GetPaymentStatus("TX_001", It.IsAny<CancellationToken>()))
               .ReturnsAsync(new PaymentStatus { Id = "TX_001", Status = "PositiveFinish" });
 
         var svc = BuildCashBillHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -182,7 +183,7 @@ public class MockedIntegrationTests
         };
 
         var caller = new Mock<IStripeServiceCaller>();
-        caller.Setup(c => c.CreateCheckoutSessionAsync(It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.CreateCheckoutSessionAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(session);
 
         var svc = BuildStripeHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -204,7 +205,7 @@ public class MockedIntegrationTests
         };
 
         var caller = new Mock<IStripeServiceCaller>();
-        caller.Setup(c => c.GetCheckoutSessionAsync("cs_test_002"))
+        caller.Setup(c => c.GetCheckoutSessionAsync("cs_test_002", It.IsAny<CancellationToken>()))
               .ReturnsAsync(session);
 
         var svc = BuildStripeHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -224,7 +225,7 @@ public class MockedIntegrationTests
         };
 
         var caller = new Mock<IStripeServiceCaller>();
-        caller.Setup(c => c.GetCheckoutSessionAsync("cs_test_003"))
+        caller.Setup(c => c.GetCheckoutSessionAsync("cs_test_003", It.IsAny<CancellationToken>()))
               .ReturnsAsync(session);
 
         var svc = BuildStripeHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -318,7 +319,7 @@ public class MockedIntegrationTests
     public async Task Adyen_RegisterPayment_ReturnsCreated()
     {
         var caller = new Mock<IAdyenServiceCaller>();
-        caller.Setup(c => c.CreateSessionAsync(It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.CreateSessionAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(("session_adyen_001", "https://checkout.adyen.com/pay/session_adyen_001", null));
 
         var svc = BuildAdyenHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -333,7 +334,7 @@ public class MockedIntegrationTests
     public async Task Adyen_RegisterPayment_Error_ReturnsRejected()
     {
         var caller = new Mock<IAdyenServiceCaller>();
-        caller.Setup(c => c.CreateSessionAsync(It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.CreateSessionAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(((string?)null, (string?)null, "Unauthorized"));
 
         var svc = BuildAdyenHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -346,7 +347,7 @@ public class MockedIntegrationTests
     public async Task Adyen_GetStatus_ReturnsCompleted()
     {
         var caller = new Mock<IAdyenServiceCaller>();
-        caller.Setup(c => c.GetPaymentStatusAsync("adyen_ref_001"))
+        caller.Setup(c => c.GetPaymentStatusAsync("adyen_ref_001", It.IsAny<CancellationToken>()))
               .ReturnsAsync(PaymentStatusEnum.Finished);
 
         var svc = BuildAdyenHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -398,8 +399,8 @@ public class MockedIntegrationTests
     public async Task PayU_RegisterPayment_ReturnsCreated()
     {
         var caller = new Mock<IPayUServiceCaller>();
-        caller.Setup(c => c.GetAccessTokenAsync()).ReturnsAsync("tok_001");
-        caller.Setup(c => c.CreateOrderAsync("tok_001", It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("tok_001");
+        caller.Setup(c => c.CreateOrderAsync("tok_001", It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(("order_payu_001", "https://secure.payu.com/pay/order_payu_001", null));
 
         var svc = BuildPayUHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -413,8 +414,8 @@ public class MockedIntegrationTests
     public async Task PayU_RegisterPayment_Error_ReturnsRejected()
     {
         var caller = new Mock<IPayUServiceCaller>();
-        caller.Setup(c => c.GetAccessTokenAsync()).ReturnsAsync("tok_002");
-        caller.Setup(c => c.CreateOrderAsync("tok_002", It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("tok_002");
+        caller.Setup(c => c.CreateOrderAsync("tok_002", It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(((string?)null, (string?)null, "Unauthorized"));
 
         var svc = BuildPayUHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -427,8 +428,8 @@ public class MockedIntegrationTests
     public async Task PayU_GetStatus_ReturnsCompleted()
     {
         var caller = new Mock<IPayUServiceCaller>();
-        caller.Setup(c => c.GetAccessTokenAsync()).ReturnsAsync("tok_003");
-        caller.Setup(c => c.GetOrderStatusAsync("tok_003", "order_payu_002"))
+        caller.Setup(c => c.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("tok_003");
+        caller.Setup(c => c.GetOrderStatusAsync("tok_003", "order_payu_002", It.IsAny<CancellationToken>()))
               .ReturnsAsync(PaymentStatusEnum.Finished);
 
         var svc = BuildPayUHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -503,7 +504,7 @@ public class MockedIntegrationTests
         var caller = new Mock<IPrzelewy24ServiceCaller>();
         caller.Setup(c => c.ComputeSign(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<long>(), It.IsAny<string>()))
               .Returns("mock_sign");
-        caller.Setup(c => c.RegisterTransactionAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>()))
+        caller.Setup(c => c.RegisterTransactionAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(("p24_token_001", null));
 
         var svc = BuildPrzelewy24Host(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -519,7 +520,7 @@ public class MockedIntegrationTests
         var caller = new Mock<IPrzelewy24ServiceCaller>();
         caller.Setup(c => c.ComputeSign(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<long>(), It.IsAny<string>()))
               .Returns("mock_sign");
-        caller.Setup(c => c.RegisterTransactionAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>()))
+        caller.Setup(c => c.RegisterTransactionAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(((string?)null, "Unauthorized"));
 
         var svc = BuildPrzelewy24Host(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -535,7 +536,7 @@ public class MockedIntegrationTests
         caller.Setup(c => c.VerifyNotification(It.IsAny<string>())).Returns(true);
         caller.Setup(c => c.ComputeSign(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<long>(), It.IsAny<string>()))
               .Returns("mock_sign");
-        caller.Setup(c => c.VerifyTransactionAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<int>()))
+        caller.Setup(c => c.VerifyTransactionAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(PaymentStatusEnum.Finished);
 
         var svc = BuildPrzelewy24Host(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -588,8 +589,8 @@ public class MockedIntegrationTests
     public async Task Tpay_RegisterPayment_ReturnsCreated()
     {
         var caller = new Mock<ITpayServiceCaller>();
-        caller.Setup(c => c.GetAccessTokenAsync()).ReturnsAsync("tpay_tok_001");
-        caller.Setup(c => c.CreateTransactionAsync("tpay_tok_001", It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("tpay_tok_001");
+        caller.Setup(c => c.CreateTransactionAsync("tpay_tok_001", It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(("tpay_tx_001", "https://secure.tpay.com/pay/tpay_tx_001"));
 
         var svc = BuildTpayHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -604,8 +605,8 @@ public class MockedIntegrationTests
     public async Task Tpay_RegisterPayment_NullResult_ReturnsRejected()
     {
         var caller = new Mock<ITpayServiceCaller>();
-        caller.Setup(c => c.GetAccessTokenAsync()).ReturnsAsync("tpay_tok_002");
-        caller.Setup(c => c.CreateTransactionAsync("tpay_tok_002", It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("tpay_tok_002");
+        caller.Setup(c => c.CreateTransactionAsync("tpay_tok_002", It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(((string?)null, (string?)null));
 
         var svc = BuildTpayHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -618,8 +619,8 @@ public class MockedIntegrationTests
     public async Task Tpay_GetStatus_ReturnsCompleted()
     {
         var caller = new Mock<ITpayServiceCaller>();
-        caller.Setup(c => c.GetAccessTokenAsync()).ReturnsAsync("tpay_tok_003");
-        caller.Setup(c => c.GetTransactionStatusAsync("tpay_tok_003", "tpay_tx_002"))
+        caller.Setup(c => c.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("tpay_tok_003");
+        caller.Setup(c => c.GetTransactionStatusAsync("tpay_tok_003", "tpay_tx_002", It.IsAny<CancellationToken>()))
               .ReturnsAsync(PaymentStatusEnum.Finished);
 
         var svc = BuildTpayHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -671,7 +672,7 @@ public class MockedIntegrationTests
     public async Task HotPay_RegisterPayment_ReturnsCreated()
     {
         var caller = new Mock<IHotPayServiceCaller>();
-        caller.Setup(c => c.InitPaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>()))
+        caller.Setup(c => c.InitPaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(("hotpay_001", "https://pay.hotpay.pl/hotpay_001"));
 
         var svc = BuildHotPayHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -686,7 +687,7 @@ public class MockedIntegrationTests
     public async Task HotPay_RegisterPayment_NullResult_ReturnsRejected()
     {
         var caller = new Mock<IHotPayServiceCaller>();
-        caller.Setup(c => c.InitPaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>()))
+        caller.Setup(c => c.InitPaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(((string?)null, (string?)null));
 
         var svc = BuildHotPayHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -764,7 +765,7 @@ public class MockedIntegrationTests
     public async Task PayNow_RegisterPayment_ReturnsCreated()
     {
         var caller = new Mock<IPayNowServiceCaller>();
-        caller.Setup(c => c.CreatePaymentAsync(It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(("paynow_001", "https://app.paynow.pl/pay/paynow_001"));
 
         var svc = BuildPayNowHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -779,7 +780,7 @@ public class MockedIntegrationTests
     public async Task PayNow_RegisterPayment_NullResult_ReturnsRejected()
     {
         var caller = new Mock<IPayNowServiceCaller>();
-        caller.Setup(c => c.CreatePaymentAsync(It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(((string?)null, (string?)null));
 
         var svc = BuildPayNowHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -792,7 +793,7 @@ public class MockedIntegrationTests
     public async Task PayNow_GetStatus_ReturnsCompleted()
     {
         var caller = new Mock<IPayNowServiceCaller>();
-        caller.Setup(c => c.GetPaymentStatusAsync("paynow_002"))
+        caller.Setup(c => c.GetPaymentStatusAsync("paynow_002", It.IsAny<CancellationToken>()))
               .ReturnsAsync(PaymentStatusEnum.Finished);
 
         var svc = BuildPayNowHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -844,7 +845,7 @@ public class MockedIntegrationTests
     public async Task Revolut_RegisterPayment_ReturnsCreated()
     {
         var caller = new Mock<IRevolutServiceCaller>();
-        caller.Setup(c => c.CreateOrderAsync(It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.CreateOrderAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(("rev_order_001", "https://checkout.revolut.com/pay/rev_order_001"));
 
         var svc = BuildRevolutHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -859,7 +860,7 @@ public class MockedIntegrationTests
     public async Task Revolut_RegisterPayment_NullResult_ReturnsRejected()
     {
         var caller = new Mock<IRevolutServiceCaller>();
-        caller.Setup(c => c.CreateOrderAsync(It.IsAny<PaymentRequest>()))
+        caller.Setup(c => c.CreateOrderAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync(((string?)null, (string?)null));
 
         var svc = BuildRevolutHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -872,7 +873,7 @@ public class MockedIntegrationTests
     public async Task Revolut_GetStatus_Completed_ReturnsCompleted()
     {
         var caller = new Mock<IRevolutServiceCaller>();
-        caller.Setup(c => c.GetOrderAsync("rev_order_002"))
+        caller.Setup(c => c.GetOrderAsync("rev_order_002", It.IsAny<CancellationToken>()))
               .ReturnsAsync(("completed", "rev_order_002"));
 
         var svc = BuildRevolutHost(caller.Object).Services.GetRequiredService<IPaymentService>();
@@ -885,7 +886,7 @@ public class MockedIntegrationTests
     public async Task Revolut_GetStatus_Pending_ReturnsProcessing()
     {
         var caller = new Mock<IRevolutServiceCaller>();
-        caller.Setup(c => c.GetOrderAsync("rev_order_003"))
+        caller.Setup(c => c.GetOrderAsync("rev_order_003", It.IsAny<CancellationToken>()))
               .ReturnsAsync(("pending", "rev_order_003"));
 
         var svc = BuildRevolutHost(caller.Object).Services.GetRequiredService<IPaymentService>();

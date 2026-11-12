@@ -111,7 +111,7 @@ public class PaymentWebhookController : ControllerBase
             Query = Request.Query.ToDictionary(q => q.Key, q => q.Value)
         };
 
-        var result = await _payments.HandleWebhookAsync(providerKey, request);
+        var result = await _payments.HandleWebhookAsync(providerKey, request, HttpContext.RequestAborted);
 
         return result switch
         {
@@ -145,8 +145,8 @@ foreach (var provider in providers)
 
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
-| `IPaymentService` | Interfejs | Fasada: `GetProviders`, `GetChannels`, `RegisterPayment`, `GetStatus`, `HandleWebhookAsync` |
-| `IPaymentProvider` | Interfejs | Kontrakt providera: `Key`, `Name`, `GetPaymentChannels`, `RequestPayment`, `GetStatus`, `TransactionStatusChange` |
+| `IPaymentService` | Interfejs | Fasada: `GetProviders`, `GetChannels`, `RegisterPayment`, `GetStatus`, `HandleWebhookAsync`. Każda metoda przyjmuje opcjonalny `CancellationToken` |
+| `IPaymentProvider` | Interfejs | Kontrakt providera: `Key`, `Name`, `GetPaymentChannels`, `RequestPayment`, `GetStatus`, `TransactionStatusChange`. Każda metoda asynchroniczna przyjmuje opcjonalny `CancellationToken` |
 | `IWebhookPaymentProvider` | Interfejs | Rozszerzenie: `HandleWebhookAsync(PaymentWebhookRequest)` |
 | `IPaymentOptionsBuilder` | Interfejs | Fluent builder: `RegisterPaymentProvider<T>()` |
 
@@ -247,4 +247,6 @@ var response = result switch
 - We własnych providerach porównuj podpisy przez WebhookSignature.FixedTimeEquals, a identyfikatory do URL przepuszczaj przez PaymentIdentifier.EnsureSafe
 - Nie zwracaj klientowi ErrorMessage z webhooka w treści odpowiedzi — loguj go po stronie serwera
 - De-duplikuj zdarzenia po PaymentUniqueId; konsument webhooka musi być idempotentny
+- Przekazuj CancellationToken (w kontrolerze HttpContext.RequestAborted) do każdego wywołania IPaymentService — token dociera do wywołań HTTP bramki
+- Własny provider: każda metoda asynchroniczna przyjmuje CancellationToken cancellationToken = default i przekazuje go dalej do HttpClient
 ```

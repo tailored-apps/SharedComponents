@@ -1,4 +1,5 @@
 #nullable enable
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -82,8 +83,8 @@ public class CashBillWebhookSignatureTests
     private static Mock<ICashbillServiceCaller> Caller()
     {
         var caller = new Mock<ICashbillServiceCaller>();
-        caller.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>())).ReturnsAsync(ExpectedSign);
-        caller.Setup(c => c.GetPaymentStatus("TX-1")).ReturnsAsync(new PaymentStatus { Id = "TX-1", Status = "PositiveFinish" });
+        caller.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>(), It.IsAny<CancellationToken>())).ReturnsAsync(ExpectedSign);
+        caller.Setup(c => c.GetPaymentStatus("TX-1", It.IsAny<CancellationToken>())).ReturnsAsync(new PaymentStatus { Id = "TX-1", Status = "PositiveFinish" });
         return caller;
     }
 
@@ -98,7 +99,7 @@ public class CashBillWebhookSignatureTests
         Assert.False(result.Success);
         Assert.NotNull(result.ErrorMessage);
         Assert.DoesNotContain(ExpectedSign, result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
-        caller.Verify(c => c.GetPaymentStatus(It.IsAny<string>()), Times.Never);
+        caller.Verify(c => c.GetPaymentStatus(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -110,7 +111,7 @@ public class CashBillWebhookSignatureTests
         var result = await provider.HandleWebhookAsync(Request(string.Empty));
 
         Assert.False(result.Success);
-        caller.Verify(c => c.GetPaymentStatus(It.IsAny<string>()), Times.Never);
+        caller.Verify(c => c.GetPaymentStatus(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -123,7 +124,7 @@ public class CashBillWebhookSignatureTests
 
         Assert.True(result.Success);
         Assert.Equal("TX-1", result.PaymentResponse?.PaymentUniqueId);
-        caller.Verify(c => c.GetPaymentStatus("TX-1"), Times.Once);
+        caller.Verify(c => c.GetPaymentStatus("TX-1", It.IsAny<CancellationToken>()), Times.Once);
     }
 }
 

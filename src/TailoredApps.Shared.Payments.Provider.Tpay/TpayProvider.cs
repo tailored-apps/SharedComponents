@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -104,11 +105,11 @@ file class TpayStatusResponse
 public interface ITpayServiceCaller
 {
     /// <summary>Wywołanie API.</summary>
-    Task<string> GetAccessTokenAsync();
+    Task<string> GetAccessTokenAsync(CancellationToken cancellationToken = default);
     /// <summary>Wywołanie API.</summary>
-    Task<(string? transactionId, string? paymentUrl)> CreateTransactionAsync(string token, PaymentRequest request);
+    Task<(string? transactionId, string? paymentUrl)> CreateTransactionAsync(string token, PaymentRequest request, CancellationToken cancellationToken = default);
     /// <summary>Wywołanie API.</summary>
-    Task<PaymentStatusEnum> GetTransactionStatusAsync(string token, string transactionId);
+    Task<PaymentStatusEnum> GetTransactionStatusAsync(string token, string transactionId, CancellationToken cancellationToken = default);
     /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifyNotification(string body, string signature);
 }
@@ -127,7 +128,7 @@ public class TpayServiceCaller : ITpayServiceCaller
     }
 
     /// <inheritdoc/>
-    public async Task<string> GetAccessTokenAsync()
+    public async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken = default)
     {
         using var client = httpClientFactory.CreateClient("Tpay");
         var content = new FormUrlEncodedContent([
@@ -135,14 +136,14 @@ public class TpayServiceCaller : ITpayServiceCaller
             new("client_id",     options.ClientId),
             new("client_secret", options.ClientSecret),
         ]);
-        var response = await client.PostAsync($"{options.ServiceUrl}/oauth/auth", content);
+        var response = await client.PostAsync($"{options.ServiceUrl}/oauth/auth", content, cancellationToken);
         response.EnsureSuccessStatusCode();
-        var json = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<TpayTokenResponse>(json)?.AccessToken ?? string.Empty;
     }
 
     /// <inheritdoc/>
-    public async Task<(string? transactionId, string? paymentUrl)> CreateTransactionAsync(string token, PaymentRequest request)
+    public async Task<(string? transactionId, string? paymentUrl)> CreateTransactionAsync(string token, PaymentRequest request, CancellationToken cancellationToken = default)
     {
         using var client = httpClientFactory.CreateClient("Tpay");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -163,21 +164,21 @@ public class TpayServiceCaller : ITpayServiceCaller
             body.Pay = new TpayPay { Channel = request.PaymentChannel };
 
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync($"{options.ServiceUrl}/transactions", content);
-        var json = await response.Content.ReadAsStringAsync();
+        var response = await client.PostAsync($"{options.ServiceUrl}/transactions", content, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var tx = JsonSerializer.Deserialize<TpayTransactionResponse>(json);
         return (tx?.TransactionId, tx?.PaymentUrl);
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentStatusEnum> GetTransactionStatusAsync(string token, string transactionId)
+    public async Task<PaymentStatusEnum> GetTransactionStatusAsync(string token, string transactionId, CancellationToken cancellationToken = default)
     {
         using var client = httpClientFactory.CreateClient("Tpay");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var safeTransactionId = PaymentIdentifier.EnsureSafe(transactionId, nameof(transactionId));
-        var response = await client.GetAsync($"{options.ServiceUrl}/transactions/{safeTransactionId}");
+        var response = await client.GetAsync($"{options.ServiceUrl}/transactions/{safeTransactionId}", cancellationToken);
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
-        var json = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var status = JsonSerializer.Deserialize<TpayStatusResponse>(json)?.Status;
         return status switch
         {
@@ -221,7 +222,7 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
     public string Url => "https://tpay.com";
 
     /// <inheritdoc/>
-    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
+    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
     {
         ICollection<PaymentChannel> channels =
         [
@@ -233,10 +234,10 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
+    public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
-        var token = await caller.GetAccessTokenAsync();
-        var (transactionId, paymentUrl) = await caller.CreateTransactionAsync(token, request);
+        var token = await caller.GetAccessTokenAsync(cancellationToken);
+        var (transactionId, paymentUrl) = await caller.CreateTransactionAsync(token, request, cancellationToken);
         if (transactionId is null)
             return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "API error" };
         return new PaymentResponse
@@ -248,17 +249,17 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> GetStatus(string paymentId)
+    public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
     {
-        var token = await caller.GetAccessTokenAsync();
-        var status = await caller.GetTransactionStatusAsync(token, paymentId);
+        var token = await caller.GetAccessTokenAsync(cancellationToken);
+        var status = await caller.GetTransactionStatusAsync(token, paymentId, cancellationToken);
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
     /// <inheritdoc/>
-    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {
         var body = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("X-Signature", out var s) ? s.ToString() : string.Empty;
@@ -276,7 +277,7 @@ public class TpayProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
         => Task.FromResult(ProcessNotification(payload).ToPaymentResponse());
 
     private PaymentWebhookResult ProcessNotification(TransactionStatusChangePayload payload)

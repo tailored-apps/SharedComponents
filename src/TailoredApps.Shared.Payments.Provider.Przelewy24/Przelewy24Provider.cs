@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -80,9 +81,9 @@ file class P24VerifyRequest
 public interface IPrzelewy24ServiceCaller
 {
     /// <summary>Wywołanie API.</summary>
-    Task<(string? token, string? error)> RegisterTransactionAsync(PaymentRequest request, string sessionId);
+    Task<(string? token, string? error)> RegisterTransactionAsync(PaymentRequest request, string sessionId, CancellationToken cancellationToken = default);
     /// <summary>Wywołanie API.</summary>
-    Task<PaymentStatusEnum> VerifyTransactionAsync(string sessionId, long amount, string currency, int orderId);
+    Task<PaymentStatusEnum> VerifyTransactionAsync(string sessionId, long amount, string currency, int orderId, CancellationToken cancellationToken = default);
     /// <summary>Computes the SHA-384 signature required by Przelewy24 for a transaction.</summary>
     /// <param name="sessionId">Unique session identifier for the transaction.</param>
     /// <param name="merchantId">Przelewy24 merchant identifier.</param>
@@ -123,7 +124,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
     }
 
     /// <inheritdoc/>
-    public async Task<(string? token, string? error)> RegisterTransactionAsync(PaymentRequest request, string sessionId)
+    public async Task<(string? token, string? error)> RegisterTransactionAsync(PaymentRequest request, string sessionId, CancellationToken cancellationToken = default)
     {
         using var client = CreateClient();
         var amount = (long)(request.Amount * 100);
@@ -145,14 +146,14 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
         };
 
         var content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json");
-        var response = await client.PostAsync($"{options.ServiceUrl}/api/v1/transaction/register", content);
-        var json = await response.Content.ReadAsStringAsync();
+        var response = await client.PostAsync($"{options.ServiceUrl}/api/v1/transaction/register", content, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<P24RegisterResponse>(json);
         return (result?.Data?.Token, response.IsSuccessStatusCode ? null : json);
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentStatusEnum> VerifyTransactionAsync(string sessionId, long amount, string currency, int orderId)
+    public async Task<PaymentStatusEnum> VerifyTransactionAsync(string sessionId, long amount, string currency, int orderId, CancellationToken cancellationToken = default)
     {
         using var client = CreateClient();
         var normalisedCurrency = currency.ToUpperInvariant();
@@ -168,7 +169,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
             Sign = sign,
         };
         var content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json");
-        var response = await client.PutAsync($"{options.ServiceUrl}/api/v1/transaction/verify", content);
+        var response = await client.PutAsync($"{options.ServiceUrl}/api/v1/transaction/verify", content, cancellationToken);
         return response.IsSuccessStatusCode ? PaymentStatusEnum.Finished : PaymentStatusEnum.Rejected;
     }
 
@@ -266,7 +267,7 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
     public string Url => "https://przelewy24.pl";
 
     /// <inheritdoc/>
-    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
+    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
     {
         ICollection<PaymentChannel> channels =
         [
@@ -278,10 +279,10 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
+    public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
         var sessionId = Guid.NewGuid().ToString("N");
-        var (token, error) = await caller.RegisterTransactionAsync(request, sessionId);
+        var (token, error) = await caller.RegisterTransactionAsync(request, sessionId, cancellationToken);
 
         if (token is null)
             return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = error };
@@ -295,13 +296,13 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public Task<PaymentResponse> GetStatus(string paymentId)
+    public Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
         => Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = PaymentStatusEnum.Processing });
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
     /// <inheritdoc/>
-    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {
         var body = request.Body ?? string.Empty;
 
@@ -311,14 +312,14 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
             QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>(),
         };
 
-        return await ProcessNotificationAsync(payload);
+        return await ProcessNotificationAsync(payload, cancellationToken);
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
-        => (await ProcessNotificationAsync(payload)).ToPaymentResponse();
+    public async Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
+        => (await ProcessNotificationAsync(payload, cancellationToken)).ToPaymentResponse();
 
-    private async Task<PaymentWebhookResult> ProcessNotificationAsync(TransactionStatusChangePayload payload)
+    private async Task<PaymentWebhookResult> ProcessNotificationAsync(TransactionStatusChangePayload payload, CancellationToken cancellationToken)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
         if (!caller.VerifyNotification(body))
@@ -340,7 +341,7 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
                 sessionId,
                 amt.GetInt64(),
                 cur.GetString()!,
-                oid.GetInt32());
+                oid.GetInt32(), cancellationToken);
 
             return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = sessionId, PaymentStatus = status, ResponseObject = "OK" });
         }

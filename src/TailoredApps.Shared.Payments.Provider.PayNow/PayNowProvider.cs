@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -65,9 +66,9 @@ file class PayNowStatusResponse
 public interface IPayNowServiceCaller
 {
     /// <summary>Wywołanie API.</summary>
-    Task<(string? paymentId, string? redirectUrl)> CreatePaymentAsync(PaymentRequest request);
+    Task<(string? paymentId, string? redirectUrl)> CreatePaymentAsync(PaymentRequest request, CancellationToken cancellationToken = default);
     /// <summary>Wywołanie API.</summary>
-    Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId);
+    Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId, CancellationToken cancellationToken = default);
     /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifySignature(string body, string signature);
 }
@@ -94,7 +95,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
     }
 
     /// <inheritdoc/>
-    public async Task<(string? paymentId, string? redirectUrl)> CreatePaymentAsync(PaymentRequest request)
+    public async Task<(string? paymentId, string? redirectUrl)> CreatePaymentAsync(PaymentRequest request, CancellationToken cancellationToken = default)
     {
         using var client = CreateClient();
         // The idempotency key must be stable for the same order so that a retried request
@@ -114,20 +115,20 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         };
 
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync($"{options.ServiceUrl}/v2/payments", content);
-        var json = await response.Content.ReadAsStringAsync();
+        var response = await client.PostAsync($"{options.ServiceUrl}/v2/payments", content, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<PayNowPaymentResponse>(json);
         return (result?.PaymentId, result?.RedirectUrl);
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId)
+    public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId, CancellationToken cancellationToken = default)
     {
         using var client = CreateClient();
         var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
-        var response = await client.GetAsync($"{options.ServiceUrl}/v2/payments/{safePaymentId}/status");
+        var response = await client.GetAsync($"{options.ServiceUrl}/v2/payments/{safePaymentId}/status", cancellationToken);
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
-        var json = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var status = JsonSerializer.Deserialize<PayNowStatusResponse>(json)?.Status;
         return status switch
         {
@@ -175,7 +176,7 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
     public string Url => "https://paynow.pl";
 
     /// <inheritdoc/>
-    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
+    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
     {
         ICollection<PaymentChannel> channels =
         [
@@ -188,9 +189,9 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
+    public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
-        var (paymentId, redirectUrl) = await caller.CreatePaymentAsync(request);
+        var (paymentId, redirectUrl) = await caller.CreatePaymentAsync(request, cancellationToken);
         if (paymentId is null)
             return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "API error" };
         return new PaymentResponse
@@ -202,16 +203,16 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> GetStatus(string paymentId)
+    public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
     {
-        var status = await caller.GetPaymentStatusAsync(paymentId);
+        var status = await caller.GetPaymentStatusAsync(paymentId, cancellationToken);
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
     /// <inheritdoc/>
-    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {
         var body = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("Signature", out var s) ? s.ToString() : string.Empty;
@@ -229,7 +230,7 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
         => Task.FromResult(ProcessNotification(payload).ToPaymentResponse());
 
     private PaymentWebhookResult ProcessNotification(TransactionStatusChangePayload payload)

@@ -1,3 +1,4 @@
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using global::Stripe;
@@ -39,7 +40,7 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// Zwracamy statyczną listę bazując na walucie — identyczną z tą, którą StripeServiceCaller
     /// przekazuje do Checkout Session. Dzięki temu UI może wyświetlić dostępne opcje.
     /// </remarks>
-    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
+    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
     {
         ICollection<PaymentChannel> channels = currency.ToUpperInvariant() switch
         {
@@ -67,9 +68,9 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <remarks>
     /// Tworzy Stripe Checkout Session. Zwraca URL do hosted page Stripe oraz ID sesji.
     /// </remarks>
-    public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
+    public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
-        var session = await stripeCaller.CreateCheckoutSessionAsync(request);
+        var session = await stripeCaller.CreateCheckoutSessionAsync(request, cancellationToken);
 
         return new PaymentResponse
         {
@@ -83,9 +84,9 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <remarks>
     /// Pobiera aktualny status Checkout Session. ID = Stripe Session ID (cs_...).
     /// </remarks>
-    public async Task<PaymentResponse> GetStatus(string paymentId)
+    public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
     {
-        var session = await stripeCaller.GetCheckoutSessionAsync(paymentId);
+        var session = await stripeCaller.GetCheckoutSessionAsync(paymentId, cancellationToken);
 
         return new PaymentResponse
         {
@@ -105,7 +106,7 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// Weryfikuje podpis HMAC-SHA256 i przetwarza zdarzenia:
     /// checkout.session.completed, checkout.session.expired.
     /// </remarks>
-    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
         => Task.FromResult(ProcessEvent(payload).ToPaymentResponse());
 
     private PaymentWebhookResult ProcessEvent(TransactionStatusChangePayload payload)
@@ -164,7 +165,8 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// (e.g. <c>payment_method.attached</c>) result in <see cref="PaymentWebhookIgnored"/>.
     /// </remarks>
     /// <param name="request">Unified HTTP webhook request.</param>
-    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    /// <param name="cancellationToken">Token that cancels the operation.</param>
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {
         var rawBody = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("Stripe-Signature", out var sig)

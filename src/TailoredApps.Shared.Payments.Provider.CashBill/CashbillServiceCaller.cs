@@ -1,3 +1,4 @@
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -57,17 +58,17 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         }
 
         /// <inheritdoc/>
-        public async Task<ICollection<PaymentChannels>> GetPaymentChannels(string currency)
+        public async Task<ICollection<PaymentChannels>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
         {
             var shopId = options.Value.ShopId;
             var mainUrl = options.Value.ServiceUrl;
 
-            List<PaymentChannels> paymentChannels = await cashbillCaller.MakeFormRequest<List<PaymentChannels>>(Path.Combine(mainUrl, "paymentchannels", shopId), "GET", null);
+            List<PaymentChannels> paymentChannels = await cashbillCaller.MakeFormRequest<List<PaymentChannels>>(Path.Combine(mainUrl, "paymentchannels", shopId), "GET", null, cancellationToken);
             return paymentChannels.Where(x => x.AvailableCurrencies?.Any(c => string.Equals(c, currency, StringComparison.InvariantCultureIgnoreCase)) == true).ToList();
         }
 
         /// <inheritdoc/>
-        public async Task<PaymentStatus> GeneratePayment(PaymentRequest request)
+        public async Task<PaymentStatus> GeneratePayment(PaymentRequest request, CancellationToken cancellationToken = default)
         {
             var shopId = options.Value.ShopId;
             var secretPhrase = options.Value.ShopSecretPhrase;
@@ -126,7 +127,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             });
 
 
-            Payment payment = await cashbillCaller.MakeFormRequest<Payment>(new Uri(mainUrl, $"payment/{shopId}").ToString(), "POST", requestContent);
+            Payment payment = await cashbillCaller.MakeFormRequest<Payment>(new Uri(mainUrl, $"payment/{shopId}").ToString(), "POST", requestContent, cancellationToken);
             returnUrl = new Uri($"{returnUrl}/{payment.Id}");
 
             // return url
@@ -137,17 +138,17 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
                 new KeyValuePair<string, string?>( "negativeReturnUrl", negativeReturnUrl ),
                 new KeyValuePair<string, string?>( "sign", signReturn )
             });
-            await cashbillCaller.MakeFormRequest(new Uri(mainUrl, $"payment/{shopId}/{payment.Id}").ToString(), "PUT", requestReturnBrowserContent);
+            await cashbillCaller.MakeFormRequest(new Uri(mainUrl, $"payment/{shopId}/{payment.Id}").ToString(), "PUT", requestReturnBrowserContent, cancellationToken);
 
             //status 
             var signStatus = Hash(payment.Id + secretPhrase);
-            var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{payment.Id}?sign={signStatus}").ToString(), "GET", null);
+            var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{payment.Id}?sign={signStatus}").ToString(), "GET", null, cancellationToken);
 
             status.PaymentProviderRedirectUrl = payment.RedirectUrl;
             return status;
         }
         /// <inheritdoc/>
-        public async Task<PaymentStatus> GetPaymentStatus(string paymentId)
+        public async Task<PaymentStatus> GetPaymentStatus(string paymentId, CancellationToken cancellationToken = default)
         {
             var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
             var shopId = options.Value.ShopId;
@@ -155,12 +156,12 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             var mainUrl = new Uri(options.Value.ServiceUrl);
 
             var signStatus = Hash(paymentId + secretPhrase);
-            var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{safePaymentId}?sign={signStatus}").ToString(), "GET", null);
+            var status = await cashbillCaller.MakeFormRequest<PaymentStatus>(new Uri(mainUrl, $"payment/{shopId}/{safePaymentId}?sign={signStatus}").ToString(), "GET", null, cancellationToken);
 
             return status;
         }
         /// <inheritdoc/>
-        public async Task<string> GetSignForNotificationService(TransactionStatusChanged transactionStatusChanged)
+        public async Task<string> GetSignForNotificationService(TransactionStatusChanged transactionStatusChanged, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {

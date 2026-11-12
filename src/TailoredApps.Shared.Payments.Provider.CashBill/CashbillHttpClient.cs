@@ -1,3 +1,4 @@
+using System.Threading;
 using System;
 using System.IO;
 using System.Net;
@@ -28,8 +29,10 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         }
 
         /// <inheritdoc/>
-        public async Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData)
+        public async Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData, CancellationToken cancellationToken = default)
         {
+            // The request itself is synchronous and cannot be interrupted; at least do not start it.
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 var newUrl = new Uri(url);
@@ -38,7 +41,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
                 if (method != "GET")
                 {
                     ArgumentNullException.ThrowIfNull(requestFormData);
-                    byte[] byteArray = Encoding.UTF8.GetBytes(await requestFormData.ReadAsStringAsync());
+                    byte[] byteArray = Encoding.UTF8.GetBytes(await requestFormData.ReadAsStringAsync(cancellationToken));
                     request22.ContentType = "application/x-www-form-urlencoded; charset=UTF8";
                     request22.ContentLength = byteArray.Length;
                     using (Stream dataStream = request22.GetRequestStream())
@@ -87,14 +90,15 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         }
 
         /// <inheritdoc/>
-        public async Task MakeFormRequest(string url, string method, FormUrlEncodedContent requestFormData)
+        public async Task MakeFormRequest(string url, string method, FormUrlEncodedContent requestFormData, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 var newUrl = new Uri(url);
                 WebRequest request22 = WebRequest.Create(newUrl.ToString());
                 request22.Method = method;
-                byte[] byteArray = Encoding.UTF8.GetBytes(await requestFormData.ReadAsStringAsync());
+                byte[] byteArray = Encoding.UTF8.GetBytes(await requestFormData.ReadAsStringAsync(cancellationToken));
                 request22.ContentType = "application/x-www-form-urlencoded; charset=UTF8";
                 request22.ContentLength = byteArray.Length;
                 using (Stream dataStream = request22.GetRequestStream())

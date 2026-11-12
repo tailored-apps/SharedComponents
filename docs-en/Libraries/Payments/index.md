@@ -111,7 +111,7 @@ public class PaymentWebhookController : ControllerBase
             Query = Request.Query.ToDictionary(q => q.Key, q => q.Value)
         };
 
-        var result = await _payments.HandleWebhookAsync(providerKey, request);
+        var result = await _payments.HandleWebhookAsync(providerKey, request, HttpContext.RequestAborted);
 
         return result switch
         {
@@ -145,8 +145,8 @@ foreach (var provider in providers)
 
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
-| `IPaymentService` | Interfejs | Fasada: `GetProviders`, `GetChannels`, `RegisterPayment`, `GetStatus`, `HandleWebhookAsync` |
-| `IPaymentProvider` | Interfejs | Kontrakt providera: `Key`, `Name`, `GetPaymentChannels`, `RequestPayment`, `GetStatus`, `TransactionStatusChange` |
+| `IPaymentService` | Interface | Facade: `GetProviders`, `GetChannels`, `RegisterPayment`, `GetStatus`, `HandleWebhookAsync`. Every method takes an optional `CancellationToken` |
+| `IPaymentProvider` | Interface | Provider contract: `Key`, `Name`, `GetPaymentChannels`, `RequestPayment`, `GetStatus`, `TransactionStatusChange`. Every asynchronous method takes an optional `CancellationToken` |
 | `IWebhookPaymentProvider` | Interfejs | Rozszerzenie: `HandleWebhookAsync(PaymentWebhookRequest)` |
 | `IPaymentOptionsBuilder` | Interfejs | Fluent builder: `RegisterPaymentProvider<T>()` |
 
@@ -247,4 +247,6 @@ var response = result switch
 - In custom providers compare signatures with WebhookSignature.FixedTimeEquals and pass URL identifiers through PaymentIdentifier.EnsureSafe
 - Do not echo the webhook ErrorMessage to the caller - log it server-side
 - De-duplicate events on PaymentUniqueId; the webhook consumer must be idempotent
+- Pass a CancellationToken (HttpContext.RequestAborted in a controller) to every IPaymentService call - it reaches the gateway HTTP calls
+- Custom provider: every asynchronous method takes CancellationToken cancellationToken = default and forwards it to HttpClient
 ```

@@ -1,3 +1,4 @@
+using System.Threading;
 using global::Stripe;
 using global::Stripe.Checkout;
 
@@ -9,10 +10,10 @@ namespace TailoredApps.Shared.Payments.Provider.Stripe;
 public interface IStripeServiceCaller
 {
     /// <summary>Tworzy Stripe Checkout Session i zwraca jej dane.</summary>
-    Task<Session> CreateCheckoutSessionAsync(Payments.PaymentRequest request);
+    Task<Session> CreateCheckoutSessionAsync(Payments.PaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Pobiera Checkout Session po ID (rozszerzony o PaymentIntent).</summary>
-    Task<Session> GetCheckoutSessionAsync(string sessionId);
+    Task<Session> GetCheckoutSessionAsync(string sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Weryfikuje podpis webhooka i zwraca sparsowane zdarzenie Stripe.

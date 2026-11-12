@@ -1,3 +1,4 @@
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -252,8 +253,8 @@ public class CashBillSignatureHardeningTests
     private static Mock<ICashbillServiceCaller> Caller(string expectedSign)
     {
         var mock = new Mock<ICashbillServiceCaller>();
-        mock.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>())).ReturnsAsync(expectedSign);
-        mock.Setup(c => c.GetPaymentStatus("TX_1")).ReturnsAsync(new PaymentStatus { Id = "TX_1", Status = "PositiveFinish" });
+        mock.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>(), It.IsAny<CancellationToken>())).ReturnsAsync(expectedSign);
+        mock.Setup(c => c.GetPaymentStatus("TX_1", It.IsAny<CancellationToken>())).ReturnsAsync(new PaymentStatus { Id = "TX_1", Status = "PositiveFinish" });
         return mock;
     }
 
@@ -302,7 +303,7 @@ public class CashBillSignatureHardeningTests
     public async Task When_Secret_Not_Configured_Should_Fail_Closed()
     {
         var mock = new Mock<ICashbillServiceCaller>();
-        mock.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>()))
+        mock.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("not configured"));
         var provider = new CashBillProvider(mock.Object);
 
@@ -310,7 +311,7 @@ public class CashBillSignatureHardeningTests
 
         Assert.False(result.Success);
         Assert.Equal("Signature verification is not configured.", result.ErrorMessage);
-        mock.Verify(c => c.GetPaymentStatus(It.IsAny<string>()), Times.Never);
+        mock.Verify(c => c.GetPaymentStatus(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -331,7 +332,7 @@ public class CashBillSignatureHardeningTests
 
         Assert.Equal(PaymentStatusEnum.Rejected, result.PaymentStatus);
         Assert.Equal("Invalid signature.", result.ResponseObject);
-        mock.Verify(c => c.GetPaymentStatus(It.IsAny<string>()), Times.Never);
+        mock.Verify(c => c.GetPaymentStatus(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -352,7 +353,7 @@ public class CashBillSignatureHardeningTests
             ServiceUrl = "https://pay.cashbill.pl/testws/rest/",
         }));
 
-        await Assert.ThrowsAsync<ArgumentException>(() => caller.GetPaymentStatus("../paymentchannels/shop"));
+        await Assert.ThrowsAsync<ArgumentException>(() => caller.GetPaymentStatus("../paymentchannels/shop", It.IsAny<CancellationToken>()));
     }
 }
 
@@ -432,7 +433,7 @@ public class WebhookResultCarriesPaymentIdTests
         const string body = "{\"sessionId\":\"sess_1\",\"amount\":100,\"currency\":\"PLN\",\"orderId\":5}";
         var mock = new Mock<IPrzelewy24ServiceCaller>();
         mock.Setup(m => m.VerifyNotification(body)).Returns(true);
-        mock.Setup(m => m.VerifyTransactionAsync("sess_1", 100, "PLN", 5)).ReturnsAsync(PaymentStatusEnum.Finished);
+        mock.Setup(m => m.VerifyTransactionAsync("sess_1", 100, "PLN", 5, It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Finished);
         var provider = new Przelewy24Provider(mock.Object, Options.Create(new Przelewy24ServiceOptions()));
         var result = await provider.HandleWebhookAsync(new PaymentWebhookRequest { Body = body });
         Assert.True(result.Success);

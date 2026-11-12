@@ -1,4 +1,5 @@
 #nullable enable
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -226,7 +227,7 @@ public class ProviderWebhookRejectionTests
         const string body = """{"sessionId":"s1","amount":100,"currency":"PLN","orderId":7}""";
         var caller = new Mock<IPrzelewy24ServiceCaller>();
         caller.Setup(c => c.VerifyNotification(body)).Returns(true);
-        caller.Setup(c => c.VerifyTransactionAsync("s1", 100, "PLN", 7)).ThrowsAsync(new InvalidOperationException("gateway down"));
+        caller.Setup(c => c.VerifyTransactionAsync("s1", 100, "PLN", 7, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("gateway down"));
 
         var result = await Przelewy24(caller).HandleWebhookAsync(Body(body));
 
@@ -255,7 +256,7 @@ public class ProviderWebhookRejectionTests
     public async Task When_CashBill_Signature_Does_Not_Match_Should_Reject_As_InvalidSignature()
     {
         var caller = new Mock<ICashbillServiceCaller>();
-        caller.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>())).ReturnsAsync("0123456789abcdef0123456789abcdef");
+        caller.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>(), It.IsAny<CancellationToken>())).ReturnsAsync("0123456789abcdef0123456789abcdef");
 
         var result = await new CashBillProvider(caller.Object).HandleWebhookAsync(CashBillRequest("TX-1", "ffffffffffffffffffffffffffffffff"));
 
@@ -266,7 +267,7 @@ public class ProviderWebhookRejectionTests
     public async Task When_CashBill_Secret_Is_Not_Configured_Should_Reject_As_NotConfigured()
     {
         var caller = new Mock<ICashbillServiceCaller>();
-        caller.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>())).ThrowsAsync(new InvalidOperationException("no secret"));
+        caller.Setup(c => c.GetSignForNotificationService(It.IsAny<TransactionStatusChanged>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("no secret"));
 
         var result = await new CashBillProvider(caller.Object).HandleWebhookAsync(CashBillRequest("TX-1", "abc"));
 
