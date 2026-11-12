@@ -1,12 +1,20 @@
 namespace TailoredApps.Shared.DateTime;
 
 /// <summary>
-/// A clock that can be replaced in tests. Superseded by <see cref="System.TimeProvider"/>, which is part of
-/// .NET: inject <see cref="System.TimeProvider"/> in new code and use this interface only for code that
-/// has not been moved yet. <see cref="DateTimeProvider"/> reads the same <see cref="System.TimeProvider"/>,
-/// so both can share one clock while a code base migrates.
+/// The current date and time as ready-to-use values, read from a clock that can be replaced in tests.
 /// </summary>
-[System.Obsolete(DateTimeProvider.ObsoleteMessage, DiagnosticId = DateTimeProvider.ObsoleteDiagnosticId)]
+/// <remarks>
+/// <para>
+/// This is a convenience view over <see cref="System.TimeProvider"/>, the clock abstraction of .NET:
+/// <see cref="DateTimeProvider"/> reads every value from one <see cref="System.TimeProvider"/>, so code that
+/// injects this interface and code that injects <see cref="System.TimeProvider"/> directly share one clock.
+/// </para>
+/// <para>
+/// Prefer the <see cref="System.DateTimeOffset"/> members (<see cref="OffsetUtcNow"/>, <see cref="OffsetNow"/>)
+/// for values that are stored or sent: they keep the offset from UTC, which a <see cref="System.DateTime"/>
+/// only hints at through its <see cref="System.DateTime.Kind"/>.
+/// </para>
+/// </remarks>
 public interface IDateTimeProvider
 {
     /// <summary>
@@ -20,6 +28,22 @@ public interface IDateTimeProvider
     System.DateTime UtcNow { get; }
 
     /// <summary>
+    /// Gets the current date and time in the local time zone of the clock, together with that zone's
+    /// offset from UTC.
+    /// </summary>
+    /// <remarks>
+    /// The default implementation derives the value from <see cref="Now"/> and the time zone of the machine;
+    /// <see cref="DateTimeProvider"/> reports the time zone of its <see cref="System.TimeProvider"/>.
+    /// </remarks>
+    System.DateTimeOffset OffsetNow => new(System.DateTime.SpecifyKind(Now, System.DateTimeKind.Local));
+
+    /// <summary>
+    /// Gets the current date and time in UTC as a <see cref="System.DateTimeOffset"/> with a zero offset.
+    /// </summary>
+    /// <remarks>The default implementation derives the value from <see cref="UtcNow"/>.</remarks>
+    System.DateTimeOffset OffsetUtcNow => new(System.DateTime.SpecifyKind(UtcNow, System.DateTimeKind.Utc));
+
+    /// <summary>
     /// Gets the time that has passed since midnight in the local time zone of the clock.
     /// </summary>
     System.TimeSpan TimeOfDay { get; }
@@ -27,10 +51,12 @@ public interface IDateTimeProvider
     /// <summary>
     /// Gets the time that has passed since midnight in UTC.
     /// </summary>
-    System.TimeSpan UtcTimeOfDay { get; }
+    /// <remarks>The default implementation derives the value from <see cref="UtcNow"/>.</remarks>
+    System.TimeSpan UtcTimeOfDay => UtcNow.TimeOfDay;
 
     /// <summary>
-    /// Gets the time that has passed since midnight in UTC. Misspelled name kept for source compatibility.
+    /// Gets the time that has passed since midnight in UTC. Misspelled name of <see cref="UtcTimeOfDay"/>,
+    /// kept so that existing code compiles.
     /// </summary>
     [System.Obsolete("Use UtcTimeOfDay.")]
     System.TimeSpan UtcTimeOfDaty => UtcTimeOfDay;

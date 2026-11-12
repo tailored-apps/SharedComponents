@@ -2,20 +2,11 @@ namespace TailoredApps.Shared.DateTime;
 
 /// <summary>
 /// <see cref="IDateTimeProvider"/> on top of a <see cref="System.TimeProvider"/>. With no argument it reads
-/// the system clock; given another provider (a fake one in a test, or the one registered in dependency
-/// injection) it reports that provider's time and local time zone.
+/// the system clock; given another provider (the one registered in dependency injection, or a fake one in
+/// a test) it reports that provider's time and local time zone.
 /// </summary>
-[System.Obsolete(ObsoleteMessage, DiagnosticId = ObsoleteDiagnosticId)]
 public class DateTimeProvider : IDateTimeProvider
 {
-    /// <summary>The diagnostic reported where <see cref="IDateTimeProvider"/> or <see cref="DateTimeProvider"/> is used.</summary>
-    public const string ObsoleteDiagnosticId = "TAS0001";
-
-    internal const string ObsoleteMessage =
-        "Use System.TimeProvider (TimeProvider.System in production, FakeTimeProvider in tests). IDateTimeProvider will be removed in 3.0.";
-
-    private readonly System.TimeProvider timeProvider;
-
     /// <summary>
     /// Initializes a new instance of <see cref="DateTimeProvider"/> that reads the system clock.
     /// </summary>
@@ -32,23 +23,43 @@ public class DateTimeProvider : IDateTimeProvider
     public DateTimeProvider(System.TimeProvider timeProvider)
     {
         System.ArgumentNullException.ThrowIfNull(timeProvider);
-        this.timeProvider = timeProvider;
+        TimeProvider = timeProvider;
     }
 
-    /// <inheritdoc/>
-    public System.DateTime Now => System.DateTime.SpecifyKind(timeProvider.GetLocalNow().DateTime, System.DateTimeKind.Local);
+    /// <summary>
+    /// Gets the clock every value is read from. Use it where a <see cref="System.TimeProvider"/> is asked
+    /// for, for example to create a timer or a delay that follows the same clock.
+    /// </summary>
+    public System.TimeProvider TimeProvider { get; }
 
     /// <inheritdoc/>
-    public System.DateTime UtcNow => timeProvider.GetUtcNow().UtcDateTime;
+    public System.DateTime Now => System.DateTime.SpecifyKind(TimeProvider.GetLocalNow().DateTime, System.DateTimeKind.Local);
 
     /// <inheritdoc/>
-    public System.TimeSpan TimeOfDay => timeProvider.GetLocalNow().TimeOfDay;
-
-    /// <inheritdoc/>
-    public System.TimeSpan UtcTimeOfDay => timeProvider.GetUtcNow().TimeOfDay;
+    public System.DateTime UtcNow => TimeProvider.GetUtcNow().UtcDateTime;
 
     /// <summary>
-    /// Gets the time that has passed since midnight in UTC. Misspelled name kept for source compatibility.
+    /// Gets the current date and time in the local time zone of <see cref="TimeProvider"/>, together with
+    /// that zone's offset from UTC.
+    /// </summary>
+    public System.DateTimeOffset OffsetNow => TimeProvider.GetLocalNow();
+
+    /// <summary>
+    /// Gets the current date and time in UTC as a <see cref="System.DateTimeOffset"/> with a zero offset.
+    /// </summary>
+    public System.DateTimeOffset OffsetUtcNow => TimeProvider.GetUtcNow();
+
+    /// <inheritdoc/>
+    public System.TimeSpan TimeOfDay => TimeProvider.GetLocalNow().TimeOfDay;
+
+    /// <summary>
+    /// Gets the time that has passed since midnight in UTC.
+    /// </summary>
+    public System.TimeSpan UtcTimeOfDay => TimeProvider.GetUtcNow().TimeOfDay;
+
+    /// <summary>
+    /// Gets the time that has passed since midnight in UTC. Misspelled name of <see cref="UtcTimeOfDay"/>,
+    /// kept so that existing code compiles.
     /// </summary>
     [System.Obsolete("Use UtcTimeOfDay.")]
     public System.TimeSpan UtcTimeOfDaty => UtcTimeOfDay;

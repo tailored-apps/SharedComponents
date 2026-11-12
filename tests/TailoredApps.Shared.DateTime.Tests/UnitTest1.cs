@@ -1,6 +1,3 @@
-// The types under test are obsolete on purpose: they stay until 3.0 for code that has not moved to TimeProvider.
-#pragma warning disable TAS0001
-
 using System;
 using Xunit;
 
