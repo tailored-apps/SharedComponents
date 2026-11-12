@@ -45,6 +45,43 @@ pwsh ./scripts/New-BumpDocs.ps1 -RecordsPath ./bump-records.json
 
 <!-- BUMP-LOG:START -->
 
+## 2026-11-09
+
+Updated **1** package reference across **1** project.
+
+Source: [workflow run](https://github.com/tailored-apps/SharedComponents/actions/runs/42645265699).
+
+**`src/TailoredApps.Shared.Email.Office365/TailoredApps.Shared.Email.Office365.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `Microsoft.Identity.Web` | `4.16.1` | `4.18.0` | `MIT` |
+
+## 2026-10-26
+
+Updated **4** package references across **3** projects.
+
+Source: [workflow run](https://github.com/tailored-apps/SharedComponents/actions/runs/40322620364).
+
+**`src/TailoredApps.Shared.Email.Office365/TailoredApps.Shared.Email.Office365.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `MailKit` | `4.18.1` | `4.18.2` | `MIT` |
+| `MimeKit` | `4.18.1` | `4.18.2` | `MIT` |
+
+**`src/TailoredApps.Shared.MediatR.ML/TailoredApps.Shared.MediatR.ML.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `Microsoft.Bcl.Memory` | `10.0.13` | `10.0.14` | `MIT` |
+
+**`tests/TailoredApps.Shared.Email.Tests/TailoredApps.Shared.Email.Tests.csproj`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `MimeKit` | `4.18.1` | `4.18.2` | `MIT` |
+
 ## 2026-10-19
 
 Updated **7** package references across **2** projects.

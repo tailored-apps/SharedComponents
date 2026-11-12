@@ -16,6 +16,8 @@ Dziękujemy za zainteresowanie współtworzeniem **TailoredApps Shared Component
 
 ## Środowisko lokalne
 
+Wymagany jest **.NET SDK 11.0.100 lub nowszy** — buduje wszystkie platformy docelowe (`net8.0`–`net11.0`). Testy uruchamiają się na `net10.0` i `net11.0`, więc potrzebne są oba runtime'y. Konwencje dotyczące platform docelowych i runtime async opisuje strona [Platformy docelowe i runtime async](Platform/index.md).
+
 ```bash
 git clone https://github.com/tailored-apps/SharedComponents.git
 cd SharedComponents
