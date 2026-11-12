@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -26,22 +27,30 @@ namespace TailoredApps.Shared.MediatR.Interfaces.Caching
     public interface ICachePolicy<TRequest, TResponse> where TRequest : IRequest<TResponse>
     {
         /// <summary>
-        /// Gets the absolute expiration date and time for the cache entry.
-        /// Defaults to <c>null</c> (no absolute expiration).
+        /// Gets the moment at which the cache entry expires. Used only when
+        /// <see cref="AbsoluteExpirationRelativeToNow"/> is <c>null</c>; a moment in the past means the
+        /// response is not cached at all. Defaults to <c>null</c>.
         /// </summary>
         DateTime? AbsoluteExpiration => null;
 
         /// <summary>
-        /// Gets the absolute expiration time relative to now.
-        /// Defaults to <c>5 minutes</c>.
+        /// Gets how long the cache entry lives, counted from the moment it is stored. Takes precedence over
+        /// <see cref="AbsoluteExpiration"/>. Defaults to <c>5 minutes</c>; when both are <c>null</c> the
+        /// default of the registered <c>HybridCache</c> applies.
         /// </summary>
         TimeSpan? AbsoluteExpirationRelativeToNow => TimeSpan.FromMinutes(5);
 
         /// <summary>
-        /// Gets the sliding expiration window. The cache entry expires if it has not been
-        /// accessed within this time span. Defaults to <c>30 seconds</c>.
+        /// Gets how long the in-process copy of the entry may be served before the distributed cache is
+        /// consulted again. Defaults to <c>null</c>: the same lifetime as the entry itself.
         /// </summary>
-        TimeSpan? SlidingExpiration => TimeSpan.FromSeconds(30);
+        TimeSpan? LocalCacheExpiration => null;
+
+        /// <summary>
+        /// Gets the tags attached to the cache entry, so that related entries can be invalidated together
+        /// with <c>HybridCache.RemoveByTagAsync</c>. Defaults to <c>null</c> (no tags).
+        /// </summary>
+        IReadOnlyCollection<string>? Tags => null;
 
         /// <summary>
         /// Generates a cache key from the fully-qualified request type name and a SHA-256 hash of

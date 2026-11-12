@@ -78,7 +78,7 @@ With the switch off, the `net11.0` asset is compiled like the others — with st
 From version **2.0** every library is compiled with nullable reference types enabled, so the public API tells the compiler which values may be `null`:
 
 - Members that were never guaranteed to hold a value are now declared nullable — for example `PaymentRequest.Currency`, `PaymentResponse.RedirectUrl`, `MailMessage.Body` or the optional properties of the option classes. If your project has `<Nullable>enable</Nullable>`, the compiler now warns where such a value is used without a check.
-- `ICache.GetAsync<T>` returns `T?`: a cache miss is `default(T)`.
+- Parameters that always accepted `null` are declared that way — for example the attachments of `IEmailProvider.SendMail`.
 - Nothing changes at run time for code that already worked. The only differences are on paths that used to end in a `NullReferenceException`, which now fail with a descriptive exception — for instance a payment request without a currency throws `ArgumentException`, and auditing an entity without a primary key throws `InvalidOperationException`.
 
 In the repository itself nullable warnings are build errors for everything under `src/` (`src/Directory.Build.props`), so the annotations cannot drift from the code.

@@ -21,7 +21,8 @@ namespace TailoredApps.Shared.MediatR.Tests
             // act & assert
             Assert.Null(policy.AbsoluteExpiration);
             Assert.Equal(TimeSpan.FromMinutes(5), policy.AbsoluteExpirationRelativeToNow);
-            Assert.Equal(TimeSpan.FromSeconds(30), policy.SlidingExpiration);
+            Assert.Null(policy.LocalCacheExpiration);
+            Assert.Null(policy.Tags);
         }
 
         [Fact]

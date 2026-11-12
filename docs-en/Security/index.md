@@ -132,8 +132,9 @@ the fixes that shipped with it, and the items that still need a human decision.
 - Transport failures (5xx, timeouts) are still reported as `PaymentStatusEnum.Rejected` by several
   providers; add an `Unknown` outcome so outages are never mistaken for refusals.
 - `CachingBehavior` no longer returns `default` for a cache miss on a value-type response (fixed in
-  1.5.1: a default value is treated as a miss and the handler runs). A cached default value still cannot
-  be told apart from a miss; change `ICache.GetAsync` to return a found flag.
+  1.5.1: a default value is treated as a miss and the handler runs). In 2.0 the problem is gone:
+  `CachingBehavior` uses `HybridCache`, which tells a miss from a cached default value and protects
+  against the handler running concurrently for the same key.
 - Amount conversion to minor units truncates and assumes two decimals; add a shared ISO-4217 helper.
 - PayU order creation shares one pooled handler that does not follow redirects (fixed in 1.5.1; it
   used to create a handler per order). It still bypasses the named client. OAuth tokens (PayU, Tpay)
