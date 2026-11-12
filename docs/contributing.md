@@ -76,6 +76,15 @@ Każda strona `docs/Libraries/<NazwaBiblioteki>/index.md` musi zawierać:
 
 Po dodaniu strony biblioteki zaktualizuj sekcję `nav:` w `mkdocs.yml` oraz tabelę bibliotek na `docs/index.md`.
 
+### Dwa języki i README pakietu
+
+- Serwis ma dwa drzewa: `docs/` (polskie) i `docs-en/` (angielskie). Każda strona istnieje w obu, pod tą samą ścieżką względną, i jest zarejestrowana
+  w `mkdocs.yml` oraz `mkdocs-en.yml`; tabela bibliotek jest na `docs/index.md` i `docs-en/index.md`. Zmiana w bibliotece aktualizuje obie wersje.
+- Każda biblioteka ma `README.md` obok swojego csproj: czym jest pakiet, instalacja, rejestracja, przykład użycia, konfiguracja i link do strony
+  w tym serwisie. Plik jest pakowany do paczki NuGet automatycznie (`src/Directory.Build.props`) i to on jest widoczny na nuget.org — do csproj
+  nie trzeba nic dodawać.
+- Przykłady kodu muszą kompilować się z aktualnym kodem: nazwy typów, metod i kluczy konfiguracji sprawdzaj w źródłach, nie z pamięci.
+
 ### Szablon strony biblioteki
 
 ```markdown
