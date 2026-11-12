@@ -95,7 +95,7 @@ public class HotPayServiceCaller : IHotPayServiceCaller
     {
         var data = $"{options.SecretHash};{kwota};{idPlatnosci};{status}";
         var computed = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))).ToLowerInvariant();
-        return string.Equals(computed, hash, StringComparison.OrdinalIgnoreCase);
+        return SignatureComparer.FixedTimeEquals(computed, hash, ignoreCase: true);
     }
 }
 

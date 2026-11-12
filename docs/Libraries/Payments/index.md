@@ -162,6 +162,14 @@ foreach (var provider in providers)
 | `PaymentWebhookRequest` | Klasa | Dane HTTP żądania webhook: `Body`, `Headers`, `QueryParams` |
 | `PaymentWebhookResult` | Enum | `Success`, `Ignored`, `Fail` |
 
+### Security
+
+| Typ | Rodzaj | Opis |
+|-----|--------|------|
+| `SignatureComparer` | Klasa statyczna | `FixedTimeEquals(expected, actual, ignoreCase)` — porównanie podpisu w stałym czasie; brak lub pusta wartość nigdy nie jest zgodnością |
+
+Wszystkie wbudowane providery weryfikują podpisy powiadomień przez `SignatureComparer`. Zwykłe porównanie stringów kończy się na pierwszym różnym znaku, więc czas odpowiedzi zdradza, jak duża część podrobionego podpisu była poprawna. Komunikat błędu nieudanej weryfikacji nie zawiera oczekiwanego podpisu.
+
 ### DI Registration
 
 | Metoda | Opis |
@@ -220,4 +228,6 @@ var result = await _payments.HandleWebhookAsync(providerKey, new PaymentWebhookR
 - Zawsze sprawdź PaymentWebhookResult — Ignored to OK, Fail to błąd podpisu/konfiguracji
 - Kwota Amount w walucie bazowej (nie w groszach — chyba że provider wymaga inaczej)
 - Dla webhooków wymagany jest endpoint HTTP POST z raw body
+- Własny provider: podpisy (HMAC, hash, CRC) porównuj wyłącznie przez SignatureComparer.FixedTimeEquals — nigdy przez == ani string.Equals
+- Nigdy nie umieszczaj oczekiwanego podpisu ani sekretu w ErrorMessage, logach ani odpowiedzi HTTP
 ```

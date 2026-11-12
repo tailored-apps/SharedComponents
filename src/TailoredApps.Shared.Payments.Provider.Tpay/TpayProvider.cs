@@ -193,7 +193,7 @@ public class TpayServiceCaller : ITpayServiceCaller
         var input = body + options.SecurityCode;
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         var computed = Convert.ToHexString(hash).ToLowerInvariant();
-        return string.Equals(computed, signature, StringComparison.OrdinalIgnoreCase);
+        return SignatureComparer.FixedTimeEquals(computed, signature, ignoreCase: true);
     }
 }
 

@@ -115,7 +115,7 @@ public class RevolutServiceCaller : IRevolutServiceCaller
         var dataBytes = Encoding.UTF8.GetBytes(signedPayload);
         var computed = Convert.ToHexString(HMACSHA256.HashData(keyBytes, dataBytes)).ToLowerInvariant();
         var receivedHex = signature.StartsWith("v1=") ? signature.Substring(3) : signature;
-        return string.Equals(computed, receivedHex, StringComparison.OrdinalIgnoreCase);
+        return SignatureComparer.FixedTimeEquals(computed, receivedHex, ignoreCase: true);
     }
 }
 

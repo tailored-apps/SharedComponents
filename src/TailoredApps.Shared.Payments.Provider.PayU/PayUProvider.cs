@@ -123,6 +123,17 @@ public interface IPayUServiceCaller
 /// <summary>Implementacja <see cref="IPayUServiceCaller"/>.</summary>
 public class PayUServiceCaller : IPayUServiceCaller
 {
+    // Order creation has to see PayU's 302 response instead of following it, so it cannot go through the
+    // redirect-following "PayU" client. A single shared handler keeps the connections pooled: creating a
+    // handler per order opens a new connection every time and exhausts sockets under load. Cookies are
+    // switched off so that nothing received for one order is ever sent along with another.
+    private static readonly SocketsHttpHandler NoRedirectHandler = new()
+    {
+        AllowAutoRedirect = false,
+        UseCookies = false,
+        PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+    };
+
     private readonly PayUServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
 
@@ -151,8 +162,7 @@ public class PayUServiceCaller : IPayUServiceCaller
     /// <inheritdoc/>
     public async Task<(string? orderId, string? redirectUri, string? error)> CreateOrderAsync(string token, PaymentRequest request)
     {
-        var handler = new HttpClientHandler { AllowAutoRedirect = false };
-        using var client = new HttpClient(handler);
+        using var client = new HttpClient(NoRedirectHandler, disposeHandler: false);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var amount = ((long)(request.Amount * 100)).ToString();
@@ -228,7 +238,7 @@ public class PayUServiceCaller : IPayUServiceCaller
         else
             computed = Convert.ToHexString(MD5.HashData(Encoding.UTF8.GetBytes(data))).ToLowerInvariant();
 
-        return string.Equals(computed, receivedSig, StringComparison.OrdinalIgnoreCase);
+        return SignatureComparer.FixedTimeEquals(computed, receivedSig, ignoreCase: true);
     }
 }
 

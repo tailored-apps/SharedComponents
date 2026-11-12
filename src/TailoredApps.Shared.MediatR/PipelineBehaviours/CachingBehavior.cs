@@ -53,7 +53,9 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
             }
             var cacheKey = cachePolicy.GetCacheKey(request);
             var cachedResponse = await _cache.GetAsync<TResponse>(cacheKey, cancellationToken);
-            if (cachedResponse != null)
+            // ICache reports a miss as default(TResponse). For value types that is never null, so a
+            // null check alone would treat every miss as a hit and skip the handler.
+            if (!EqualityComparer<TResponse>.Default.Equals(cachedResponse, default))
             {
                 _logger.LogDebug($"Response retrieved {typeof(TRequest).FullName} from cache. CacheKey: {cacheKey}");
                 return cachedResponse;

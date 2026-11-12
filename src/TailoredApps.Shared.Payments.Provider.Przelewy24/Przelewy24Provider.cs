@@ -204,7 +204,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
                 crc = options.CrcKey,
             });
             var expected = Convert.ToHexString(SHA384.HashData(System.Text.Encoding.UTF8.GetBytes(json))).ToLowerInvariant();
-            return string.Equals(expected, receivedSign, StringComparison.OrdinalIgnoreCase);
+            return SignatureComparer.FixedTimeEquals(expected, receivedSign, ignoreCase: true);
         }
         catch { return false; }
     }

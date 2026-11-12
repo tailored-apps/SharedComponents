@@ -101,5 +101,65 @@ namespace TailoredApps.Shared.MediatR.Tests
                 c => c.SetAsync("cache-key-3", "fresh-response", TimeSpan.FromSeconds(42), absoluteExpiration, TimeSpan.FromMinutes(7), CancellationToken.None),
                 Times.Once);
         }
+
+        [Fact]
+        public async Task When_Cache_Misses_For_Value_Type_Response_Should_Invoke_Next_And_Store_Response()
+        {
+            // arrange: ICache reports a miss as default(T), which for a value type is not null
+            var request = new CachedCountRequest { Id = 5 };
+            var policyMock = new Mock<ICachePolicy<CachedCountRequest, int>>();
+            policyMock.Setup(p => p.GetCacheKey(request)).Returns("count-key-5");
+            var cacheMock = new Mock<ICache>();
+            cacheMock.Setup(c => c.GetAsync<int>("count-key-5", It.IsAny<CancellationToken>())).ReturnsAsync(default(int));
+            var sut = new CachingBehavior<CachedCountRequest, int>(
+                cacheMock.Object, NullLogger<CachingBehavior<CachedCountRequest, int>>.Instance, new[] { policyMock.Object });
+            var nextCalls = 0;
+            RequestHandlerDelegate<int> next = (ct) =>
+            {
+                nextCalls++;
+                return Task.FromResult(42);
+            };
+
+            // act
+            var response = await sut.Handle(request, next, CancellationToken.None);
+
+            // assert
+            Assert.Equal(42, response);
+            Assert.Equal(1, nextCalls);
+            cacheMock.Verify(
+                c => c.SetAsync("count-key-5", 42, It.IsAny<TimeSpan?>(), It.IsAny<DateTime?>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task When_Cached_Value_Type_Response_Exists_Should_Return_It_Without_Invoking_Next()
+        {
+            // arrange
+            var request = new CachedCountRequest { Id = 6 };
+            var policyMock = new Mock<ICachePolicy<CachedCountRequest, int>>();
+            policyMock.Setup(p => p.GetCacheKey(request)).Returns("count-key-6");
+            var cacheMock = new Mock<ICache>();
+            cacheMock.Setup(c => c.GetAsync<int>("count-key-6", It.IsAny<CancellationToken>())).ReturnsAsync(17);
+            var sut = new CachingBehavior<CachedCountRequest, int>(
+                cacheMock.Object, NullLogger<CachingBehavior<CachedCountRequest, int>>.Instance, new[] { policyMock.Object });
+            var nextCalls = 0;
+            RequestHandlerDelegate<int> next = (ct) =>
+            {
+                nextCalls++;
+                return Task.FromResult(42);
+            };
+
+            // act
+            var response = await sut.Handle(request, next, CancellationToken.None);
+
+            // assert
+            Assert.Equal(17, response);
+            Assert.Equal(0, nextCalls);
+        }
+
+        public class CachedCountRequest : IRequest<int>
+        {
+            public int Id { get; set; }
+        }
     }
 }

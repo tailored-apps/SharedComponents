@@ -143,7 +143,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         var keyBytes = Encoding.UTF8.GetBytes(options.SignatureKey);
         var dataBytes = Encoding.UTF8.GetBytes(body);
         var computed = Convert.ToBase64String(HMACSHA256.HashData(keyBytes, dataBytes));
-        return string.Equals(computed, signature, StringComparison.Ordinal);
+        return SignatureComparer.FixedTimeEquals(computed, signature);
     }
 }
 

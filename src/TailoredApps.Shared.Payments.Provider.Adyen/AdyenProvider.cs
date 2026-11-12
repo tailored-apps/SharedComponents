@@ -179,7 +179,7 @@ public class AdyenServiceCaller : IAdyenServiceCaller
             var keyBytes = Convert.FromHexString(options.NotificationHmacKey);
             var dataBytes = Encoding.UTF8.GetBytes(payload);
             var computed = Convert.ToBase64String(HMACSHA256.HashData(keyBytes, dataBytes));
-            return string.Equals(computed, hmacSignature, StringComparison.Ordinal);
+            return SignatureComparer.FixedTimeEquals(computed, hmacSignature);
         }
         catch { return false; }
     }

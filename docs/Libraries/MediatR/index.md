@@ -171,4 +171,5 @@ public class MyCachePolicy : ICachePolicy<MyQuery, MyResponse>
 - Aby cache działał, zaimplementuj ICachePolicy<TRequest, TResponse> i zarejestruj (auto-discovery)
 - LoggingBehavior loguje na poziomie DEBUG — włącz odpowiedni log level
 - Każdy request ma unikalne correlation ID w logach
+- Cache a typy wartościowe: ICache zgłasza brak wpisu jako default(TResponse), więc zapisana odpowiedź równa default (0, false, default struktury) jest traktowana jak brak wpisu i handler wykona się ponownie — dla takich odpowiedzi użyj typu referencyjnego lub Nullable<T>
 ```
