@@ -83,7 +83,15 @@ public class PaymentRequest
     /// <summary>Gets or sets the ISO 3166-1 alpha-2 country code of the payer's address.</summary>
     public string? Country { get; set; }
 
-    /// <summary>Gets or sets any additional provider-specific data associated with the payment.</summary>
+    /// <summary>
+    /// Gets or sets your own reference for this payment, for example an order number.
+    /// </summary>
+    /// <remarks>
+    /// Providers pass it to the gateway as the merchant reference. Tpay and Adyen do not repeat the identifier
+    /// returned by <see cref="IPaymentProvider.RequestPayment"/> in their notifications: for them this value is
+    /// what comes back as <see cref="PaymentResponse.PaymentUniqueId"/> of a webhook result, so set it whenever
+    /// a webhook has to be matched with an order.
+    /// </remarks>
     public string? AdditionalData { get; set; }
 
     /// <summary>Gets or sets the referrer URL or identifier associated with this payment request.</summary>

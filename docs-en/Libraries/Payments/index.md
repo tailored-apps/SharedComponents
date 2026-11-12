@@ -5,6 +5,9 @@
 
 ---
 
+!!! tip "Upgrading from 1.x?"
+    The changes required in application code are collected on the [Upgrading to 2.0](../../Migration/v2.md) page.
+
 ## Description
 
 This library provides a unified abstraction for payment gateway integration in .NET applications. Instead of writing separate logic for each payment operator, you program against the common `IPaymentService` interface, which automatically routes requests to the correct provider based on its key (`"Stripe"`, `"PayU"`, `"CashBill"`, etc.).
@@ -80,10 +83,17 @@ public class CheckoutService
         return response.RedirectUrl;
     }
 
-    public async Task<PaymentStatusEnum> CheckStatusAsync(string providerId, string paymentId)
+    public async Task<PaymentStatusEnum?> CheckStatusAsync(string providerId, string paymentId)
     {
-        var response = await _payments.GetStatus(providerId, paymentId);
-        return response.PaymentStatus;
+        try
+        {
+            var response = await _payments.GetStatus(providerId, paymentId);
+            return response.PaymentStatus;
+        }
+        catch (HttpRequestException)   // a failing gateway (covers PaymentGatewayException)
+        {
+            return null;               // unknown state: leave the order alone, check again later
+        }
     }
 }
 ```
@@ -280,8 +290,15 @@ string redirectUrl = response.RedirectUrl;  // → przeglądarka
 
 ### Sprawdzanie statusu
 ```csharp
-var status = await _payments.GetStatus("Stripe", paymentId);
-// status.PaymentStatus: Created/Processing/Finished/Rejected
+try
+{
+    var status = await _payments.GetStatus("Stripe", paymentId);
+    // status.PaymentStatus: Created/Processing/Finished/Rejected
+}
+catch (HttpRequestException)
+{
+    // a failing gateway: the state of the payment is not known - leave the order alone, check again later
+}
 ```
 
 ### Obsługa webhooków

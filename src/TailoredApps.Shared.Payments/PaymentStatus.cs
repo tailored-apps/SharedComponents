@@ -15,6 +15,10 @@ public enum PaymentStatusEnum
     /// <summary>The payment was completed successfully.</summary>
     Finished,
 
-    /// <summary>The payment was rejected, cancelled, or failed.</summary>
+    /// <summary>
+    /// The payment was rejected, cancelled, or failed - as reported by the gateway. A gateway that is failing
+    /// or cannot be reached is never reported with this value: providers throw
+    /// <see cref="PaymentGatewayException"/> instead.
+    /// </summary>
     Rejected
 }

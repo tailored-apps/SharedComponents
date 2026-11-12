@@ -5,6 +5,9 @@
 
 ---
 
+!!! tip "Aktualizujesz z 1.x?"
+    Zmiany wymagane w kodzie aplikacji są zebrane na stronie [Aktualizacja do 2.0](../../Migration/v2.md).
+
 ## Opis
 
 Biblioteka dostarcza zunifikowaną abstrakcję do integracji z bramkami płatności w aplikacjach .NET. Zamiast pisać osobną logikę dla każdego operatora płatności, programujesz do wspólnego interfejsu `IPaymentService`, który automatycznie kieruje żądania do właściwego providera na podstawie klucza (`"Stripe"`, `"PayU"`, `"CashBill"` itd.).
@@ -80,10 +83,17 @@ public class CheckoutService
         return response.RedirectUrl;
     }
 
-    public async Task<PaymentStatusEnum> CheckStatusAsync(string providerId, string paymentId)
+    public async Task<PaymentStatusEnum?> CheckStatusAsync(string providerId, string paymentId)
     {
-        var response = await _payments.GetStatus(providerId, paymentId);
-        return response.PaymentStatus;
+        try
+        {
+            var response = await _payments.GetStatus(providerId, paymentId);
+            return response.PaymentStatus;
+        }
+        catch (HttpRequestException)   // awaria bramki (obejmuje PaymentGatewayException)
+        {
+            return null;               // stan nieznany: nie zmieniaj zamówienia, sprawdź później
+        }
     }
 }
 ```
@@ -280,8 +290,15 @@ string redirectUrl = response.RedirectUrl;  // → przeglądarka
 
 ### Sprawdzanie statusu
 ```csharp
-var status = await _payments.GetStatus("Stripe", paymentId);
-// status.PaymentStatus: Created/Processing/Finished/Rejected
+try
+{
+    var status = await _payments.GetStatus("Stripe", paymentId);
+    // status.PaymentStatus: Created/Processing/Finished/Rejected
+}
+catch (HttpRequestException)
+{
+    // awaria bramki: stan płatności nieznany — nie zmieniaj zamówienia, sprawdź później
+}
 ```
 
 ### Obsługa webhooków

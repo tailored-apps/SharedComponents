@@ -51,6 +51,7 @@ nav:
               - Tpay: Libraries/Payments/Providers/Tpay.md
       - Querying: Libraries/Querying/index.md
       - WebApi: Libraries/WebApi/index.md
+  - Upgrading to 2.0: Migration/v2.md
   - Target frameworks: Platform/index.md
   - Dependencies: Dependencies/index.md
   - Security: Security/index.md
