@@ -5,16 +5,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Polly;
 using TailoredApps.Shared.MediatR.Interfaces.Handlers;
 
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours
 {
     /// <summary>
-    /// MediatR pipeline behavior that implements a fallback strategy. When the primary handler throws
-    /// an exception, the registered <see cref="IFallbackHandler{TRequest, TResponse}"/> is invoked
-    /// to provide an alternative response.
+    /// MediatR pipeline behavior that answers a request from an
+    /// <see cref="IFallbackHandler{TRequest,TResponse}"/> when the rest of the pipeline throws.
+    /// A request without a registered fallback handler passes through unchanged.
     /// </summary>
+    /// <remarks>
+    /// A request cancelled by its caller is not sent to the fallback: the cancellation propagates.
+    /// </remarks>
     /// <typeparam name="TRequest">The type of the MediatR request.</typeparam>
     /// <typeparam name="TResponse">The type of the response.</typeparam>
     public class FallbackBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
@@ -26,35 +28,44 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
         /// <summary>
         /// Initializes a new instance of <see cref="FallbackBehavior{TRequest, TResponse}"/>.
         /// </summary>
-        /// <param name="fallbackHandlers">The collection of fallback handlers registered for this request/response pair.</param>
-        /// <param name="logger">The logger instance used for diagnostic output.</param>
+        /// <param name="fallbackHandlers">The fallback handlers registered for the request/response pair.</param>
+        /// <param name="logger">The logger instance for diagnostic output.</param>
         public FallbackBehavior(IEnumerable<IFallbackHandler<TRequest, TResponse>> fallbackHandlers, ILogger<FallbackBehavior<TRequest, TResponse>> logger)
         {
             _fallbackHandlers = fallbackHandlers;
             _logger = logger;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Executes the next pipeline step and, if it throws, returns the fallback handler's response instead.
+        /// </summary>
+        /// <param name="request">The incoming MediatR request.</param>
+        /// <param name="next">The next handler delegate in the pipeline.</param>
+        /// <param name="cancellationToken">Token used to cancel the operation.</param>
+        /// <returns>The response of the pipeline, or of the fallback handler when the pipeline failed.</returns>
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             var fallbackHandler = _fallbackHandlers.FirstOrDefault();
             if (fallbackHandler == null)
             {
+                // No fallback handler found, continue through pipeline
                 return await next();
             }
 
-            var fallbackPolicy = Policy<TResponse>
-                .Handle<Exception>()
-                .FallbackAsync(async (cancellationToken) =>
-                {
-                    _logger.LogDebug($"Initial handler failed. Falling back to `{fallbackHandler.GetType().FullName}@HandleFallback`");
-                    return await fallbackHandler.HandleFallback(request, cancellationToken)
-                        .ConfigureAwait(false);
-                });
+            try
+            {
+                return await next();
+            }
+            catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    exception,
+                    "Handler for {RequestType} failed. Falling back to {FallbackHandler}.",
+                    typeof(TRequest).FullName,
+                    fallbackHandler.GetType().FullName);
 
-            var response = await fallbackPolicy.ExecuteAsync(async () => await next());
-
-            return response;
+                return await fallbackHandler.HandleFallback(request, cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 }

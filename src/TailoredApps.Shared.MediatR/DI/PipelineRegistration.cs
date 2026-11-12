@@ -31,6 +31,10 @@ namespace TailoredApps.Shared.MediatR.DI
         /// <inheritdoc/>
         public void RegisterPipelineBehaviors()
         {
+            // CachingBehavior stores responses in HybridCache: an in-process cache that also uses a
+            // registered IDistributedCache. Nothing is replaced if the host has already added one.
+            serviceCollection.AddHybridCache();
+
             // Register MediatR Pipeline Behaviors
             serviceCollection.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
             serviceCollection.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));

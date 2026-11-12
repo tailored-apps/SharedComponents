@@ -132,8 +132,8 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
   `PaymentStatusEnum.Rejected`; dodaj wynik `Unknown`, by awaria nie była mylona z odmową.
 - `CachingBehavior` nie zwraca już `default` przy braku wpisu dla odpowiedzi typu wartościowego
   (poprawione w 1.5.1: wartość domyślna jest traktowana jak brak wpisu i handler się wykonuje).
-  Zapisanej wartości domyślnej nadal nie da się odróżnić od braku wpisu; zmień `ICache.GetAsync` tak,
-  by zwracał flagę znalezienia.
+  W 2.0 problem znika: `CachingBehavior` korzysta z `HybridCache`, który odróżnia brak wpisu od
+  zapisanej wartości domyślnej i chroni przed równoległym wykonaniem handlera dla tego samego klucza.
 - Konwersja kwot na jednostki mniejsze obcina i zakłada dwa miejsca dziesiętne; dodaj wspólny helper ISO-4217.
 - Tworzenie zamówienia PayU współdzieli jeden handler z pulą połączeń, który nie podąża za
   przekierowaniami (poprawione w 1.5.1; wcześniej handler powstawał per zamówienie). Nadal omija

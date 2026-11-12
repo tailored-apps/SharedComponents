@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using MediatR;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -43,12 +44,25 @@ namespace TailoredApps.Shared.MediatR.Tests
         }
 
         [Fact]
+        public void Should_Register_The_Hybrid_Cache_That_CachingBehavior_Needs()
+        {
+            // arrange
+            var services = new ServiceCollection();
+
+            // act
+            new PipelineRegistration(services).RegisterPipelineBehaviors();
+            using var provider = services.BuildServiceProvider();
+
+            // assert
+            Assert.NotNull(provider.GetService<HybridCache>());
+        }
+
+        [Fact]
         public void Should_Resolve_All_Behaviors_For_A_Request_In_Registration_Order()
         {
             // arrange
             var services = new ServiceCollection();
             services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
-            services.AddSingleton<ICache>(Mock.Of<ICache>());
             new PipelineRegistration(services).RegisterPipelineBehaviors();
 
             // act

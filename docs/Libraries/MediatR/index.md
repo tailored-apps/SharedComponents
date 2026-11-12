@@ -41,6 +41,15 @@ pipeline.RegisterPipelineBehaviors();
 pipeline.RegisterPipelineBehaviors(typeof(Program).Assembly);
 ```
 
+`RegisterPipelineBehaviors()` rejestruje też `HybridCache`, w którym `CachingBehavior` przechowuje odpowiedzi. Sam z siebie to cache w pamięci procesu; gdy w kontenerze jest `IDistributedCache` (np. Redis), `HybridCache` używa go automatycznie jako poziomu współdzielonego między instancjami:
+
+```csharp
+builder.Services.AddStackExchangeRedisCache(options => options.Configuration = "localhost:6379");
+```
+
+!!! info "Zmiany w 2.0"
+    `CachingBehavior` korzysta z `HybridCache`. Interfejs `ICache` i klasa `Cache` zostały usunięte razem z zależnością od Newtonsoft.Json — usuń własną rejestrację `ICache`. Odpowiedzi są serializowane przez System.Text.Json, a `ICachePolicy.SlidingExpiration` nie jest już obsługiwane (wpis żyje do czasu wygaśnięcia). Po aktualizacji wyczyść współdzielony cache lub zmień prefiks kluczy: wpisy zapisane przez 1.x mają inny format.
+
 ---
 
 ## Przykład użycia
@@ -86,9 +95,9 @@ public class GetProductQueryCachePolicy : ICachePolicy<GetProductQuery, ProductD
     public string GetCacheKey(GetProductQuery request)
         => $"product:{request.ProductId}";
 
-    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(5);
-    public TimeSpan? AbsoluteExpiration => null;
     public TimeSpan? AbsoluteExpirationRelativeToNow => TimeSpan.FromHours(1);
+    public TimeSpan? LocalCacheExpiration => TimeSpan.FromMinutes(5);
+    public IReadOnlyCollection<string>? Tags => ["products"];
 }
 ```
 
@@ -116,15 +125,15 @@ public class GetProductQueryFallback : IFallbackHandler<GetProductQuery, Product
 |-----|--------|------|
 | `LoggingBehavior<TRequest, TResponse>` | Pipeline Behavior | Loguje czas wykonania i wyjątki; correlation ID per request |
 | `ValidationBehavior<TRequest, TResponse>` | Pipeline Behavior | Wykonuje wszystkie `IValidator<TRequest>` (FluentValidation) |
-| `CachingBehavior<TRequest, TResponse>` | Pipeline Behavior | Cache'uje odpowiedź zgodnie z `ICachePolicy<TRequest, TResponse>` |
+| `CachingBehavior<TRequest, TResponse>` | Pipeline Behavior | Cache'uje odpowiedź w `HybridCache` zgodnie z `ICachePolicy<TRequest, TResponse>`; równoległe identyczne żądania wykonują handler raz |
 | `FallbackBehavior<TRequest, TResponse>` | Pipeline Behavior | Przy wyjątku wywołuje `IFallbackHandler<TRequest, TResponse>` |
-| `RetryBehavior<TRequest, TResponse>` | Pipeline Behavior | Ponawia request zgodnie z `IRetryableRequest<TRequest, TResponse>`; po `ExceptionsAllowedBeforeCircuitTrip` kolejnych nieudanych requestach otwiera circuit breaker (współdzielony per typ requestu) i przez 5 s odrzuca wywołania `BrokenCircuitException` |
+| `RetryBehavior<TRequest, TResponse>` | Pipeline Behavior | Ponawia request zgodnie z `IRetryableRequest<TRequest, TResponse>`; po `ExceptionsAllowedBeforeCircuitTrip` kolejnych nieudanych requestach otwiera circuit breaker (współdzielony per typ requestu) i przez 5 s odrzuca wywołania wyjątkiem `CircuitBreakerOpenException` (`RequestType`, `RetryAfter`); potem jedno żądanie próbne zamyka lub ponownie otwiera obwód. Bez zewnętrznych bibliotek |
 | `PipelineRegistration` | Klasa | Rejestruje wszystkie behaviors + auto-discovery z assembly |
 | `IPipelineRegistration` | Interfejs | Kontrakt PipelineRegistration |
-| `ICachePolicy<TRequest, TResponse>` | Interfejs | Konfiguracja cache: klucz, TTL, sliding/absolute expiration |
+| `ICachePolicy<TRequest, TResponse>` | Interfejs | Konfiguracja cache: klucz, czas życia (`AbsoluteExpirationRelativeToNow`, domyślnie 5 min, lub `AbsoluteExpiration`), `LocalCacheExpiration`, `Tags` |
 | `IFallbackHandler<TRequest, TResponse>` | Interfejs | Handler fallbacku przy wyjątku |
 | `IRetryableRequest<TRequest, TResponse>` | Interfejs | Konfiguracja retry dla requestu |
-| `ICache` | Interfejs | Abstrakcja cache (wstrzykiwana do CachingBehavior) |
+| `HybridCache` | Klasa (.NET) | Magazyn odpowiedzi używany przez `CachingBehavior`; rejestrowany przez `RegisterPipelineBehaviors()`. Unieważnianie: `RemoveAsync(key)`, `RemoveByTagAsync(tag)` |
 
 ---
 
@@ -168,9 +177,9 @@ public class MyQueryValidator : AbstractValidator<MyQuery>
 public class MyCachePolicy : ICachePolicy<MyQuery, MyResponse>
 {
     public string GetCacheKey(MyQuery r) => $"my:{r.Id}";
-    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(5);
-    public TimeSpan? AbsoluteExpiration => null;
     public TimeSpan? AbsoluteExpirationRelativeToNow => TimeSpan.FromHours(1);
+    public TimeSpan? LocalCacheExpiration => TimeSpan.FromMinutes(5);
+    public IReadOnlyCollection<string>? Tags => ["products"];
 }
 ```
 
@@ -181,5 +190,12 @@ public class MyCachePolicy : ICachePolicy<MyQuery, MyResponse>
 - Każdy request ma unikalne correlation ID w logach
 - Domyślny klucz cache to hash treści żądania; dla danych per użytkownik nadpisz GetCacheKey i dodaj identyfikator użytkownika/tenanta
 - LoggingBehavior loguje tylko nazwę requestu i correlation id — dane żądania loguj jawnie w handlerze, nigdy całe obiekty z hasłami
-- Cache a typy wartościowe: ICache zgłasza brak wpisu jako default(TResponse), więc zapisana odpowiedź równa default (0, false, default struktury) jest traktowana jak brak wpisu i handler wykona się ponownie — dla takich odpowiedzi użyj typu referencyjnego lub Nullable<T>
+- Cache opiera się na HybridCache (rejestruje go RegisterPipelineBehaviors): nie rejestruj ICache — ten interfejs nie istnieje w 2.0
+- Każda odpowiedź jest cache'owana tak, jak została zwrócona — także null, 0 i false; równoległe identyczne żądania wykonują handler raz
+- Czas życia wpisu ustawiaj przez AbsoluteExpirationRelativeToNow (domyślnie 5 minut) albo AbsoluteExpiration; SlidingExpiration nie jest obsługiwane
+- Typ odpowiedzi w cache musi dać się serializować przez System.Text.Json; dla innych typów zarejestruj IHybridCacheSerializer<T>
+- Aby współdzielić cache między instancjami, zarejestruj IDistributedCache (np. Redis) — HybridCache użyje go automatycznie
+- Żądanie anulowane przez wywołującego nie jest ponawiane, nie otwiera circuit breakera i nie trafia do fallbacku
+- Otwarty obwód zgłasza CircuitBreakerOpenException (w 1.x: BrokenCircuitException z Polly); odpowiedz 503 i nagłówkiem Retry-After z właściwości RetryAfter
+- Biblioteka nie zależy od Polly ani Newtonsoft.Json — nie dodawaj ich, by skonfigurować retry lub cache
 ```

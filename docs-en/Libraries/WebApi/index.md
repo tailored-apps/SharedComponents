@@ -139,7 +139,7 @@ app.MapPrometheusScrapingEndpoint(); // /metrics
 
 ## 🔒 Security
 
-- **Retries only for idempotent methods.** The standard resilience handler (`AddStandardResilienceHandler`) used to retry `POST`/`PATCH` as well. A retried `POST /charge` whose first attempt reached the server is a duplicate charge. Retrying non-idempotent methods is now **disabled** (`HttpClientSettings.RetryUnsafeHttpMethods = false`). Enable it only when every HTTP client in the host uses idempotency keys.
+- **Retries only for safe methods.** The standard resilience handler (`AddStandardResilienceHandler`) retries every request by default. A retried `POST /charge` whose first attempt reached the server is a duplicate charge. Retrying the methods that change state — `POST`, `PUT`, `PATCH`, `DELETE`, `CONNECT` — is therefore **disabled** (`HttpClientSettings.RetryUnsafeHttpMethods = false`); `GET`, `HEAD`, `OPTIONS` and `TRACE` are retried. Version 1.x still retried `PUT` and `DELETE`; from 2.0 the library uses the built-in `DisableForUnsafeHttpMethods()` of `Microsoft.Extensions.Http.Resilience`. Enable retries only when every HTTP client in the host uses idempotency keys.
 
 ```json
 { "WebApiDefaults": { "HttpClient": { "EnableStandardResilience": true, "RetryUnsafeHttpMethods": false } } }

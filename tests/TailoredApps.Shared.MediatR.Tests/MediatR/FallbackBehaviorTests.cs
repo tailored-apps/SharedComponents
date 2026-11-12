@@ -77,5 +77,23 @@ namespace TailoredApps.Shared.MediatR.Tests
             Assert.Equal(1, nextCalls);
             fallbackMock.Verify(h => h.HandleFallback(It.IsAny<FallbackRequest>(), It.IsAny<CancellationToken>()), Times.Never);
         }
+
+        [Fact]
+        public async Task When_Request_Is_Cancelled_Should_Propagate_The_Cancellation_And_Never_Invoke_Fallback()
+        {
+            // arrange: a strict mock fails the test if the fallback is asked to answer a request nobody waits for
+            var request = new FallbackRequest();
+            var fallbackMock = new Mock<IFallbackHandler<FallbackRequest, string>>(MockBehavior.Strict);
+            var sut = CreateSut(fallbackMock.Object);
+            using var cancellation = new CancellationTokenSource();
+            RequestHandlerDelegate<string> next = (ct) =>
+            {
+                cancellation.Cancel();
+                throw new OperationCanceledException(cancellation.Token);
+            };
+
+            // act & assert
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sut.Handle(request, next, cancellation.Token));
+        }
     }
 }

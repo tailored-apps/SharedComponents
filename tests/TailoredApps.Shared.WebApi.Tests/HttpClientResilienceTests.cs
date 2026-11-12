@@ -1,77 +1,89 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
-using Microsoft.Extensions.Options;
-using Polly;
-using Polly.Retry;
 using Xunit;
 
 namespace TailoredApps.Shared.WebApi.Tests
 {
+    /// <summary>
+    /// Exercises the resilience defaults through a real <see cref="HttpClient"/> from the factory: the
+    /// gateway always answers 503, and the test counts how many times the request was actually sent.
+    /// </summary>
     public class HttpClientResilienceTests
     {
-        private static HttpRetryStrategyOptions ResolveRetryOptions(bool retryUnsafeHttpMethods)
+        /// <summary>One original attempt plus the standard handler's three retries.</summary>
+        private const int AttemptsWhenRetried = 4;
+
+        private sealed class UnavailableGateway : HttpMessageHandler
         {
+            private int attempts;
+
+            public int Attempts => attempts;
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                Interlocked.Increment(ref attempts);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+            }
+        }
+
+        private static async Task<int> CountAttempts(string method, bool retryUnsafeHttpMethods)
+        {
+            var gateway = new UnavailableGateway();
             var builder = WebApplication.CreateBuilder(Array.Empty<string>());
             builder.AddTailoredWebApiDefaults(options =>
             {
                 options.HttpClient.EnableServiceDiscovery = false;
                 options.HttpClient.RetryUnsafeHttpMethods = retryUnsafeHttpMethods;
             });
-            builder.Services.AddHttpClient("payments");
-            var app = builder.Build();
+            builder.Services.AddHttpClient("gateway").ConfigurePrimaryHttpMessageHandler(() => gateway);
 
             // ConfigureHttpClientDefaults configures an unnamed builder, so the standard pipeline options
-            // shared by every client are registered under "<empty name>-standard".
-            return app.Services
-                .GetRequiredService<IOptionsMonitor<HttpStandardResilienceOptions>>()
-                .Get("-standard")
-                .Retry;
-        }
+            // shared by every client are registered under "<empty name>-standard". The defaults wait
+            // seconds between attempts; keep the test fast.
+            builder.Services.Configure<HttpStandardResilienceOptions>("-standard", options =>
+            {
+                options.Retry.Delay = TimeSpan.FromMilliseconds(1);
+                options.Retry.UseJitter = false;
+            });
 
-        private static async Task<bool> ShouldRetry(HttpRetryStrategyOptions retry, HttpMethod method)
-        {
-            var context = ResilienceContextPool.Shared.Get();
-            try
-            {
-                context.SetRequestMessage(new HttpRequestMessage(method, "https://gateway.example/charge"));
-                var outcome = Outcome.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
-                return await retry.ShouldHandle(new RetryPredicateArguments<HttpResponseMessage>(context, outcome, 0));
-            }
-            finally
-            {
-                ResilienceContextPool.Shared.Return(context);
-            }
+            await using var app = builder.Build();
+            var client = app.Services.GetRequiredService<IHttpClientFactory>().CreateClient("gateway");
+
+            using var response = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), "https://gateway.example/charge"));
+
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            return gateway.Attempts;
         }
 
         [Theory]
         [InlineData("POST")]
+        [InlineData("PUT")]
         [InlineData("PATCH")]
-        public async Task When_Method_Is_Not_Idempotent_Should_Not_Retry_By_Default(string method)
+        [InlineData("DELETE")]
+        public async Task When_Method_Changes_State_Should_Send_The_Request_Once_By_Default(string method)
         {
-            var retry = ResolveRetryOptions(retryUnsafeHttpMethods: false);
-            Assert.False(await ShouldRetry(retry, new HttpMethod(method)));
+            Assert.Equal(1, await CountAttempts(method, retryUnsafeHttpMethods: false));
         }
 
         [Theory]
         [InlineData("GET")]
-        [InlineData("PUT")]
-        [InlineData("DELETE")]
-        public async Task When_Method_Is_Idempotent_Should_Still_Retry_Transient_Failures(string method)
+        [InlineData("HEAD")]
+        [InlineData("OPTIONS")]
+        public async Task When_Method_Is_Safe_Should_Retry_Transient_Failures(string method)
         {
-            var retry = ResolveRetryOptions(retryUnsafeHttpMethods: false);
-            Assert.True(await ShouldRetry(retry, new HttpMethod(method)));
+            Assert.Equal(AttemptsWhenRetried, await CountAttempts(method, retryUnsafeHttpMethods: false));
         }
 
         [Fact]
         public async Task When_Unsafe_Retries_Are_Opted_In_Should_Retry_Post()
         {
-            var retry = ResolveRetryOptions(retryUnsafeHttpMethods: true);
-            Assert.True(await ShouldRetry(retry, HttpMethod.Post));
+            Assert.Equal(AttemptsWhenRetried, await CountAttempts("POST", retryUnsafeHttpMethods: true));
         }
     }
 }

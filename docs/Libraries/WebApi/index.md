@@ -139,7 +139,7 @@ app.MapPrometheusScrapingEndpoint(); // /metrics
 
 ## 🔒 Bezpieczeństwo
 
-- **Retry tylko dla metod idempotentnych.** Standardowy handler odporności (`AddStandardResilienceHandler`) domyślnie ponawiał także `POST`/`PATCH`. Ponowiony `POST /charge`, którego pierwsza próba dotarła do serwera, to podwójne obciążenie. Od tej wersji ponawianie metod nieidempotentnych jest **wyłączone** (`HttpClientSettings.RetryUnsafeHttpMethods = false`). Włącz je tylko wtedy, gdy każdy klient HTTP w hoście używa kluczy idempotencji.
+- **Retry tylko dla metod bezpiecznych.** Standardowy handler odporności (`AddStandardResilienceHandler`) domyślnie ponawia każde żądanie. Ponowiony `POST /charge`, którego pierwsza próba dotarła do serwera, to podwójne obciążenie. Dlatego ponawianie metod zmieniających stan — `POST`, `PUT`, `PATCH`, `DELETE`, `CONNECT` — jest **wyłączone** (`HttpClientSettings.RetryUnsafeHttpMethods = false`); ponawiane są `GET`, `HEAD`, `OPTIONS` i `TRACE`. W wersji 1.x `PUT` i `DELETE` były jeszcze ponawiane; od 2.0 biblioteka używa wbudowanego `DisableForUnsafeHttpMethods()` z `Microsoft.Extensions.Http.Resilience`. Włącz ponawianie tylko wtedy, gdy każdy klient HTTP w hoście używa kluczy idempotencji.
 
 ```json
 { "WebApiDefaults": { "HttpClient": { "EnableStandardResilience": true, "RetryUnsafeHttpMethods": false } } }
