@@ -35,7 +35,14 @@ public interface IPaymentProvider
     /// </summary>
     /// <param name="request">Payment details including amount, currency, and payer information.</param>
     /// <param name="cancellationToken">Token that cancels the operation.</param>
-    /// <returns>Response containing the redirect URL and payment unique identifier.</returns>
+    /// <returns>
+    /// Response containing the redirect URL and payment unique identifier, or a response with
+    /// <see cref="PaymentStatusEnum.Rejected"/> when the gateway refused the request.
+    /// </returns>
+    /// <exception cref="PaymentGatewayException">
+    /// The gateway could not handle the call (5xx, 408, 429). The payment may or may not exist; it must not be
+    /// reported as rejected.
+    /// </exception>
     Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -43,7 +50,11 @@ public interface IPaymentProvider
     /// </summary>
     /// <param name="paymentId">Provider-specific payment or transaction identifier.</param>
     /// <param name="cancellationToken">Token that cancels the operation.</param>
-    /// <returns>Current <see cref="PaymentResponse"/> including status.</returns>
+    /// <returns>Current <see cref="PaymentResponse"/> including the status the gateway reported.</returns>
+    /// <exception cref="PaymentGatewayException">
+    /// The gateway did not answer the query with a success status. The state of the payment is not known; it
+    /// must not be reported as rejected.
+    /// </exception>
     Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default);
 
     /// <summary>

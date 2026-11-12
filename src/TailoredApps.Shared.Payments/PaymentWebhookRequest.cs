@@ -13,7 +13,13 @@ public class PaymentWebhookRequest
     /// <summary>HTTP method (GET, POST, etc.).</summary>
     public string HttpMethod { get; init; } = "POST";
 
-    /// <summary>Raw request body (JSON, form data, …). Null when the gateway sends no body.</summary>
+    /// <summary>
+    /// Raw request body (JSON, form data, …), exactly as it was received. Null when the gateway sends no body.
+    /// </summary>
+    /// <remarks>
+    /// Gateways sign these exact bytes, so read the body from the request stream. A body rebuilt from a bound
+    /// model, a parsed form or a re-serialized JSON document does not verify.
+    /// </remarks>
     public string? Body { get; init; }
 
     /// <summary>Value of the Content-Type header.</summary>

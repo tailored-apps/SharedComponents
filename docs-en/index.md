@@ -38,6 +38,12 @@ Welcome to the documentation of **TailoredApps Shared Components** — a set of 
 
 ---
 
+## Upgrading from 1.x
+
+Moving from 1.x to 2.0? The changes required in application code - handling a failing payment gateway, the required members of `PaymentRequest`, Tpay and Adyen webhooks - are collected on the [Upgrading to 2.0](Migration/v2.md) page.
+
+---
+
 ## Target frameworks
 
 From version 2.0 the libraries ship for `net10.0` and `net11.0`; older frameworks are served by the 1.x packages (`1.6.x`). The `net11.0` assets are compiled with **runtime async**. Details, limitations and how to switch it off: [Target frameworks and runtime async](Platform/index.md).

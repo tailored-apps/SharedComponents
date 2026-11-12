@@ -38,6 +38,12 @@ Witaj w dokumentacji **TailoredApps Shared Components** — zestawu wielokrotneg
 
 ---
 
+## Aktualizacja z 1.x
+
+Przechodzisz z 1.x na 2.0? Zmiany wymagane w kodzie aplikacji — obsługa awarii bramki płatności, wymagane pola `PaymentRequest`, webhooki Tpay i Adyen — zebrano na stronie [Aktualizacja do 2.0](Migration/v2.md).
+
+---
+
 ## Platformy docelowe
 
 Od wersji 2.0 biblioteki są wydawane dla `net10.0` i `net11.0`; starsze platformy obsługują paczki 1.x (`1.6.x`). Assety `net11.0` są kompilowane z użyciem **runtime async**. Szczegóły, ograniczenia i sposób wyłączenia: [Platformy docelowe i runtime async](Platform/index.md).
