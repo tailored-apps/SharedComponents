@@ -85,6 +85,13 @@ After adding a library page, update the `nav:` section in `mkdocs.yml` and the l
   has to be added to the csproj.
 - Code samples must compile against the current source: check type, method and configuration key names in the code, not from memory.
 
+### The demo application and the integration tests
+
+The [demo application](Demo/index.md) (`samples/TailoredApps.Shared.Demo`) uses every library, and `tests/TailoredApps.Shared.IntegrationTests`
+drives it over HTTP. A new library is added to the demo too, with a test of its scenario; a change after which a library is used differently
+updates the demo. The demo runs without a network: an external service is replaced at the transport level (an HTTP handler), never by
+changing the library.
+
 ### Library page template
 
 ```markdown

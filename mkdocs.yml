@@ -50,6 +50,7 @@ nav:
               - Tpay: Libraries/Payments/Providers/Tpay.md
       - Querying: Libraries/Querying/index.md
       - WebApi: Libraries/WebApi/index.md
+  - Aplikacja demo: Demo/index.md
   - Aktualizacja do 3.0 (test): Migration/v3.md
   - Aktualizacja do 2.0: Migration/v2.md
   - Platformy docelowe: Platform/index.md

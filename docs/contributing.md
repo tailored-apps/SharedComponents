@@ -85,6 +85,13 @@ Po dodaniu strony biblioteki zaktualizuj sekcję `nav:` w `mkdocs.yml` oraz tabe
   nie trzeba nic dodawać.
 - Przykłady kodu muszą kompilować się z aktualnym kodem: nazwy typów, metod i kluczy konfiguracji sprawdzaj w źródłach, nie z pamięci.
 
+### Aplikacja demo i testy integracyjne
+
+[Aplikacja demo](Demo/index.md) (`samples/TailoredApps.Shared.Demo`) używa każdej biblioteki, a `tests/TailoredApps.Shared.IntegrationTests`
+sprawdza ją przez HTTP. Nowa biblioteka trafia też do demo, razem z testem swojego scenariusza; zmiana, po której biblioteka jest używana
+inaczej, aktualizuje demo. Demo działa bez sieci: zewnętrzna usługa jest podstawiana na poziomie transportu (handler HTTP), nigdy przez
+zmianę biblioteki.
+
 ### Szablon strony biblioteki
 
 ```markdown

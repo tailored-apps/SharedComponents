@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<!--
+			Not below TailoredApps.Shared on purpose: inside that namespace the simple names DateTime, Email or
+			Payments would resolve to the libraries' namespaces instead of the types an application means.
+		-->
+		<RootNamespace>TailoredApps.Demo</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+	</ItemGroup>
+
+	<!-- Every library in src/, by project reference: the demo always runs against the current source. -->
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.*\TailoredApps.Shared.*.csproj" />
+	</ItemGroup>
+
+	<!-- The e-mail templates are read from the content root at run time, so they go wherever the application goes. -->
+	<ItemGroup>
+		<None Remove="EmailTemplates\**" />
+		<Content Include="EmailTemplates\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+	</ItemGroup>
+
+</Project>

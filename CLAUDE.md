@@ -21,6 +21,7 @@ runtime has to be installed as well for the `net10.0` test runs.
 - Run specific test project: `dotnet test tests/TailoredApps.Shared.DateTime.Tests/TailoredApps.Shared.DateTime.Tests.csproj`
 - Run single test: `dotnet test --filter "FullyQualifiedName=TailoredApps.Shared.DateTime.Tests.DateTimeProviderTests.As_Library_User_When_Get_Now_I_Get_Mine_System_Date_In_Current_Timezone_And_Local_Kind"`
 - Run on one framework only: add `-f net10.0` (or `-f net11.0`); without it every test runs twice.
+- Run the demo application: `dotnet run --project samples/TailoredApps.Shared.Demo -f net10.0` (`http://localhost:5080`, no network needed).
 - With coverage, as CI does: `dotnet test TailoredApps.Shared.slnx -p:CollectCoverage=true -p:CoverletOutputFormat=opencover`.
   Write MSBuild properties as `-p:Name=value`: Git Bash on Windows rewrites `/p:` into a path and the command fails with `MSB1008`.
 
@@ -42,8 +43,13 @@ runtime has to be installed as well for the `net10.0` test runs.
 # Architecture
 
 The repository is 24 NuGet packages (`TailoredApps.Shared.*`) under `src/`, with one test project per library family under `tests/`.
-There is no application project: every library is consumed through dependency-injection extension methods. All packages are released
-together under a single version taken from the git tag.
+Every library is consumed through dependency-injection extension methods. All packages are released together under a single version
+taken from the git tag.
+
+The one application is `samples/TailoredApps.Shared.Demo` (namespace `TailoredApps.Demo`, never packed): a shop Web API that uses all 24
+libraries, with the payment gateways faked by an HTTP handler (`Payments/FakeGateway.cs`), the console e-mail provider and SQLite in memory.
+`tests/TailoredApps.Shared.IntegrationTests` starts it with `WebApplicationFactory` (frozen `TimeProvider`, recorded e-mail) and runs in CI
+with the other tests. A new library is added to the demo with a test of its scenario.
 
 ## Build configuration shared by every project
 - `Directory.Build.props` (root): artifacts output, `TargetFrameworks` (`net10.0;net11.0` for every project) and `LangVersion=latest`, so both target frameworks compile with the same C# version.
@@ -52,7 +58,7 @@ together under a single version taken from the git tag.
   Packages tied to the runtime generation (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) have one `PackageVersion` per target
   framework in conditional groups (`net10.0` -> `10.*`, `net11.0` -> `11.*`). Adding such a dependency means adding it to both groups.
 - Most versions float (`10.*`, `1.*`). The weekly *Bump dependencies* workflow (`scripts/Bump-Deps.ps1`) raises the pinned ones and writes its own docs entry.
-- Project files hold only what is their own (PackageId, Title, Description, tags, references). Target frameworks, `SourceRevisionId`, nullable, packaging and the shared package metadata come from `Directory.Build.props`, `src/Directory.Build.props` and `tests/Directory.Build.props`.
+- Project files hold only what is their own (PackageId, Title, Description, tags, references). Target frameworks, `SourceRevisionId`, nullable, packaging and the shared package metadata come from `Directory.Build.props`, `src/Directory.Build.props`, `tests/Directory.Build.props` and `samples/Directory.Build.props`.
 - `nuget.config` restricts package sources to nuget.org.
 
 ## Library families and how they fit together
