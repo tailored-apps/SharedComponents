@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
@@ -47,7 +48,7 @@ file class HotPayResponse
 public interface IHotPayServiceCaller
 {
     /// <summary>Wywołanie API.</summary>
-    Task<(string? paymentId, string? redirectUrl)> InitPaymentAsync(PaymentRequest request, string paymentId);
+    Task<(string? paymentId, string? redirectUrl)> InitPaymentAsync(PaymentRequest request, string paymentId, CancellationToken cancellationToken = default);
     /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifyNotification(string hash, string kwota, string idPlatnosci, string status);
 }
@@ -66,7 +67,7 @@ public class HotPayServiceCaller : IHotPayServiceCaller
     }
 
     /// <inheritdoc/>
-    public async Task<(string? paymentId, string? redirectUrl)> InitPaymentAsync(PaymentRequest request, string paymentId)
+    public async Task<(string? paymentId, string? redirectUrl)> InitPaymentAsync(PaymentRequest request, string paymentId, CancellationToken cancellationToken = default)
     {
         var amount = request.Amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
         // The signed service name must be exactly the one sent in the request body.
@@ -87,8 +88,8 @@ public class HotPayServiceCaller : IHotPayServiceCaller
 
         using var client = httpClientFactory.CreateClient("HotPay");
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync(options.ServiceUrl, content);
-        var json = await response.Content.ReadAsStringAsync();
+        var response = await client.PostAsync(options.ServiceUrl, content, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<HotPayResponse>(json);
         return (result?.PaymentId ?? paymentId, result?.RedirectUrl);
     }
@@ -124,7 +125,7 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
     public string Url => "https://hotpay.pl";
 
     /// <inheritdoc/>
-    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
+    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
     {
         ICollection<PaymentChannel> channels =
         [
@@ -136,10 +137,10 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
+    public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
         var paymentId = Guid.NewGuid().ToString("N");
-        var (resultId, redirectUrl) = await caller.InitPaymentAsync(request, paymentId);
+        var (resultId, redirectUrl) = await caller.InitPaymentAsync(request, paymentId, cancellationToken);
 
         if (resultId is null && redirectUrl is null)
             return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "API error" };
@@ -153,13 +154,13 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public Task<PaymentResponse> GetStatus(string paymentId)
+    public Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
         => Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = PaymentStatusEnum.Processing });
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
     /// <inheritdoc/>
-    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {
         var hash = request.Query.TryGetValue("HASH", out var h) ? h.ToString() : string.Empty;
         var kwota = request.Query.TryGetValue("KWOTA", out var k) ? k.ToString() : string.Empty;
@@ -177,26 +178,14 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        var response = await TransactionStatusChange(payload);
-
-        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
-        {
-            var msg = response.ResponseObject?.ToString() ?? string.Empty;
-            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
-                return PaymentWebhookResult.Fail(msg);
-        }
-
-        if (response.PaymentStatus == PaymentStatusEnum.Processing)
-            return PaymentWebhookResult.Ignore("Non-actionable event");
-
-        return PaymentWebhookResult.Ok(response);
+        return Task.FromResult(ProcessNotification(payload));
     }
 
     /// <inheritdoc/>
-    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
+        => Task.FromResult(ProcessNotification(payload).ToPaymentResponse());
+
+    private PaymentWebhookResult ProcessNotification(TransactionStatusChangePayload payload)
     {
         var qs = payload.QueryParameters;
         var hash = qs.TryGetValue("HASH", out var h) ? h.ToString() : string.Empty;
@@ -205,10 +194,10 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
         var status = qs.TryGetValue("STATUS", out var s) ? s.ToString() : string.Empty;
 
         if (!caller.VerifyNotification(hash, kwota, idPlatnosci, status))
-            return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid hash" });
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.InvalidSignature, "Invalid hash");
 
         var payStatus = status == "SUCCESS" ? PaymentStatusEnum.Finished : PaymentStatusEnum.Rejected;
-        return Task.FromResult(new PaymentResponse { PaymentUniqueId = idPlatnosci, PaymentStatus = payStatus, ResponseObject = "OK" });
+        return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = idPlatnosci, PaymentStatus = payStatus, ResponseObject = "OK" });
     }
 }
 
@@ -218,7 +207,10 @@ public static class HotPayProviderExtensions
     /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterHotPayProvider(this IServiceCollection services)
     {
-        services.AddOptions<HotPayServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<HotPayServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.SecretHash), $"'{HotPayServiceOptions.ConfigurationKey}:SecretHash' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<HotPayConfigureOptions>();
         services.AddHttpClient("HotPay");
         services.AddTransient<IHotPayServiceCaller, HotPayServiceCaller>();

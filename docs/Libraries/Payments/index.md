@@ -107,17 +107,18 @@ public class PaymentWebhookController : ControllerBase
         var request = new PaymentWebhookRequest
         {
             Body = body.GetRawText(),
-            Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()),
-            QueryParams = Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString())
+            Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value),
+            Query = Request.Query.ToDictionary(q => q.Key, q => q.Value)
         };
 
-        var result = await _payments.HandleWebhookAsync(providerKey, request);
+        var result = await _payments.HandleWebhookAsync(providerKey, request, HttpContext.RequestAborted);
 
         return result switch
         {
-            PaymentWebhookResult.Success => Ok(),
-            PaymentWebhookResult.Ignored => NoContent(),
-            _ => BadRequest()
+            PaymentWebhookProcessed => Ok(),
+            PaymentWebhookIgnored => NoContent(),
+            PaymentWebhookRejected { Rejection: PaymentWebhookRejection.InvalidSignature } => Unauthorized(),
+            PaymentWebhookRejected => BadRequest(),
         };
     }
 }
@@ -144,8 +145,8 @@ foreach (var provider in providers)
 
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
-| `IPaymentService` | Interfejs | Fasada: `GetProviders`, `GetChannels`, `RegisterPayment`, `GetStatus`, `HandleWebhookAsync` |
-| `IPaymentProvider` | Interfejs | Kontrakt providera: `Key`, `Name`, `GetPaymentChannels`, `RequestPayment`, `GetStatus`, `TransactionStatusChange` |
+| `IPaymentService` | Interfejs | Fasada: `GetProviders`, `GetChannels`, `RegisterPayment`, `GetStatus`, `HandleWebhookAsync`. Każda metoda przyjmuje opcjonalny `CancellationToken` |
+| `IPaymentProvider` | Interfejs | Kontrakt providera: `Key`, `Name`, `GetPaymentChannels`, `RequestPayment`, `GetStatus`, `TransactionStatusChange`. Każda metoda asynchroniczna przyjmuje opcjonalny `CancellationToken` |
 | `IWebhookPaymentProvider` | Interfejs | Rozszerzenie: `HandleWebhookAsync(PaymentWebhookRequest)` |
 | `IPaymentOptionsBuilder` | Interfejs | Fluent builder: `RegisterPaymentProvider<T>()` |
 
@@ -155,12 +156,31 @@ foreach (var provider in providers)
 |-----|--------|------|
 | `PaymentRequest` | Klasa | Dane płatności: provider, kanał, kwota, waluta, dane płatnika |
 | `PaymentResponse` | Klasa | Wynik: `RedirectUrl`, `PaymentUniqueId`, `PaymentStatus` |
-| `PaymentStatusEnum` | Enum | `Created`, `Pending`, `Completed`, `Failed`, `Cancelled` |
+| `PaymentStatusEnum` | Enum | `Created`, `Processing`, `Finished`, `Rejected` |
 | `PaymentModel` | Enum | `OneTime`, `Subscription` |
 | `PaymentChannel` | Klasa | Kanał płatności: `Id`, `Name`, `Description`, `PaymentModel` |
 | `PaymentProvider` | Klasa | Metadane providera: `Key`, `Name`, `Description`, `Url` |
-| `PaymentWebhookRequest` | Klasa | Dane HTTP żądania webhook: `Body`, `Headers`, `QueryParams` |
-| `PaymentWebhookResult` | Enum | `Success`, `Ignored`, `Fail` |
+| `PaymentWebhookRequest` | Klasa | Dane HTTP żądania webhook: `Body`, `Headers`, `Query` |
+| `PaymentWebhookResult` | Rekord (zamknięta hierarchia) | Dokładnie jeden z: `PaymentWebhookProcessed` (`Payment`), `PaymentWebhookIgnored` (`Reason`, `Payment`), `PaymentWebhookRejected` (`Rejection`, `Message`). Zgodnościowo: `Success`, `Ignored`, `PaymentResponse`, `ErrorMessage` |
+| `PaymentWebhookRejection` | Enum | Powód odrzucenia: `InvalidSignature`, `NotConfigured`, `MalformedPayload`, `ProcessingFailed`, `UnknownProvider`, `NotSupported`, `Unspecified` |
+
+### Walidacja konfiguracji przy starcie
+
+Każde `Register*Provider()` sprawdza ustawienia, bez których provider nie może działać: dane dostępowe do API oraz sekret podpisujący webhooki. Gdy czegoś brakuje, host **nie wystartuje** — `OptionsValidationException` wymienia każde brakujące ustawienie (np. `'Payments:Providers:PayU:SignatureKey' is not configured.`). Adresy powrotu i powiadomień nie są walidowane.
+
+| Provider (`Payments:Providers:<Nazwa>`) | Wymagane ustawienia |
+|---|---|
+| Adyen | `ApiKey`, `MerchantAccount`, `NotificationHmacKey` |
+| CashBill (`Payments:Providers:Cashbill`) | `ServiceUrl`, `ShopId`, `ShopSecretPhrase` |
+| HotPay | `SecretHash` |
+| PayNow | `ApiKey`, `SignatureKey` |
+| PayU | `ClientId`, `ClientSecret`, `PosId`, `SignatureKey` |
+| Przelewy24 | `MerchantId`, `PosId`, `ApiKey`, `CrcKey` |
+| Revolut | `ApiKey`, `WebhookSecret` |
+| Stripe | `SecretKey`, `WebhookSecret` |
+| Tpay | `ClientId`, `ClientSecret`, `SecurityCode` |
+
+Rejestruj tylko tych providerów, których faktycznie używasz i masz skonfigurowanych w danym środowisku.
 
 ### DI Registration
 
@@ -213,7 +233,7 @@ string redirectUrl = response.RedirectUrl;  // → przeglądarka
 ### Sprawdzanie statusu
 ```csharp
 var status = await _payments.GetStatus("Stripe", paymentId);
-// status.PaymentStatus: Created/Pending/Completed/Failed/Cancelled
+// status.PaymentStatus: Created/Processing/Finished/Rejected
 ```
 
 ### Obsługa webhooków
@@ -222,17 +242,30 @@ var result = await _payments.HandleWebhookAsync(providerKey, new PaymentWebhookR
 {
     Body = rawBody,
     Headers = httpHeaders,
-    QueryParams = queryParams
+    Query = query
 });
+
+var response = result switch
+{
+    PaymentWebhookProcessed processed => Handle(processed.Payment),   // PaymentUniqueId + PaymentStatus
+    PaymentWebhookIgnored => NoContent(),                             // authentic, nothing to do
+    PaymentWebhookRejected { Rejection: PaymentWebhookRejection.InvalidSignature } => Unauthorized(),
+    PaymentWebhookRejected => BadRequest(),
+};
 ```
 
 ### Zasady
 - Każdy provider ma unikalny Key (np. "Stripe", "PayU", "CashBill")
-- Zawsze sprawdź PaymentWebhookResult — Ignored to OK, Fail to błąd podpisu/konfiguracji
+- Wynik webhooka to zawsze jeden z trzech rekordów: PaymentWebhookProcessed (działaj na Payment), PaymentWebhookIgnored (odpowiedz 2xx, nic nie rób), PaymentWebhookRejected (nie ufaj niczemu z żądania)
+- Powód odrzucenia czytaj z PaymentWebhookRejected.Rejection (np. InvalidSignature → 401, MalformedPayload → 400) — nigdy nie analizuj treści Message
+- W switch po wyniku nie dodawaj gałęzi domyślnej: hierarchia jest zamknięta i kompilator C# 15 pilnuje kompletności
 - Kwota Amount w walucie bazowej (nie w groszach — chyba że provider wymaga inaczej)
 - Dla webhooków wymagany jest endpoint HTTP POST z raw body
 - Nigdy nie uruchamiaj providera bez skonfigurowanego sekretu webhooka — weryfikacja odrzuci wszystkie powiadomienia (fail-closed)
 - We własnych providerach porównuj podpisy przez WebhookSignature.FixedTimeEquals, a identyfikatory do URL przepuszczaj przez PaymentIdentifier.EnsureSafe
 - Nie zwracaj klientowi ErrorMessage z webhooka w treści odpowiedzi — loguj go po stronie serwera
 - De-duplikuj zdarzenia po PaymentUniqueId; konsument webhooka musi być idempotentny
+- Rejestruj tylko skonfigurowanych providerów: brak danych dostępowych lub sekretu webhooka zatrzymuje start aplikacji (OptionsValidationException)
+- Przekazuj CancellationToken (w kontrolerze HttpContext.RequestAborted) do każdego wywołania IPaymentService — token dociera do wywołań HTTP bramki
+- Własny provider: każda metoda asynchroniczna przyjmuje CancellationToken cancellationToken = default i przekazuje go dalej do HttpClient
 ```

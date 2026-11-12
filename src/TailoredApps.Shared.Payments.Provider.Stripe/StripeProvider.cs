@@ -1,3 +1,4 @@
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using global::Stripe;
@@ -39,7 +40,7 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// Zwracamy statyczną listę bazując na walucie — identyczną z tą, którą StripeServiceCaller
     /// przekazuje do Checkout Session. Dzięki temu UI może wyświetlić dostępne opcje.
     /// </remarks>
-    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
+    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
     {
         ICollection<PaymentChannel> channels = currency.ToUpperInvariant() switch
         {
@@ -67,9 +68,9 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <remarks>
     /// Tworzy Stripe Checkout Session. Zwraca URL do hosted page Stripe oraz ID sesji.
     /// </remarks>
-    public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
+    public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
-        var session = await stripeCaller.CreateCheckoutSessionAsync(request);
+        var session = await stripeCaller.CreateCheckoutSessionAsync(request, cancellationToken);
 
         return new PaymentResponse
         {
@@ -83,9 +84,9 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <remarks>
     /// Pobiera aktualny status Checkout Session. ID = Stripe Session ID (cs_...).
     /// </remarks>
-    public async Task<PaymentResponse> GetStatus(string paymentId)
+    public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
     {
-        var session = await stripeCaller.GetCheckoutSessionAsync(paymentId);
+        var session = await stripeCaller.GetCheckoutSessionAsync(paymentId, cancellationToken);
 
         return new PaymentResponse
         {
@@ -105,7 +106,10 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// Weryfikuje podpis HMAC-SHA256 i przetwarza zdarzenia:
     /// checkout.session.completed, checkout.session.expired.
     /// </remarks>
-    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
+        => Task.FromResult(ProcessEvent(payload).ToPaymentResponse());
+
+    private PaymentWebhookResult ProcessEvent(TransactionStatusChangePayload payload)
     {
         var rawBody = payload.Payload?.ToString() ?? string.Empty;
         var stripeSignature = payload.QueryParameters.TryGetValue("Stripe-Signature", out var sig)
@@ -120,11 +124,9 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
         catch (StripeException ex)
         {
             // Nieprawidłowy podpis — zwracamy Rejected i nie przetwarzamy zdarzenia.
-            return Task.FromResult(new PaymentResponse
-            {
-                PaymentStatus = PaymentStatusEnum.Rejected,
-                ResponseObject = $"Webhook signature verification failed: {ex.Message}",
-            });
+            return PaymentWebhookResult.Reject(
+                PaymentWebhookRejection.InvalidSignature,
+                $"Webhook signature verification failed: {ex.Message}");
         }
 
         var response = stripeEvent.Type switch
@@ -148,7 +150,7 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        return Task.FromResult(response);
+        return PaymentWebhookResult.Ok(response);
     }
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
@@ -160,10 +162,11 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// </summary>
     /// <remarks>
     /// Events that do not represent a terminal payment state
-    /// (e.g. <c>payment_method.attached</c>) result in <see cref="PaymentWebhookResult.Ignore"/>.
+    /// (e.g. <c>payment_method.attached</c>) result in <see cref="PaymentWebhookIgnored"/>.
     /// </remarks>
     /// <param name="request">Unified HTTP webhook request.</param>
-    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    /// <param name="cancellationToken">Token that cancels the operation.</param>
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {
         var rawBody = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("Stripe-Signature", out var sig)
@@ -179,23 +182,16 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        var response = await ((IPaymentProvider)this).TransactionStatusChange(payload);
+        var result = ProcessEvent(payload);
 
-        // Signature failure — TransactionStatusChange returns Rejected + message containing "signature"
-        if (response.PaymentStatus == PaymentStatusEnum.Rejected
-            && response.ResponseObject?.ToString()?.Contains("signature", StringComparison.OrdinalIgnoreCase) == true)
+        // Non-actionable event (payment_method.attached, customer.created, ...) or one without a payment id
+        if (result is PaymentWebhookProcessed { Payment: var payment }
+            && (payment.PaymentStatus == PaymentStatusEnum.Processing || string.IsNullOrEmpty(payment.PaymentUniqueId)))
         {
-            return PaymentWebhookResult.Fail(response.ResponseObject?.ToString() ?? "Invalid signature");
+            return Task.FromResult(PaymentWebhookResult.Ignore("Non-actionable Stripe event", payment));
         }
 
-        // Non-actionable event (payment_method.attached, customer.created, …)
-        if (response.PaymentStatus == PaymentStatusEnum.Processing
-            || string.IsNullOrEmpty(response.PaymentUniqueId))
-        {
-            return PaymentWebhookResult.Ignore("Non-actionable Stripe event");
-        }
-
-        return PaymentWebhookResult.Ok(response);
+        return Task.FromResult(result);
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -263,7 +259,11 @@ public static class StripeProviderExtensions
     /// </summary>
     public static void RegisterStripeProvider(this IServiceCollection services)
     {
-        services.AddOptions<StripeServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<StripeServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.SecretKey), $"'{StripeServiceOptions.ConfigurationKey}:SecretKey' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.WebhookSecret), $"'{StripeServiceOptions.ConfigurationKey}:WebhookSecret' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<StripeConfigureOptions>();
         services.AddTransient<global::Stripe.Checkout.SessionService>();
         services.AddTransient<IStripeServiceCaller, StripeServiceCaller>();

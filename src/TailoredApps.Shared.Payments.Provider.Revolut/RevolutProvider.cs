@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -53,9 +54,9 @@ file class RevolutOrderResponse
 public interface IRevolutServiceCaller
 {
     /// <summary>Wywołanie API.</summary>
-    Task<(string? id, string? checkoutUrl)> CreateOrderAsync(PaymentRequest request);
+    Task<(string? id, string? checkoutUrl)> CreateOrderAsync(PaymentRequest request, CancellationToken cancellationToken = default);
     /// <summary>Wywołanie API.</summary>
-    Task<(string? state, string? id)> GetOrderAsync(string orderId);
+    Task<(string? state, string? id)> GetOrderAsync(string orderId, CancellationToken cancellationToken = default);
     /// <summary>Weryfikuje podpis powiadomienia.</summary>
     bool VerifyWebhookSignature(string payload, string timestamp, string signature);
 }
@@ -93,7 +94,7 @@ public class RevolutServiceCaller : IRevolutServiceCaller
     }
 
     /// <inheritdoc/>
-    public async Task<(string? id, string? checkoutUrl)> CreateOrderAsync(PaymentRequest request)
+    public async Task<(string? id, string? checkoutUrl)> CreateOrderAsync(PaymentRequest request, CancellationToken cancellationToken = default)
     {
         using var client = CreateClient();
         var body = new RevolutOrderRequest
@@ -105,20 +106,20 @@ public class RevolutServiceCaller : IRevolutServiceCaller
             Email = request.Email,
         };
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync($"{options.ApiUrl}/1.0/orders", content);
-        var json = await response.Content.ReadAsStringAsync();
+        var response = await client.PostAsync($"{options.ApiUrl}/1.0/orders", content, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
         return (result?.Id, result?.CheckoutUrl);
     }
 
     /// <inheritdoc/>
-    public async Task<(string? state, string? id)> GetOrderAsync(string orderId)
+    public async Task<(string? state, string? id)> GetOrderAsync(string orderId, CancellationToken cancellationToken = default)
     {
         using var client = CreateClient();
         var safeOrderId = PaymentIdentifier.EnsureSafe(orderId, nameof(orderId));
-        var response = await client.GetAsync($"{options.ApiUrl}/1.0/orders/{safeOrderId}");
+        var response = await client.GetAsync($"{options.ApiUrl}/1.0/orders/{safeOrderId}", cancellationToken);
         if (!response.IsSuccessStatusCode) return (null, orderId);
-        var json = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
         return (result?.State, result?.Id);
     }
@@ -187,7 +188,7 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
     public string Url => "https://revolut.com/business";
 
     /// <inheritdoc/>
-    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
+    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
     {
         ICollection<PaymentChannel> channels =
         [
@@ -198,9 +199,9 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
+    public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
-        var (id, checkoutUrl) = await caller.CreateOrderAsync(request);
+        var (id, checkoutUrl) = await caller.CreateOrderAsync(request, cancellationToken);
         if (id is null)
             return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "API error" };
         return new PaymentResponse
@@ -212,9 +213,9 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> GetStatus(string paymentId)
+    public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
     {
-        var (state, _) = await caller.GetOrderAsync(paymentId);
+        var (state, _) = await caller.GetOrderAsync(paymentId, cancellationToken);
         var status = state switch
         {
             "completed" => PaymentStatusEnum.Finished,
@@ -231,7 +232,7 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
     /// <inheritdoc/>
-    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {
         var body = request.Body ?? string.Empty;
         var timestamp = request.Headers.TryGetValue("Revolut-Request-Timestamp", out var t) ? t.ToString() : string.Empty;
@@ -247,33 +248,21 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        var response = await TransactionStatusChange(payload);
-
-        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
-        {
-            var msg = response.ResponseObject?.ToString() ?? string.Empty;
-            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
-                return PaymentWebhookResult.Fail(msg);
-        }
-
-        if (response.PaymentStatus == PaymentStatusEnum.Processing)
-            return PaymentWebhookResult.Ignore("Non-actionable event");
-
-        return PaymentWebhookResult.Ok(response);
+        return Task.FromResult(ProcessNotification(payload));
     }
 
     /// <inheritdoc/>
-    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
+        => Task.FromResult(ProcessNotification(payload).ToPaymentResponse());
+
+    private PaymentWebhookResult ProcessNotification(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
         var timestamp = payload.QueryParameters.TryGetValue("Revolut-Request-Timestamp", out var t) ? t.ToString() : string.Empty;
         var signature = payload.QueryParameters.TryGetValue("Revolut-Signature", out var s) ? s.ToString() : string.Empty;
 
         if (!caller.VerifyWebhookSignature(body, timestamp, signature))
-            return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.InvalidSignature, "Invalid signature");
 
         var status = PaymentStatusEnum.Processing;
         string? paymentUniqueId = null;
@@ -295,7 +284,7 @@ public class RevolutProvider : IPaymentProvider, IWebhookPaymentProvider
         }
         catch { /* ignore */ }
 
-        return Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
+        return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
     }
 }
 
@@ -305,7 +294,11 @@ public static class RevolutProviderExtensions
     /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterRevolutProvider(this IServiceCollection services)
     {
-        services.AddOptions<RevolutServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<RevolutServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ApiKey), $"'{RevolutServiceOptions.ConfigurationKey}:ApiKey' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.WebhookSecret), $"'{RevolutServiceOptions.ConfigurationKey}:WebhookSecret' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<RevolutConfigureOptions>();
         services.AddHttpClient("Revolut");
         services.AddTransient<IRevolutServiceCaller, RevolutServiceCaller>();

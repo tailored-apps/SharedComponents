@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -16,8 +17,9 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         /// <param name="url">Absolute URL of the CashBill API endpoint.</param>
         /// <param name="method">HTTP method (e.g. "GET", "POST", "PUT").</param>
         /// <param name="requestFormData">Form-encoded content to send with the request; may be <c>null</c> for GET requests.</param>
+        /// <param name="cancellationToken">Token that cancels the operation.</param>
         /// <returns>Deserialized response of type <typeparamref name="T"/>.</returns>
-        Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData);
+        Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sends an HTTP request with form-encoded body without deserializing the response.
@@ -26,6 +28,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         /// <param name="url">Absolute URL of the CashBill API endpoint.</param>
         /// <param name="method">HTTP method (e.g. "POST", "PUT").</param>
         /// <param name="requestFormData">Form-encoded content to send with the request.</param>
-        Task MakeFormRequest(string url, string method, FormUrlEncodedContent requestFormData);
+        /// <param name="cancellationToken">Token that cancels the operation.</param>
+        Task MakeFormRequest(string url, string method, FormUrlEncodedContent requestFormData, CancellationToken cancellationToken = default);
     }
 }

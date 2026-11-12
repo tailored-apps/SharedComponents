@@ -1,4 +1,5 @@
 #nullable enable
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -82,7 +83,7 @@ public class AdyenProviderTests
     public async Task RequestPayment_CallerSuccess_ReturnsCreated()
     {
         var mock = new Mock<IAdyenServiceCaller>();
-        mock.Setup(m => m.CreateSessionAsync(It.IsAny<PaymentRequest>()))
+        mock.Setup(m => m.CreateSessionAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(("sess_abc", "https://checkout.adyen.com/pay/abc", null));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -96,7 +97,7 @@ public class AdyenProviderTests
     public async Task RequestPayment_CallerError_ReturnsRejected()
     {
         var mock = new Mock<IAdyenServiceCaller>();
-        mock.Setup(m => m.CreateSessionAsync(It.IsAny<PaymentRequest>()))
+        mock.Setup(m => m.CreateSessionAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((null, null, "API error"));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -108,7 +109,7 @@ public class AdyenProviderTests
     public async Task GetStatus_Finished()
     {
         var mock = new Mock<IAdyenServiceCaller>();
-        mock.Setup(m => m.GetPaymentStatusAsync("psp_123")).ReturnsAsync(PaymentStatusEnum.Finished);
+        mock.Setup(m => m.GetPaymentStatusAsync("psp_123", It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Finished);
         var result = await Build(mock.Object).GetStatus("psp_123");
         Assert.Equal(PaymentStatusEnum.Finished, result.PaymentStatus);
     }
@@ -117,7 +118,7 @@ public class AdyenProviderTests
     public async Task GetStatus_Processing()
     {
         var mock = new Mock<IAdyenServiceCaller>();
-        mock.Setup(m => m.GetPaymentStatusAsync("psp_123")).ReturnsAsync(PaymentStatusEnum.Processing);
+        mock.Setup(m => m.GetPaymentStatusAsync("psp_123", It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Processing);
         var result = await Build(mock.Object).GetStatus("psp_123");
         Assert.Equal(PaymentStatusEnum.Processing, result.PaymentStatus);
     }
@@ -193,8 +194,8 @@ public class PayUProviderTests
     public async Task RequestPayment_Success_ReturnsCreated()
     {
         var mock = new Mock<IPayUServiceCaller>();
-        mock.Setup(m => m.GetAccessTokenAsync()).ReturnsAsync("token_abc");
-        mock.Setup(m => m.CreateOrderAsync("token_abc", It.IsAny<PaymentRequest>()))
+        mock.Setup(m => m.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("token_abc");
+        mock.Setup(m => m.CreateOrderAsync("token_abc", It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(("order_123", "https://secure.payu.com/pay/abc", null));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -208,8 +209,8 @@ public class PayUProviderTests
     public async Task RequestPayment_CreateOrderFails_ReturnsRejected()
     {
         var mock = new Mock<IPayUServiceCaller>();
-        mock.Setup(m => m.GetAccessTokenAsync()).ReturnsAsync("token");
-        mock.Setup(m => m.CreateOrderAsync(It.IsAny<string>(), It.IsAny<PaymentRequest>()))
+        mock.Setup(m => m.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("token");
+        mock.Setup(m => m.CreateOrderAsync(It.IsAny<string>(), It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((null, null, "Unauthorized"));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -220,8 +221,8 @@ public class PayUProviderTests
     public async Task GetStatus_Completed_ReturnsFinished()
     {
         var mock = new Mock<IPayUServiceCaller>();
-        mock.Setup(m => m.GetAccessTokenAsync()).ReturnsAsync("token");
-        mock.Setup(m => m.GetOrderStatusAsync("token", "order_1")).ReturnsAsync(PaymentStatusEnum.Finished);
+        mock.Setup(m => m.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("token");
+        mock.Setup(m => m.GetOrderStatusAsync("token", "order_1", It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Finished);
         var result = await Build(mock.Object).GetStatus("order_1");
         Assert.Equal(PaymentStatusEnum.Finished, result.PaymentStatus);
     }
@@ -230,8 +231,8 @@ public class PayUProviderTests
     public async Task GetStatus_Pending_ReturnsProcessing()
     {
         var mock = new Mock<IPayUServiceCaller>();
-        mock.Setup(m => m.GetAccessTokenAsync()).ReturnsAsync("token");
-        mock.Setup(m => m.GetOrderStatusAsync("token", "order_1")).ReturnsAsync(PaymentStatusEnum.Processing);
+        mock.Setup(m => m.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("token");
+        mock.Setup(m => m.GetOrderStatusAsync("token", "order_1", It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Processing);
         var result = await Build(mock.Object).GetStatus("order_1");
         Assert.Equal(PaymentStatusEnum.Processing, result.PaymentStatus);
     }
@@ -240,8 +241,8 @@ public class PayUProviderTests
     public async Task GetStatus_Canceled_ReturnsRejected()
     {
         var mock = new Mock<IPayUServiceCaller>();
-        mock.Setup(m => m.GetAccessTokenAsync()).ReturnsAsync("token");
-        mock.Setup(m => m.GetOrderStatusAsync("token", "order_1")).ReturnsAsync(PaymentStatusEnum.Rejected);
+        mock.Setup(m => m.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("token");
+        mock.Setup(m => m.GetOrderStatusAsync("token", "order_1", It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Rejected);
         var result = await Build(mock.Object).GetStatus("order_1");
         Assert.Equal(PaymentStatusEnum.Rejected, result.PaymentStatus);
     }
@@ -334,7 +335,7 @@ public class Przelewy24ProviderTests
     public async Task RequestPayment_Success_ReturnsCreated()
     {
         var mock = new Mock<IPrzelewy24ServiceCaller>();
-        mock.Setup(m => m.RegisterTransactionAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>()))
+        mock.Setup(m => m.RegisterTransactionAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(("token_p24_abc", null));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -348,7 +349,7 @@ public class Przelewy24ProviderTests
     public async Task RequestPayment_ApiError_ReturnsRejected()
     {
         var mock = new Mock<IPrzelewy24ServiceCaller>();
-        mock.Setup(m => m.RegisterTransactionAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>()))
+        mock.Setup(m => m.RegisterTransactionAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((null, "Bad credentials"));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -368,7 +369,7 @@ public class Przelewy24ProviderTests
         var body = """{"sessionId":"sess_1","amount":999,"currency":"PLN","orderId":12345}""";
         var mock = new Mock<IPrzelewy24ServiceCaller>();
         mock.Setup(m => m.VerifyNotification(body)).Returns(true);
-        mock.Setup(m => m.VerifyTransactionAsync("sess_1", 999, "PLN", 12345)).ReturnsAsync(PaymentStatusEnum.Finished);
+        mock.Setup(m => m.VerifyTransactionAsync("sess_1", 999, "PLN", 12345, It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Finished);
         var result = await Build(mock.Object).TransactionStatusChange(Req.Webhook(body));
         Assert.Equal(PaymentStatusEnum.Finished, result.PaymentStatus);
     }
@@ -379,7 +380,7 @@ public class Przelewy24ProviderTests
         var body = """{"sessionId":"sess_1","amount":999,"currency":"PLN","orderId":12345}""";
         var mock = new Mock<IPrzelewy24ServiceCaller>();
         mock.Setup(m => m.VerifyNotification(body)).Returns(true);
-        mock.Setup(m => m.VerifyTransactionAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<int>()))
+        mock.Setup(m => m.VerifyTransactionAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(PaymentStatusEnum.Rejected);
         var result = await Build(mock.Object).TransactionStatusChange(Req.Webhook(body));
         Assert.Equal(PaymentStatusEnum.Rejected, result.PaymentStatus);
@@ -432,8 +433,8 @@ public class TpayProviderTests
     public async Task RequestPayment_Success_ReturnsCreated()
     {
         var mock = new Mock<ITpayServiceCaller>();
-        mock.Setup(m => m.GetAccessTokenAsync()).ReturnsAsync("token_tpay");
-        mock.Setup(m => m.CreateTransactionAsync("token_tpay", It.IsAny<PaymentRequest>()))
+        mock.Setup(m => m.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("token_tpay");
+        mock.Setup(m => m.CreateTransactionAsync("token_tpay", It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(("txn_123", "https://pay.tpay.com/txn/abc"));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -447,8 +448,8 @@ public class TpayProviderTests
     public async Task RequestPayment_NoTransactionId_ReturnsRejected()
     {
         var mock = new Mock<ITpayServiceCaller>();
-        mock.Setup(m => m.GetAccessTokenAsync()).ReturnsAsync("token");
-        mock.Setup(m => m.CreateTransactionAsync(It.IsAny<string>(), It.IsAny<PaymentRequest>()))
+        mock.Setup(m => m.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("token");
+        mock.Setup(m => m.CreateTransactionAsync(It.IsAny<string>(), It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((null, null));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -459,8 +460,8 @@ public class TpayProviderTests
     public async Task GetStatus_Finished()
     {
         var mock = new Mock<ITpayServiceCaller>();
-        mock.Setup(m => m.GetAccessTokenAsync()).ReturnsAsync("tok");
-        mock.Setup(m => m.GetTransactionStatusAsync("tok", "txn_1")).ReturnsAsync(PaymentStatusEnum.Finished);
+        mock.Setup(m => m.GetAccessTokenAsync(It.IsAny<CancellationToken>())).ReturnsAsync("tok");
+        mock.Setup(m => m.GetTransactionStatusAsync("tok", "txn_1", It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Finished);
         var result = await Build(mock.Object).GetStatus("txn_1");
         Assert.Equal(PaymentStatusEnum.Finished, result.PaymentStatus);
     }
@@ -530,7 +531,7 @@ public class HotPayProviderTests
     public async Task RequestPayment_Success_ReturnsCreated()
     {
         var mock = new Mock<IHotPayServiceCaller>();
-        mock.Setup(m => m.InitPaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>()))
+        mock.Setup(m => m.InitPaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(("pay_abc", "https://hotpay.pl/pay/abc"));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -544,7 +545,7 @@ public class HotPayProviderTests
     public async Task RequestPayment_NoUrl_ReturnsRejected()
     {
         var mock = new Mock<IHotPayServiceCaller>();
-        mock.Setup(m => m.InitPaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>()))
+        mock.Setup(m => m.InitPaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((null, null));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -628,7 +629,7 @@ public class PayNowProviderTests
     public async Task RequestPayment_Success_ReturnsCreated()
     {
         var mock = new Mock<IPayNowServiceCaller>();
-        mock.Setup(m => m.CreatePaymentAsync(It.IsAny<PaymentRequest>()))
+        mock.Setup(m => m.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(("pn_abc", "https://api.paynow.pl/checkout/pn_abc"));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -642,7 +643,7 @@ public class PayNowProviderTests
     public async Task RequestPayment_ApiError_ReturnsRejected()
     {
         var mock = new Mock<IPayNowServiceCaller>();
-        mock.Setup(m => m.CreatePaymentAsync(It.IsAny<PaymentRequest>())).ReturnsAsync((null, null));
+        mock.Setup(m => m.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync((null, null));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
         Assert.Equal(PaymentStatusEnum.Rejected, result.PaymentStatus);
@@ -652,7 +653,7 @@ public class PayNowProviderTests
     public async Task GetStatus_Confirmed_ReturnsFinished()
     {
         var mock = new Mock<IPayNowServiceCaller>();
-        mock.Setup(m => m.GetPaymentStatusAsync("pn_1")).ReturnsAsync(PaymentStatusEnum.Finished);
+        mock.Setup(m => m.GetPaymentStatusAsync("pn_1", It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Finished);
         var result = await Build(mock.Object).GetStatus("pn_1");
         Assert.Equal(PaymentStatusEnum.Finished, result.PaymentStatus);
     }
@@ -661,7 +662,7 @@ public class PayNowProviderTests
     public async Task GetStatus_Pending_ReturnsProcessing()
     {
         var mock = new Mock<IPayNowServiceCaller>();
-        mock.Setup(m => m.GetPaymentStatusAsync("pn_1")).ReturnsAsync(PaymentStatusEnum.Processing);
+        mock.Setup(m => m.GetPaymentStatusAsync("pn_1", It.IsAny<CancellationToken>())).ReturnsAsync(PaymentStatusEnum.Processing);
         var result = await Build(mock.Object).GetStatus("pn_1");
         Assert.Equal(PaymentStatusEnum.Processing, result.PaymentStatus);
     }
@@ -738,7 +739,7 @@ public class RevolutProviderTests
     public async Task RequestPayment_Success_ReturnsCreated()
     {
         var mock = new Mock<IRevolutServiceCaller>();
-        mock.Setup(m => m.CreateOrderAsync(It.IsAny<PaymentRequest>()))
+        mock.Setup(m => m.CreateOrderAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(("rev_abc", "https://checkout.revolut.com/pay/abc"));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
@@ -752,7 +753,7 @@ public class RevolutProviderTests
     public async Task RequestPayment_ApiError_ReturnsRejected()
     {
         var mock = new Mock<IRevolutServiceCaller>();
-        mock.Setup(m => m.CreateOrderAsync(It.IsAny<PaymentRequest>())).ReturnsAsync((null, null));
+        mock.Setup(m => m.CreateOrderAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync((null, null));
 
         var result = await Build(mock.Object).RequestPayment(Req.Make());
         Assert.Equal(PaymentStatusEnum.Rejected, result.PaymentStatus);
@@ -762,7 +763,7 @@ public class RevolutProviderTests
     public async Task GetStatus_Completed_ReturnsFinished()
     {
         var mock = new Mock<IRevolutServiceCaller>();
-        mock.Setup(m => m.GetOrderAsync("rev_1")).ReturnsAsync(("completed", "rev_1"));
+        mock.Setup(m => m.GetOrderAsync("rev_1", It.IsAny<CancellationToken>())).ReturnsAsync(("completed", "rev_1"));
         var result = await Build(mock.Object).GetStatus("rev_1");
         Assert.Equal(PaymentStatusEnum.Finished, result.PaymentStatus);
     }
@@ -771,7 +772,7 @@ public class RevolutProviderTests
     public async Task GetStatus_Pending_ReturnsProcessing()
     {
         var mock = new Mock<IRevolutServiceCaller>();
-        mock.Setup(m => m.GetOrderAsync("rev_1")).ReturnsAsync(("pending", "rev_1"));
+        mock.Setup(m => m.GetOrderAsync("rev_1", It.IsAny<CancellationToken>())).ReturnsAsync(("pending", "rev_1"));
         var result = await Build(mock.Object).GetStatus("rev_1");
         Assert.Equal(PaymentStatusEnum.Processing, result.PaymentStatus);
     }
@@ -780,7 +781,7 @@ public class RevolutProviderTests
     public async Task GetStatus_Cancelled_ReturnsRejected()
     {
         var mock = new Mock<IRevolutServiceCaller>();
-        mock.Setup(m => m.GetOrderAsync("rev_1")).ReturnsAsync(("cancelled", "rev_1"));
+        mock.Setup(m => m.GetOrderAsync("rev_1", It.IsAny<CancellationToken>())).ReturnsAsync(("cancelled", "rev_1"));
         var result = await Build(mock.Object).GetStatus("rev_1");
         Assert.Equal(PaymentStatusEnum.Rejected, result.PaymentStatus);
     }
@@ -789,7 +790,7 @@ public class RevolutProviderTests
     public async Task GetStatus_Unknown_ReturnsFallback()
     {
         var mock = new Mock<IRevolutServiceCaller>();
-        mock.Setup(m => m.GetOrderAsync("rev_1")).ReturnsAsync(("authorised", "rev_1"));
+        mock.Setup(m => m.GetOrderAsync("rev_1", It.IsAny<CancellationToken>())).ReturnsAsync(("authorised", "rev_1"));
         var result = await Build(mock.Object).GetStatus("rev_1");
         // authorised → Created or Processing depending on implementation
         Assert.True(result.PaymentStatus != PaymentStatusEnum.Finished);

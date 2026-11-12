@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TailoredApps.Shared.Payments
@@ -22,12 +23,13 @@ namespace TailoredApps.Shared.Payments
         /// Unified representation of the raw HTTP request
         /// (body, headers, query parameters, etc.).
         /// </param>
+        /// <param name="cancellationToken">Token that cancels the operation.</param>
         /// <returns>
-        /// <see cref="PaymentWebhookResult.Ok"/> — notification was processed,
-        ///   <see cref="PaymentWebhookResult.PaymentResponse"/> contains the resolved status.<br/>
-        /// <see cref="PaymentWebhookResult.Ignore"/> — notification was valid but irrelevant.<br/>
-        /// <see cref="PaymentWebhookResult.Fail"/> — signature invalid, parse error, etc.
+        /// <see cref="PaymentWebhookProcessed"/> — the notification was authentic and carries the resolved payment state.<br/>
+        /// <see cref="PaymentWebhookIgnored"/> — the notification was authentic but requires no action.<br/>
+        /// <see cref="PaymentWebhookRejected"/> — the notification was not accepted;
+        ///   <see cref="PaymentWebhookRejected.Rejection"/> says why (invalid signature, malformed payload, …).
         /// </returns>
-        Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request);
+        Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default);
     }
 }

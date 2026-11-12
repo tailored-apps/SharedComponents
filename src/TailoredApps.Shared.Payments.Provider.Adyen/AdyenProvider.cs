@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -91,10 +92,10 @@ file class AdyenStatusResponse
 public interface IAdyenServiceCaller
 {
     /// <summary>Tworzy sesję płatności Adyen i zwraca id sesji oraz URL checkout.</summary>
-    Task<(string? sessionId, string? checkoutUrl, string? error)> CreateSessionAsync(PaymentRequest request);
+    Task<(string? sessionId, string? checkoutUrl, string? error)> CreateSessionAsync(PaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Pobiera status płatności na podstawie pspReference lub sessionId.</summary>
-    Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId);
+    Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId, CancellationToken cancellationToken = default);
 
     /// <summary>Weryfikuje HMAC podpis powiadomienia webhooka.</summary>
     bool VerifyNotificationHmac(string payload, string hmacSignature);
@@ -130,7 +131,7 @@ public class AdyenServiceCaller : IAdyenServiceCaller
     }
 
     /// <inheritdoc/>
-    public async Task<(string? sessionId, string? checkoutUrl, string? error)> CreateSessionAsync(PaymentRequest request)
+    public async Task<(string? sessionId, string? checkoutUrl, string? error)> CreateSessionAsync(PaymentRequest request, CancellationToken cancellationToken = default)
     {
         using var client = CreateClient();
         var body = new AdyenSessionRequest
@@ -143,8 +144,8 @@ public class AdyenServiceCaller : IAdyenServiceCaller
             CountryCode = request.Country ?? "PL",
         };
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync($"{BaseUrl}/sessions", content);
-        var json = await response.Content.ReadAsStringAsync();
+        var response = await client.PostAsync($"{BaseUrl}/sessions", content, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
             return (null, null, json);
@@ -154,13 +155,13 @@ public class AdyenServiceCaller : IAdyenServiceCaller
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId)
+    public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId, CancellationToken cancellationToken = default)
     {
         using var client = CreateClient();
         var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
-        var response = await client.GetAsync($"{BaseUrl}/payments/{safePaymentId}/details");
+        var response = await client.GetAsync($"{BaseUrl}/payments/{safePaymentId}/details", cancellationToken);
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
-        var json = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<AdyenStatusResponse>(json);
         return result?.ResultCode switch
         {
@@ -215,7 +216,7 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
     public string Url => "https://www.adyen.com";
 
     /// <inheritdoc/>
-    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
+    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
     {
         ICollection<PaymentChannel> channels = currency.ToUpperInvariant() switch
         {
@@ -240,9 +241,9 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
+    public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
-        var (sessionId, checkoutUrl, error) = await caller.CreateSessionAsync(request);
+        var (sessionId, checkoutUrl, error) = await caller.CreateSessionAsync(request, cancellationToken);
 
         if (sessionId is null)
             return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = error };
@@ -256,16 +257,16 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> GetStatus(string paymentId)
+    public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
     {
-        var status = await caller.GetPaymentStatusAsync(paymentId);
+        var status = await caller.GetPaymentStatusAsync(paymentId, cancellationToken);
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
     /// <inheritdoc/>
-    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {
         var body = request.Body ?? string.Empty;
         var hmac = request.Headers.TryGetValue("HmacSignature", out var h) ? h.ToString() : string.Empty;
@@ -279,32 +280,20 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        var response = await TransactionStatusChange(payload);
-
-        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
-        {
-            var msg = response.ResponseObject?.ToString() ?? string.Empty;
-            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
-                return PaymentWebhookResult.Fail(msg);
-        }
-
-        if (response.PaymentStatus == PaymentStatusEnum.Processing)
-            return PaymentWebhookResult.Ignore("Non-actionable event");
-
-        return PaymentWebhookResult.Ok(response);
+        return Task.FromResult(ProcessNotification(payload));
     }
 
     /// <inheritdoc/>
-    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
+        => Task.FromResult(ProcessNotification(payload).ToPaymentResponse());
+
+    private PaymentWebhookResult ProcessNotification(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
         var hmac = payload.QueryParameters.TryGetValue("HmacSignature", out var h) ? h.ToString() : string.Empty;
 
         if (!caller.VerifyNotificationHmac(body, hmac))
-            return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid HMAC" });
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.InvalidSignature, "Invalid HMAC");
 
         var status = PaymentStatusEnum.Processing;
         string? paymentUniqueId = null;
@@ -340,7 +329,7 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
         }
         catch { /* ignore */ }
 
-        return Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
+        return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
     }
 }
 
@@ -352,7 +341,12 @@ public static class AdyenProviderExtensions
     /// <summary>Rejestruje <see cref="AdyenProvider"/> i jego zależności w kontenerze DI.</summary>
     public static void RegisterAdyenProvider(this IServiceCollection services)
     {
-        services.AddOptions<AdyenServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<AdyenServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ApiKey), $"'{AdyenServiceOptions.ConfigurationKey}:ApiKey' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.MerchantAccount), $"'{AdyenServiceOptions.ConfigurationKey}:MerchantAccount' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.NotificationHmacKey), $"'{AdyenServiceOptions.ConfigurationKey}:NotificationHmacKey' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<AdyenConfigureOptions>();
         services.AddHttpClient("Adyen");
         services.AddTransient<IAdyenServiceCaller, AdyenServiceCaller>();

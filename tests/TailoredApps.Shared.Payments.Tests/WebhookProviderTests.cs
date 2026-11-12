@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
@@ -341,7 +342,7 @@ public class Przelewy24WebhookTests
         var body = """{"sessionId":"sess_1","orderId":12345,"merchantId":100,"amount":1000,"currency":"PLN","sign":"abc"}""";
         var mock = new Mock<IPrzelewy24ServiceCaller>();
         mock.Setup(m => m.VerifyNotification(body)).Returns(true);
-        mock.Setup(m => m.VerifyTransactionAsync("sess_1", 1000, "PLN", 12345))
+        mock.Setup(m => m.VerifyTransactionAsync("sess_1", 1000, "PLN", 12345, It.IsAny<CancellationToken>()))
             .ReturnsAsync(PaymentStatusEnum.Finished);
 
         var request = new PaymentWebhookRequest { Body = body };
@@ -358,7 +359,7 @@ public class Przelewy24WebhookTests
         var body = """{"sessionId":"sess_1","orderId":12345,"merchantId":100,"amount":1000,"currency":"PLN","sign":"abc"}""";
         var mock = new Mock<IPrzelewy24ServiceCaller>();
         mock.Setup(m => m.VerifyNotification(body)).Returns(true);
-        mock.Setup(m => m.VerifyTransactionAsync("sess_1", 1000, "PLN", 12345))
+        mock.Setup(m => m.VerifyTransactionAsync("sess_1", 1000, "PLN", 12345, It.IsAny<CancellationToken>()))
             .ReturnsAsync(PaymentStatusEnum.Rejected);
 
         var request = new PaymentWebhookRequest { Body = body };

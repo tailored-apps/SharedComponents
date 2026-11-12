@@ -1,3 +1,4 @@
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,15 +27,15 @@ namespace TailoredApps.Shared.Payments
         }
 
         /// <inheritdoc/>
-        public async Task<ICollection<PaymentProvider>> GetProviders()
+        public async Task<ICollection<PaymentProvider>> GetProviders(CancellationToken cancellationToken = default)
         {
-            return await Task.Run(() => paymentService.Select(x => new PaymentProvider { Id = x.Key, Name = x.Name }).ToList());
+            return await Task.Run(() => paymentService.Select(x => new PaymentProvider { Id = x.Key, Name = x.Name }).ToList(), cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<ICollection<PaymentChannel>> GetChannels(string providerId, string currency)
+        public async Task<ICollection<PaymentChannel>> GetChannels(string providerId, string currency, CancellationToken cancellationToken = default)
         {
-            var channels = await paymentService.Single(x => x.Key == providerId).GetPaymentChannels(currency);
+            var channels = await paymentService.Single(x => x.Key == providerId).GetPaymentChannels(currency, cancellationToken);
             return channels.Select(x => new PaymentChannel
             {
                 AvailableCurrencies = x.AvailableCurrencies,
@@ -48,38 +49,38 @@ namespace TailoredApps.Shared.Payments
         }
 
         /// <inheritdoc/>
-        public async Task<PaymentResponse> RegisterPayment(PaymentRequest request)
+        public async Task<PaymentResponse> RegisterPayment(PaymentRequest request, CancellationToken cancellationToken = default)
         {
             var provider = paymentService.Single(x => x.Key == request.PaymentProvider);
-            return await provider.RequestPayment(request);
+            return await provider.RequestPayment(request, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<PaymentResponse> GetStatus(string providerId, string paymentId)
+        public async Task<PaymentResponse> GetStatus(string providerId, string paymentId, CancellationToken cancellationToken = default)
         {
             var provider = paymentService.Single(x => x.Key == providerId);
-            return await provider.GetStatus(paymentId);
+            return await provider.GetStatus(paymentId, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<PaymentResponse> TransactionStatusChange(string providerId, TransactionStatusChangePayload payload)
+        public async Task<PaymentResponse> TransactionStatusChange(string providerId, TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
         {
             payload.ProviderId = providerId;
             var provider = paymentService.Single(x => x.Key == providerId);
-            return await provider.TransactionStatusChange(payload);
+            return await provider.TransactionStatusChange(payload, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<PaymentWebhookResult> HandleWebhookAsync(string providerKey, PaymentWebhookRequest request)
+        public async Task<PaymentWebhookResult> HandleWebhookAsync(string providerKey, PaymentWebhookRequest request, CancellationToken cancellationToken = default)
         {
             var provider = paymentService.FirstOrDefault(x => x.Key == providerKey);
             if (provider is null)
-                return PaymentWebhookResult.Fail($"Provider '{providerKey}' not found.");
+                return PaymentWebhookResult.Reject(PaymentWebhookRejection.UnknownProvider, $"Provider '{providerKey}' not found.");
 
             if (provider is not IWebhookPaymentProvider webhookProvider)
-                return PaymentWebhookResult.Fail($"Provider '{providerKey}' does not support webhook handling.");
+                return PaymentWebhookResult.Reject(PaymentWebhookRejection.NotSupported, $"Provider '{providerKey}' does not support webhook handling.");
 
-            return await webhookProvider.HandleWebhookAsync(request);
+            return await webhookProvider.HandleWebhookAsync(request, cancellationToken);
         }
     }
 }

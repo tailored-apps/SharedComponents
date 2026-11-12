@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -107,13 +108,13 @@ file class PayUOrderDetail
 public interface IPayUServiceCaller
 {
     /// <summary>Pobiera token OAuth (grant_type=client_credentials).</summary>
-    Task<string> GetAccessTokenAsync();
+    Task<string> GetAccessTokenAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Tworzy zamówienie w PayU i zwraca orderId + redirectUri.</summary>
-    Task<(string? orderId, string? redirectUri, string? error)> CreateOrderAsync(string token, PaymentRequest request);
+    Task<(string? orderId, string? redirectUri, string? error)> CreateOrderAsync(string token, PaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Pobiera status zamówienia po orderId.</summary>
-    Task<PaymentStatusEnum> GetOrderStatusAsync(string token, string orderId);
+    Task<PaymentStatusEnum> GetOrderStatusAsync(string token, string orderId, CancellationToken cancellationToken = default);
 
     /// <summary>Weryfikuje podpis powiadomienia (OpenPayU-Signature header).</summary>
     bool VerifySignature(string body, string incomingSignature);
@@ -146,7 +147,7 @@ public class PayUServiceCaller : IPayUServiceCaller
     }
 
     /// <inheritdoc/>
-    public async Task<string> GetAccessTokenAsync()
+    public async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken = default)
     {
         using var client = httpClientFactory.CreateClient("PayU");
         var content = new FormUrlEncodedContent([
@@ -154,14 +155,14 @@ public class PayUServiceCaller : IPayUServiceCaller
             new("client_id",     options.ClientId),
             new("client_secret", options.ClientSecret),
         ]);
-        var response = await client.PostAsync($"{options.ServiceUrl}/pl/standard/user/oauth/authorize", content);
+        var response = await client.PostAsync($"{options.ServiceUrl}/pl/standard/user/oauth/authorize", content, cancellationToken);
         response.EnsureSuccessStatusCode();
-        var json = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<PayUTokenResponse>(json)?.AccessToken ?? string.Empty;
     }
 
     /// <inheritdoc/>
-    public async Task<(string? orderId, string? redirectUri, string? error)> CreateOrderAsync(string token, PaymentRequest request)
+    public async Task<(string? orderId, string? redirectUri, string? error)> CreateOrderAsync(string token, PaymentRequest request, CancellationToken cancellationToken = default)
     {
         using var client = new HttpClient(NoRedirectHandler, disposeHandler: false);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -180,8 +181,8 @@ public class PayUServiceCaller : IPayUServiceCaller
         };
 
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync($"{options.ServiceUrl}/api/v2_1/orders", content);
-        var json = await response.Content.ReadAsStringAsync();
+        var response = await client.PostAsync($"{options.ServiceUrl}/api/v2_1/orders", content, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (response.StatusCode == System.Net.HttpStatusCode.Found || response.StatusCode == System.Net.HttpStatusCode.Redirect)
         {
@@ -200,14 +201,14 @@ public class PayUServiceCaller : IPayUServiceCaller
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentStatusEnum> GetOrderStatusAsync(string token, string orderId)
+    public async Task<PaymentStatusEnum> GetOrderStatusAsync(string token, string orderId, CancellationToken cancellationToken = default)
     {
         using var client = httpClientFactory.CreateClient("PayU");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var safeOrderId = PaymentIdentifier.EnsureSafe(orderId, nameof(orderId));
-        var response = await client.GetAsync($"{options.ServiceUrl}/api/v2_1/orders/{safeOrderId}");
+        var response = await client.GetAsync($"{options.ServiceUrl}/api/v2_1/orders/{safeOrderId}", cancellationToken);
         if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
-        var json = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<PayUStatusResponse>(json);
         var status = result?.Orders?.FirstOrDefault()?.Status;
         return status switch
@@ -276,7 +277,7 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
     public string Url => "https://payu.pl";
 
     /// <inheritdoc/>
-    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency)
+    public Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default)
     {
         ICollection<PaymentChannel> channels = currency.ToUpperInvariant() switch
         {
@@ -298,10 +299,10 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> RequestPayment(PaymentRequest request)
+    public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
-        var token = await caller.GetAccessTokenAsync();
-        var (orderId, redirectUri, error) = await caller.CreateOrderAsync(token, request);
+        var token = await caller.GetAccessTokenAsync(cancellationToken);
+        var (orderId, redirectUri, error) = await caller.CreateOrderAsync(token, request, cancellationToken);
 
         if (orderId is null)
             return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = error };
@@ -315,17 +316,17 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentResponse> GetStatus(string paymentId)
+    public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
     {
-        var token = await caller.GetAccessTokenAsync();
-        var status = await caller.GetOrderStatusAsync(token, paymentId);
+        var token = await caller.GetAccessTokenAsync(cancellationToken);
+        var status = await caller.GetOrderStatusAsync(token, paymentId, cancellationToken);
         return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
     }
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
     /// <inheritdoc/>
-    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {
         var body = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("OpenPayU-Signature", out var s) ? s.ToString() : string.Empty;
@@ -339,32 +340,20 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        var response = await TransactionStatusChange(payload);
-
-        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
-        {
-            var msg = response.ResponseObject?.ToString() ?? string.Empty;
-            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
-                return PaymentWebhookResult.Fail(msg);
-        }
-
-        if (response.PaymentStatus == PaymentStatusEnum.Processing)
-            return PaymentWebhookResult.Ignore("Non-actionable event");
-
-        return PaymentWebhookResult.Ok(response);
+        return Task.FromResult(ProcessNotification(payload));
     }
 
     /// <inheritdoc/>
-    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+    public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
+        => Task.FromResult(ProcessNotification(payload).ToPaymentResponse());
+
+    private PaymentWebhookResult ProcessNotification(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
         var sig = payload.QueryParameters.TryGetValue("OpenPayU-Signature", out var s) ? s.ToString() : string.Empty;
 
         if (!caller.VerifySignature(body, sig))
-            return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.InvalidSignature, "Invalid signature");
 
         var status = PaymentStatusEnum.Processing;
         string? paymentUniqueId = null;
@@ -386,7 +375,7 @@ public class PayUProvider : IPaymentProvider, IWebhookPaymentProvider
         }
         catch { /* ignore */ }
 
-        return Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
+        return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
     }
 }
 
@@ -398,7 +387,13 @@ public static class PayUProviderExtensions
     /// <summary>Rejestruje <see cref="PayUProvider"/> i jego zależności w kontenerze DI.</summary>
     public static void RegisterPayUProvider(this IServiceCollection services)
     {
-        services.AddOptions<PayUServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<PayUServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), $"'{PayUServiceOptions.ConfigurationKey}:ClientId' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ClientSecret), $"'{PayUServiceOptions.ConfigurationKey}:ClientSecret' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.PosId), $"'{PayUServiceOptions.ConfigurationKey}:PosId' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.SignatureKey), $"'{PayUServiceOptions.ConfigurationKey}:SignatureKey' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<PayUConfigureOptions>();
         services.AddHttpClient("PayU");
         services.AddTransient<IPayUServiceCaller, PayUServiceCaller>();

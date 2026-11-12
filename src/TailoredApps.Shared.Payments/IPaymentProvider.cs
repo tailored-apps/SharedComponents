@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -25,28 +26,32 @@ namespace TailoredApps.Shared.Payments
         /// Returns the list of payment channels available for the given currency.
         /// </summary>
         /// <param name="currency">ISO 4217 currency code (e.g. "PLN", "EUR").</param>
+        /// <param name="cancellationToken">Token that cancels the operation.</param>
         /// <returns>Collection of available <see cref="PaymentChannel"/> objects.</returns>
-        Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency);
+        Task<ICollection<PaymentChannel>> GetPaymentChannels(string currency, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Initiates a new payment transaction via this provider.
         /// </summary>
         /// <param name="request">Payment details including amount, currency, and payer information.</param>
+        /// <param name="cancellationToken">Token that cancels the operation.</param>
         /// <returns>Response containing the redirect URL and payment unique identifier.</returns>
-        Task<PaymentResponse> RequestPayment(PaymentRequest request);
+        Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves the current status of an existing payment.
         /// </summary>
         /// <param name="paymentId">Provider-specific payment or transaction identifier.</param>
+        /// <param name="cancellationToken">Token that cancels the operation.</param>
         /// <returns>Current <see cref="PaymentResponse"/> including status.</returns>
-        Task<PaymentResponse> GetStatus(string paymentId);
+        Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Processes an incoming status-change notification (back-channel or legacy webhook).
         /// </summary>
         /// <param name="payload">Payload wrapper containing body, query parameters, and provider ID.</param>
+        /// <param name="cancellationToken">Token that cancels the operation.</param>
         /// <returns>Resolved <see cref="PaymentResponse"/> with updated status.</returns>
-        Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload);
+        Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default);
     }
 }
