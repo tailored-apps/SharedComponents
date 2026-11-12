@@ -28,7 +28,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         }
 
         /// <inheritdoc/>
-        public async Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent requestFormData)
+        public async Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData)
         {
             try
             {
@@ -37,6 +37,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
                 request22.Method = method;
                 if (method != "GET")
                 {
+                    ArgumentNullException.ThrowIfNull(requestFormData);
                     byte[] byteArray = Encoding.UTF8.GetBytes(await requestFormData.ReadAsStringAsync());
                     request22.ContentType = "application/x-www-form-urlencoded; charset=UTF8";
                     request22.ContentLength = byteArray.Length;
@@ -52,7 +53,8 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
                                 using (StreamReader reader22 = new StreamReader(responseStream))
                                 {
                                     string responseFromServer = reader22.ReadToEnd();
-                                    T payment = JsonSerializer.Deserialize<T>(responseFromServer);
+                                    T payment = JsonSerializer.Deserialize<T>(responseFromServer)
+                                        ?? throw new InvalidOperationException("CashBill returned an empty response.");
                                     return payment;
                                 }
                             }
@@ -68,7 +70,8 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
                             using (StreamReader reader22 = new StreamReader(responseStream))
                             {
                                 string responseFromServer = reader22.ReadToEnd();
-                                T payment = JsonSerializer.Deserialize<T>(responseFromServer);
+                                T payment = JsonSerializer.Deserialize<T>(responseFromServer)
+                                        ?? throw new InvalidOperationException("CashBill returned an empty response.");
                                 return payment;
                             }
                         }

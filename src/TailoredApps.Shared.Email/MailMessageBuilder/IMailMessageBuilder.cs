@@ -6,6 +6,6 @@ namespace TailoredApps.Shared.Email.MailMessageBuilder
     public interface IMailMessageBuilder
     {
         /// <summary>Buduje treść wiadomości na podstawie klucza szablonu i zmiennych.</summary>
-        string Build(string templateKey, IDictionary<string, string> variables, IDictionary<string, string> templates);
+        string Build(string templateKey, IDictionary<string, string>? variables, IDictionary<string, string>? templates);
     }
 }

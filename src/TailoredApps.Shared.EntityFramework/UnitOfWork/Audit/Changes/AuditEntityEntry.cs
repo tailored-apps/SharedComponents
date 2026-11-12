@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
 using TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions;
 
@@ -42,7 +43,7 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes
         /// <summary>
         /// Returns a dictionary mapping primary key property names to their current values.
         /// </summary>
-        Dictionary<string, object> GetPrimaryKeys();
+        Dictionary<string, object?> GetPrimaryKeys();
 
         /// <summary>
         /// Copies primary key values from the EF Core tracked entity into both
@@ -98,19 +99,19 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes
         /// <inheritdoc/>
         public string GetPrimaryKeyStringIdentifier()
         {
-            var primaryKeyValues = _entityEntry.Metadata.FindPrimaryKey()
+            var primaryKeyValues = GetPrimaryKey()
                 .Properties
-                .Select(key => key.PropertyInfo.GetValue(_entityEntry.Entity));
+                .Select(key => key.PropertyInfo?.GetValue(_entityEntry.Entity));
 
             return $"{EntityType.Name}_{string.Join("_", primaryKeyValues)}";
         }
 
         /// <inheritdoc/>
-        public Dictionary<string, object> GetPrimaryKeys()
+        public Dictionary<string, object?> GetPrimaryKeys()
         {
-            var primaryKey = _entityEntry.Metadata.FindPrimaryKey();
+            var primaryKey = GetPrimaryKey();
 
-            var keys = primaryKey.Properties.ToDictionary(x => x.Name, x => x.PropertyInfo.GetValue(_entityEntry.Entity));
+            var keys = primaryKey.Properties.ToDictionary(x => x.Name, x => x.PropertyInfo?.GetValue(_entityEntry.Entity));
 
             return keys;
         }
@@ -118,15 +119,25 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes
         /// <inheritdoc/>
         public void SetPrimaryKeys()
         {
-            var primaryKeyProperties = _entityEntry.Metadata.FindPrimaryKey().Properties;
+            var primaryKeyProperties = GetPrimaryKey().Properties;
 
             foreach (var property in primaryKeyProperties)
             {
+                // Shadow key properties have no CLR property to copy.
+                if (property.PropertyInfo is null)
+                {
+                    continue;
+                }
+
                 var primaryKeyValue = property.PropertyInfo.GetValue(_entityEntry.Entity);
 
                 property.PropertyInfo.SetValue(CurrentEntity, primaryKeyValue);
                 property.PropertyInfo.SetValue(OriginalEntity, primaryKeyValue);
             }
         }
+
+        private IKey GetPrimaryKey()
+            => _entityEntry.Metadata.FindPrimaryKey()
+               ?? throw new InvalidOperationException($"Entity '{EntityType.Name}' has no primary key and cannot be audited.");
     }
 }

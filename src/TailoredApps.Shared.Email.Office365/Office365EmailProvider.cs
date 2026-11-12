@@ -57,7 +57,9 @@ namespace TailoredApps.Shared.Email.Office365
             else
             {
                 ICertificateLoader certificateLoader = new DefaultCertificateLoader();
-                certificateLoader.LoadIfNeeded(options.Value.Certificate);
+                var certificate = options.Value.Certificate
+                    ?? throw new InvalidOperationException($"'{AuthenticationConfig.ConfigurationKey}' needs either ClientSecret or Certificate.");
+                certificateLoader.LoadIfNeeded(certificate);
 
                 app = ConfidentialClientApplicationBuilder.Create(options.Value.ClientId)
                     .WithCertificate(options.Value.Certificate.Certificate)
@@ -110,7 +112,9 @@ namespace TailoredApps.Shared.Email.Office365
         {
             var response = new List<Models.MailMessage>();
             var authToken = await confidentialClientApplication.AcquireTokenForClient(scopes).ExecuteAsync();
-            var oauth2 = new SaslMechanismOAuth2(options.Value.MailBox, authToken.AccessToken);
+            var mailBox = options.Value.MailBox
+                ?? throw new InvalidOperationException($"'{AuthenticationConfig.ConfigurationKey}:MailBox' is not configured.");
+            var oauth2 = new SaslMechanismOAuth2(mailBox, authToken.AccessToken);
 
             using (var client = new ImapClient())
             {
@@ -148,9 +152,9 @@ namespace TailoredApps.Shared.Email.Office365
                     {
                         HtmlBody = message.HtmlBody,
                         Topic = message.Subject,
-                        Copy = string.Join(",", message.Cc?.Select(z => z.ToString())),
-                        Sender = string.Join(",", message.From?.Select(z => z.ToString())),
-                        Recipent = string.Join(",", message.To?.Select(z => z.ToString())),
+                        Copy = string.Join(",", message.Cc?.Select(z => z.ToString()) ?? []),
+                        Sender = string.Join(",", message.From?.Select(z => z.ToString()) ?? []),
+                        Recipent = string.Join(",", message.To?.Select(z => z.ToString()) ?? []),
                         Body = message.GetTextBody(MimeKit.Text.TextFormat.Plain),
                         Date = message.Date,
                         Attachements = GetAttachements(message.Attachments)
@@ -168,7 +172,7 @@ namespace TailoredApps.Shared.Email.Office365
             var result = new Dictionary<string, string>();
             foreach (var attachement in attachments)
             {
-                if (attachement is MimePart res)
+                if (attachement is MimePart { Content: not null } res)
                 {
                     byte[] bytes;
                     using (var memoryStream = new MemoryStream())
@@ -199,7 +203,7 @@ namespace TailoredApps.Shared.Email.Office365
         /// <param name="messageBody">The body content of the message.</param>
         /// <param name="attachments">A dictionary of attachment file names mapped to their byte content.</param>
         /// <returns>A string result or identifier for the sent message.</returns>
-        public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
+        public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]>? attachments)
         {
             throw new NotImplementedException();
         }

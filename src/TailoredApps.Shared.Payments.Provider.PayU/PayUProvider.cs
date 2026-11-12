@@ -173,7 +173,7 @@ public class PayUServiceCaller : IPayUServiceCaller
             ContinueUrl = options.ContinueUrl,
             MerchantPosId = options.PosId,
             Description = request.Title ?? request.Description ?? "Order",
-            CurrencyCode = request.Currency.ToUpperInvariant(),
+            CurrencyCode = (request.Currency ?? throw new ArgumentException("Currency is required.", nameof(request))).ToUpperInvariant(),
             TotalAmount = amount,
             Buyer = new PayUBuyer { Email = request.Email ?? string.Empty, FirstName = request.FirstName ?? string.Empty, LastName = request.Surname ?? string.Empty },
             Products = [new PayUProduct { Name = request.Title ?? "Product", UnitPrice = amount }],

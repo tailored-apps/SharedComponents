@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Dynamic.Core.Exceptions;
@@ -56,7 +57,7 @@ namespace TailoredApps.Shared.EntityFramework.Querying
         public static IQueryable<T> ApplySorting<T>(
             this IQueryable<T> query,
             ISortingParameters sortingParameters,
-            IEnumerable<string> allowedSortFields)
+            IEnumerable<string>? allowedSortFields)
         {
             if (sortingParameters?.IsSortingSpecified != true)
                 return query;
@@ -93,7 +94,7 @@ namespace TailoredApps.Shared.EntityFramework.Querying
         public static IQueryable<T> ApplySorting<T>(
             this IQueryable<T> query,
             IEnumerable<ISortingParameters> sortingParameters,
-            IEnumerable<string> allowedSortFields)
+            IEnumerable<string>? allowedSortFields)
             where T : IModelBase
         {
             var parametersSnapshot = sortingParameters?.Where(x => x.IsSortingSpecified)
@@ -114,10 +115,10 @@ namespace TailoredApps.Shared.EntityFramework.Querying
         /// commas, whitespace or operators.
         /// </summary>
         /// <param name="sortField">The field name supplied by the caller.</param>
-        public static bool IsSimpleSortField(string sortField)
+        public static bool IsSimpleSortField([NotNullWhen(true)] string? sortField)
             => !string.IsNullOrWhiteSpace(sortField) && IdentifierPattern.IsMatch(sortField);
 
-        private static void ValidateSortField(string sortField, IEnumerable<string> allowedSortFields)
+        private static void ValidateSortField([NotNull] string? sortField, IEnumerable<string>? allowedSortFields)
         {
             if (!IsSimpleSortField(sortField))
                 throw new ArgumentException("Sort field must be a single property name.", nameof(sortField));
@@ -161,7 +162,7 @@ namespace TailoredApps.Shared.EntityFramework.Querying
         private static string GenerateSortQuery(ISortingParameters sortingParameter)
             => sortingParameter.SortDir == SortDirection.Desc
                 ? $"{sortingParameter.SortField} {SortDirection.Desc}"
-                : sortingParameter.SortField;
+                : sortingParameter.SortField!;
 
     }
 }

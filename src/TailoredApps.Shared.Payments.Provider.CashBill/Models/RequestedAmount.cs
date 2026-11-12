@@ -14,6 +14,6 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill.Models
 
         /// <summary>Gets or sets the ISO 4217 currency code for the requested amount.</summary>
         [JsonPropertyName("currencyCode")]
-        public string CurrencyCode { get; set; }
+        public string? CurrencyCode { get; set; }
     }
 }

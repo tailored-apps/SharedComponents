@@ -25,7 +25,7 @@ namespace TailoredApps.Shared.MediatR.PagedRequest
         public bool IsPagingSpecified => Page.HasValue && Count.HasValue;
 
         /// <summary>Name of the field to sort by.</summary>
-        public string SortField { get; set; }
+        public string? SortField { get; set; }
 
         /// <summary>Sort direction (ascending or descending). Null means no sorting.</summary>
         public SortDirection? SortDir { get; set; }
@@ -34,7 +34,7 @@ namespace TailoredApps.Shared.MediatR.PagedRequest
         public bool IsSortingSpecified => !string.IsNullOrWhiteSpace(SortField) && SortDir.HasValue;
 
         /// <summary>Filter / query criteria applied to the data set.</summary>
-        public TQuery Filter { get; set; }
+        public TQuery? Filter { get; set; }
 
         /// <summary>
         /// Returns <c>true</c> when <see cref="SortField"/> matches <paramref name="fieldName"/>

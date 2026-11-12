@@ -12,12 +12,12 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Model
         /// <summary>
         /// Gets or sets the original file name of the classified image.
         /// </summary>
-        public string FileName { get; set; }
+        public string? FileName { get; set; }
 
         /// <summary>
         /// Gets or sets the label of the class with the highest predicted confidence.
         /// </summary>
-        public string PredictedLabel { get; set; }
+        public string? PredictedLabel { get; set; }
 
         /// <summary>
         /// Gets or sets the confidence score of the predicted label (0.0 to 1.0).
@@ -27,11 +27,11 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Model
         /// <summary>
         /// Gets or sets a dictionary mapping each class label to its confidence score.
         /// </summary>
-        public Dictionary<string, float> Scores { get; set; }
+        public Dictionary<string, float>? Scores { get; set; }
 
         /// <summary>
         /// Gets or sets metadata about the ML model used to produce this prediction.
         /// </summary>
-        public ModelInfo ModelInfo { get; set; }
+        public ModelInfo? ModelInfo { get; set; }
     }
 }

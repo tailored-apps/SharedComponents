@@ -13,11 +13,11 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Messa
         /// <summary>
         /// Gets or sets the path to the source directory containing labelled training images.
         /// </summary>
-        public string Source { get; set; }
+        public string? Source { get; set; }
 
         /// <summary>
         /// Gets or sets the destination file path where the trained model will be saved.
         /// </summary>
-        public string ModelDestFolderPath { get; set; }
+        public string? ModelDestFolderPath { get; set; }
     }
 }

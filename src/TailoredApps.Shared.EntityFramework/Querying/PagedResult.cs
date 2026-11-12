@@ -16,7 +16,7 @@ namespace TailoredApps.Shared.EntityFramework.Querying
     public class PagedResult<T> : IPagedResult<T>
     {
         private static readonly IEnumerable<T> EmptyList = Enumerable.Empty<T>();
-        private readonly PagingQuery<T> pagingQuery;
+        private readonly PagingQuery<T>? pagingQuery;
 
         /// <summary>
         /// Initializes a new instance of <see cref="PagedResult{T}"/> backed by a <see cref="PagingQuery{T}"/>.
@@ -50,6 +50,7 @@ namespace TailoredApps.Shared.EntityFramework.Querying
         /// <returns>This instance with <see cref="Results"/> and <see cref="Count"/> populated.</returns>
         public async Task<PagedResult<T>> GetPagedResultAsync()
         {
+            if (pagingQuery == null) throw new ArgumentNullException(nameof(pagingQuery));
             Results = pagingQuery.IsMoreDataToFetch ? await pagingQuery.ToListAsync() : EmptyList.ToList();
             Count = pagingQuery.TotalCount > 0 ? pagingQuery.TotalCount : Results.Count;
             return this;
@@ -78,7 +79,7 @@ namespace TailoredApps.Shared.EntityFramework.Querying
         /// <summary>
         /// Gets or sets the collection of items for the current page.
         /// </summary>
-        public ICollection<T> Results { get; set; }
+        public ICollection<T> Results { get; set; } = new List<T>();
 
         /// <summary>
         /// Gets or sets the total number of records across all pages.

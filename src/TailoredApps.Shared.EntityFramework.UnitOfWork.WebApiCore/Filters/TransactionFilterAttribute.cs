@@ -97,7 +97,7 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Filters
         /// <summary>
         /// Returns <c>true</c> when the action produced a result with a 4xx or 5xx status code.
         /// </summary>
-        internal static bool IsErrorResult(Microsoft.AspNetCore.Mvc.IActionResult result)
+        internal static bool IsErrorResult(Microsoft.AspNetCore.Mvc.IActionResult? result)
             => result is IStatusCodeActionResult { StatusCode: >= 400 };
     }
 }

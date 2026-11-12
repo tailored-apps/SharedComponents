@@ -26,7 +26,7 @@ namespace TailoredApps.Shared.MediatR.Caching
         }
 
         /// <inheritdoc/>
-        public async Task<T> GetAsync<T>(string cacheKey, CancellationToken cancellationToken)
+        public async Task<T?> GetAsync<T>(string cacheKey, CancellationToken cancellationToken)
         {
             var response = await distributedCache.GetAsync(cacheKey, cancellationToken);
             if (response == null)
@@ -34,7 +34,7 @@ namespace TailoredApps.Shared.MediatR.Caching
                 return default(T);
             }
             var stringData = Encoding.UTF8.GetString(response);
-            var serialized = (T)JsonConvert.DeserializeObject(stringData, typeof(T), new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+            var serialized = (T?)JsonConvert.DeserializeObject(stringData, typeof(T), new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
             return serialized;
         }
 

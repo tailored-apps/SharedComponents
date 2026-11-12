@@ -73,6 +73,18 @@ Po wyłączeniu asset `net11.0` jest kompilowany tak samo jak pozostałe — z m
 
 ---
 
+## Nullable reference types
+
+Od wersji **2.0** każda biblioteka jest kompilowana z włączonymi nullable reference types, więc publiczne API informuje kompilator, które wartości mogą być `null`:
+
+- Składowe, które nigdy nie miały gwarancji wartości, są teraz zadeklarowane jako nullable — na przykład `PaymentRequest.Currency`, `PaymentResponse.RedirectUrl`, `MailMessage.Body` czy opcjonalne właściwości klas opcji. Jeśli Twój projekt ma `<Nullable>enable</Nullable>`, kompilator ostrzeże w miejscach, gdzie taka wartość jest używana bez sprawdzenia.
+- `ICache.GetAsync<T>` zwraca `T?`: brak wpisu w cache to `default(T)`.
+- W czasie działania nic się nie zmienia dla kodu, który już działał. Różnice dotyczą wyłącznie ścieżek, które kończyły się wyjątkiem `NullReferenceException` — teraz zgłaszają wyjątek z opisem, np. żądanie płatności bez waluty rzuca `ArgumentException`, a audyt encji bez klucza głównego `InvalidOperationException`.
+
+W samym repozytorium ostrzeżenia nullable są błędami kompilacji dla wszystkiego w `src/` (`src/Directory.Build.props`), więc adnotacje nie mogą rozjechać się z kodem.
+
+---
+
 ## Budowanie repozytorium
 
 - Wymagany jest **.NET SDK 11.0.100 lub nowszy** — buduje obie platformy docelowe: `net10.0` i `net11.0`.

@@ -91,12 +91,12 @@ namespace TailoredApps.Shared.WebApi.Observability
             }
         }
 
-        private static ResourceBuilder CreateResourceBuilder(string serviceName, string serviceVersion)
+        private static ResourceBuilder CreateResourceBuilder(string serviceName, string? serviceVersion)
         {
             return ConfigureService(ResourceBuilder.CreateDefault(), serviceName, serviceVersion);
         }
 
-        private static ResourceBuilder ConfigureService(ResourceBuilder resource, string serviceName, string serviceVersion)
+        private static ResourceBuilder ConfigureService(ResourceBuilder resource, string serviceName, string? serviceVersion)
         {
             return resource.AddService(
                 serviceName: serviceName,

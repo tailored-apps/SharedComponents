@@ -12,7 +12,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Model
         /// <param name="checksum">The MD5 checksum of the model file.</param>
         /// <param name="version">The version string embedded in the model file.</param>
         /// <param name="labels">The array of class label names the model was trained with.</param>
-        public ModelInfo(string name, string checksum, string version, string[] labels)
+        public ModelInfo(string? name, string checksum, string version, string[] labels)
         {
             Labels = labels;
             Version = version;
@@ -28,7 +28,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Model
         /// <summary>
         /// Gets or sets the file name of the model.
         /// </summary>
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the version string assigned to the model at training time.

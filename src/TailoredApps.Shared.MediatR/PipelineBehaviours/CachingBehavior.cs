@@ -58,7 +58,7 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
             if (!EqualityComparer<TResponse>.Default.Equals(cachedResponse, default))
             {
                 _logger.LogDebug("Response for {RequestType} retrieved from cache. CacheKey: {CacheKey}", typeof(TRequest).FullName, cacheKey);
-                return cachedResponse;
+                return cachedResponse!;
             }
 
             var response = await next();

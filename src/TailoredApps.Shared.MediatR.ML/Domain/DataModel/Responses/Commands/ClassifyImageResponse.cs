@@ -11,6 +11,6 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Respo
         /// <summary>
         /// Gets or sets the image prediction result, including the predicted label and confidence score.
         /// </summary>
-        public ImagePrediction ImagePrediction { get; set; }
+        public ImagePrediction? ImagePrediction { get; set; }
     }
 }

@@ -105,7 +105,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         var body = new PayNowPaymentRequest
         {
             Amount = (long)(request.Amount * 100),
-            Currency = request.Currency.ToUpperInvariant(),
+            Currency = (request.Currency ?? throw new ArgumentException("Currency is required.", nameof(request))).ToUpperInvariant(),
             ExternalId = externalId,
             Description = request.Title ?? request.Description ?? "Order",
             Buyer = new PayNowBuyer { Email = request.Email ?? string.Empty },

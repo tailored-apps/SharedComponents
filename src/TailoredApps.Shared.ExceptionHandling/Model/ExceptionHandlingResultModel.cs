@@ -60,7 +60,7 @@ namespace TailoredApps.Shared.ExceptionHandling.Model
             this.ErrorCode = 400;
             this.Message = "Validation Failed";
             this.Errors = errors.Keys
-                .SelectMany(key => errors[key].Errors.Select(x => new ExceptionOrValidationError(key, x.ErrorMessage)))
+                .SelectMany(key => errors[key]!.Errors.Select(x => new ExceptionOrValidationError(key, x.ErrorMessage)))
                 .ToList();
         }
 

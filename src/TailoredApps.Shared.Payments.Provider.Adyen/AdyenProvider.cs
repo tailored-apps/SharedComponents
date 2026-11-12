@@ -136,7 +136,7 @@ public class AdyenServiceCaller : IAdyenServiceCaller
         var body = new AdyenSessionRequest
         {
             MerchantAccount = options.MerchantAccount,
-            Amount = new AdyenAmount { Value = (long)(request.Amount * 100), Currency = request.Currency.ToUpperInvariant() },
+            Amount = new AdyenAmount { Value = (long)(request.Amount * 100), Currency = (request.Currency ?? throw new ArgumentException("Currency is required.", nameof(request))).ToUpperInvariant() },
             Reference = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
             ReturnUrl = options.ReturnUrl,
             ShopperEmail = request.Email,

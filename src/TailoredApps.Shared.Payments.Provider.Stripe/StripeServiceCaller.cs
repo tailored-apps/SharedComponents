@@ -31,6 +31,8 @@ public class StripeServiceCaller : IStripeServiceCaller
     /// <inheritdoc/>
     public async Task<Session> CreateCheckoutSessionAsync(Payments.PaymentRequest request)
     {
+        var currency = request.Currency ?? throw new ArgumentException("Currency is required.", nameof(request));
+
         // Metody płatności — z konfiguracji (Stripe:AllowedPaymentMethods) lub domyślne per waluta
         var configuredMethods = configuration?
             .GetSection("Stripe:AllowedPaymentMethods")
@@ -38,7 +40,7 @@ public class StripeServiceCaller : IStripeServiceCaller
 
         var paymentMethods = configuredMethods is { Count: > 0 }
             ? configuredMethods
-            : GetPaymentMethodsForCurrency(request.Currency);
+            : GetPaymentMethodsForCurrency(currency);
 
         var createOptions = new SessionCreateOptions
         {
@@ -49,8 +51,8 @@ public class StripeServiceCaller : IStripeServiceCaller
                 {
                     PriceData = new SessionLineItemPriceDataOptions
                     {
-                        Currency    = request.Currency.ToLowerInvariant(),
-                        UnitAmount  = ToStripeAmount(request.Amount, request.Currency),
+                        Currency    = currency.ToLowerInvariant(),
+                        UnitAmount  = ToStripeAmount(request.Amount, currency),
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
                             Name        = request.Title,

@@ -10,18 +10,18 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         public static string ConfigurationKey => "Payments:Providers:Cashbill";
 
         /// <summary>Gets or sets the URL to redirect the payer after a successful payment.</summary>
-        public string ReturnUrl { get; set; }
+        public string ReturnUrl { get; set; } = string.Empty;
 
         /// <summary>Gets or sets the URL to redirect the payer after a failed or cancelled payment.</summary>
-        public string NegativeReturnUrl { get; set; }
+        public string NegativeReturnUrl { get; set; } = string.Empty;
 
         /// <summary>Gets or sets the base URL of the CashBill REST API.</summary>
-        public string ServiceUrl { get; set; }
+        public string ServiceUrl { get; set; } = string.Empty;
 
         /// <summary>Gets or sets the CashBill shop identifier.</summary>
-        public string ShopId { get; set; }
+        public string ShopId { get; set; } = string.Empty;
 
         /// <summary>Gets or sets the secret phrase used to sign API requests and verify notifications.</summary>
-        public string ShopSecretPhrase { get; set; }
+        public string ShopSecretPhrase { get; set; } = string.Empty;
     }
 }

@@ -24,7 +24,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
     public class ClassifyImageCommandHandler : IClassifyImageCommandHandler
     {
         private readonly IImageClassificationService classificationService;
-        private readonly IOptions<ImageClassificationOptions> options;
+        private readonly IOptions<ImageClassificationOptions>? options;
 
         /// <summary>
         /// Initializes a new instance of <see cref="ClassifyImageCommandHandler"/> that applies the
@@ -43,7 +43,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
         /// <param name="options">
         /// Image classification options; when <see langword="null"/> the default image size limit applies.
         /// </param>
-        public ClassifyImageCommandHandler(IImageClassificationService classificationService, IOptions<ImageClassificationOptions> options)
+        public ClassifyImageCommandHandler(IImageClassificationService classificationService, IOptions<ImageClassificationOptions>? options)
         {
             this.classificationService = classificationService ?? throw new ArgumentNullException(nameof(classificationService));
             this.options = options;
@@ -63,20 +63,20 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
         public async Task<ClassifyImageResponse> Handle(ClassifyImage request, CancellationToken cancellationToken)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
-            ValidateImage(request.FileByteArray);
+            var image = ValidateImage(request.FileByteArray);
 
             return await Task.Run(() =>
             {
                 var response = new ClassifyImageResponse { };
 
-                var predictions = classificationService.Predict(request.FileByteArray, request.FileName);
+                var predictions = classificationService.Predict(image, request.FileName);
                 response.ImagePrediction = predictions;
 
                 return response;
             }, cancellationToken);
         }
 
-        private void ValidateImage(byte[] image)
+        private byte[] ValidateImage(byte[]? image)
         {
             if (image == null || image.Length == 0)
             {
@@ -93,6 +93,8 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
             {
                 throw new ArgumentException("Only JPEG and PNG images are supported.", nameof(ClassifyImage.FileByteArray));
             }
+
+            return image;
         }
     }
 }

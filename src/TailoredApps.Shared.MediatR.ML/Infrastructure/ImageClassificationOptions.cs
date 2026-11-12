@@ -24,7 +24,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         /// <summary>
         /// Gets or sets the file system path to the ML model file.
         /// </summary>
-        public string ModelFilePath { get; set; }
+        public string? ModelFilePath { get; set; }
 
         /// <summary>
         /// Gets or sets the directory under which training sets must live. The
@@ -32,14 +32,14 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         /// this directory, so a request cannot make the host enumerate and read arbitrary folders.
         /// Required for training.
         /// </summary>
-        public string TrainingRoot { get; set; }
+        public string? TrainingRoot { get; set; }
 
         /// <summary>
         /// Gets or sets the directory under which trained models may be written. The
         /// <c>TrainImageClassificationModel</c> command only accepts a <c>ModelDestFolderPath</c> that
         /// resolves inside this directory, so a request cannot overwrite arbitrary files. Required for training.
         /// </summary>
-        public string ModelsRoot { get; set; }
+        public string? ModelsRoot { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum accepted size, in bytes, of an image submitted to <c>ClassifyImage</c>.

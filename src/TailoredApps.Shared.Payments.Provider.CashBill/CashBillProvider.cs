@@ -105,7 +105,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             return new PaymentResponse { PaymentUniqueId = payment.Id, RedirectUrl = payment.PaymentProviderRedirectUrl, PaymentStatus = GetPaymentStatus(payment.Status) };
         }
 
-        private PaymentStatusEnum GetPaymentStatus(string status)
+        private PaymentStatusEnum GetPaymentStatus(string? status)
         {
 
             IDictionary<PaymentStatusEnum, IList<string>> statuses = new Dictionary<PaymentStatusEnum, IList<string>>
@@ -166,7 +166,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         /// otherwise a short, non-sensitive error message. The expected signature is never disclosed,
         /// because returning it would give a caller an oracle for forging notifications.
         /// </summary>
-        private async Task<string> VerifySignatureAsync(TransactionStatusChanged notification)
+        private async Task<string?> VerifySignatureAsync(TransactionStatusChanged notification)
         {
             if (string.IsNullOrEmpty(notification.Sign))
                 return "Missing signature.";
@@ -271,6 +271,10 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         public void Configure(CashbillServiceOptions options)
         {
             var section = configuration.GetSection(CashbillServiceOptions.ConfigurationKey).Get<CashbillServiceOptions>();
+            if (section is null)
+            {
+                return;
+            }
 
             options.ServiceUrl = section.ServiceUrl;
             options.NegativeReturnUrl = section.NegativeReturnUrl;

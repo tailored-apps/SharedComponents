@@ -39,7 +39,7 @@ namespace TailoredApps.Shared.WebApi
         /// <returns>The same <paramref name="builder"/> instance so calls can be chained.</returns>
         public static IHostApplicationBuilder AddTailoredWebApiDefaults(
             this IHostApplicationBuilder builder,
-            Action<WebApiDefaultsOptions> configure = null)
+            Action<WebApiDefaultsOptions>? configure = null)
         {
             return builder.AddTailoredWebApiDefaults(DefaultConfigurationSectionName, configure);
         }
@@ -57,7 +57,7 @@ namespace TailoredApps.Shared.WebApi
         public static IHostApplicationBuilder AddTailoredWebApiDefaults(
             this IHostApplicationBuilder builder,
             string configurationSectionName,
-            Action<WebApiDefaultsOptions> configure = null)
+            Action<WebApiDefaultsOptions>? configure = null)
         {
             if (builder == null)
             {

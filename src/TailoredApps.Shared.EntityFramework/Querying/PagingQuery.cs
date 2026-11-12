@@ -114,8 +114,8 @@ namespace TailoredApps.Shared.EntityFramework.Querying
         /// </summary>
         private int ValidateAndComputeSkip()
         {
-            var page = pagingParameters.Page.Value;
-            var size = pagingParameters.Count.Value;
+            var page = pagingParameters.Page ?? throw new InvalidOperationException("Paging parameters are not specified.");
+            var size = pagingParameters.Count ?? throw new InvalidOperationException("Paging parameters are not specified.");
 
             if (page < 1)
                 throw new ArgumentOutOfRangeException(nameof(pagingParameters.Page), page, "Page number must be at least 1.");

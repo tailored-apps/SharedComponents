@@ -33,7 +33,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             {
                 using (ZipArchive ARCHIVE = new ZipArchive(fs, ZipArchiveMode.Update))
                 {
-                    Stream readmeStream = null;
+                    Stream? readmeStream = null;
                     try
                     {
                         readmeStream = ARCHIVE.CreateEntry(versionFileName).Open();
@@ -65,7 +65,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             {
                 using (ZipArchive ARCHIVE = new ZipArchive(fs, ZipArchiveMode.Update))
                 {
-                    Stream readmeStream = null;
+                    Stream? readmeStream = null;
                     try
                     {
                         readmeStream = ARCHIVE.CreateEntry(labelsFileName).Open();
@@ -111,11 +111,11 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             {
                 using FileStream fileStream = new FileStream(modelFilePath, FileMode.Open);
                 using ZipArchive archive = new ZipArchive(fileStream, ZipArchiveMode.Read);
-                ZipArchiveEntry zipArchiveEntry = archive.GetEntry(versionFileName);
+                ZipArchiveEntry? zipArchiveEntry = archive.GetEntry(versionFileName);
                 if (zipArchiveEntry != null)
                 {
                     using StreamReader streamReader = new StreamReader(zipArchiveEntry.Open());
-                    return streamReader.ReadLine();
+                    return streamReader.ReadLine() ?? "UNKNOWN";
                 }
             }
             catch (Exception)
@@ -138,11 +138,11 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
             {
                 using FileStream fileStream = new FileStream(modelFilePath, FileMode.Open);
                 using ZipArchive archive = new ZipArchive(fileStream, ZipArchiveMode.Read);
-                ZipArchiveEntry zipArchiveEntry = archive.GetEntry(labelsFileName);
+                ZipArchiveEntry? zipArchiveEntry = archive.GetEntry(labelsFileName);
                 if (zipArchiveEntry != null)
                 {
                     using StreamReader streamReader = new StreamReader(zipArchiveEntry.Open());
-                    return streamReader.ReadLine().Split('|').Select(z => z.Trim()).Where(z => z.Length > 0).ToArray();
+                    return (streamReader.ReadLine() ?? string.Empty).Split('|').Select(z => z.Trim()).Where(z => z.Length > 0).ToArray();
                 }
             }
             catch (Exception)

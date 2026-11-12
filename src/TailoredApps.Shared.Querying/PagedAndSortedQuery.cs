@@ -16,7 +16,7 @@ namespace TailoredApps.Shared.Querying
         public bool IsPagingSpecified => Page.HasValue && Count.HasValue;
 
         /// <summary>The field to sort by.</summary>
-        public string SortField { get; set; }
+        public string? SortField { get; set; }
 
         /// <summary>The sort direction.</summary>
         public SortDirection? SortDir { get; set; }
@@ -25,7 +25,7 @@ namespace TailoredApps.Shared.Querying
         public bool IsSortingSpecified => !string.IsNullOrWhiteSpace(SortField) && SortDir.HasValue;
 
         /// <summary>The query filter object.</summary>
-        public TQuery Filter { get; set; }
+        public TQuery? Filter { get; set; }
 
         /// <summary>Determines whether the query is sorted by the specified field.</summary>
         /// <param name="fieldName">The name of the field to check.</param>
@@ -47,7 +47,7 @@ namespace TailoredApps.Shared.Querying
         new bool IsPagingSpecified { get; }
 
         /// <summary>The field to sort by.</summary>
-        new string SortField { get; set; }
+        new string? SortField { get; set; }
 
         /// <summary>The sort direction.</summary>
         new SortDirection? SortDir { get; set; }
@@ -56,7 +56,7 @@ namespace TailoredApps.Shared.Querying
         new bool IsSortingSpecified { get; }
 
         /// <summary>The query filter object.</summary>
-        new TQuery Filter { get; set; }
+        new TQuery? Filter { get; set; }
 
         /// <summary>Determines whether the query is sorted by the specified field.</summary>
         /// <param name="fieldName">The name of the field to check.</param>
@@ -81,7 +81,7 @@ namespace TailoredApps.Shared.Querying
     public interface ISortingParameters
     {
         /// <summary>The field to sort by.</summary>
-        string SortField { get; }
+        string? SortField { get; }
 
         /// <summary>The sort direction.</summary>
         SortDirection? SortDir { get; }
@@ -100,7 +100,7 @@ namespace TailoredApps.Shared.Querying
     public interface IQuery<T>
     {
         /// <summary>The query filter object.</summary>
-        T Filter { get; set; }
+        T? Filter { get; set; }
     }
 
     /// <summary>Interface for a paged MediatR request with a filter and a response model.</summary>

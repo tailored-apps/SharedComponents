@@ -7,9 +7,9 @@ namespace TailoredApps.Shared.Payments
     public class PaymentProvider
     {
         /// <summary>Gets or sets the unique key that identifies the provider (e.g. "Stripe", "PayU").</summary>
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         /// <summary>Gets or sets the display name of the provider.</summary>
-        public string Name { get; set; }
+        public string? Name { get; set; }
     }
 }

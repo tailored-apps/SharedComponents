@@ -99,7 +99,7 @@ public class RevolutServiceCaller : IRevolutServiceCaller
         var body = new RevolutOrderRequest
         {
             Amount = (long)(request.Amount * 100),
-            Currency = request.Currency.ToUpperInvariant(),
+            Currency = (request.Currency ?? throw new ArgumentException("Currency is required.", nameof(request))).ToUpperInvariant(),
             Description = request.Title ?? request.Description,
             ExternalRef = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
             Email = request.Email,

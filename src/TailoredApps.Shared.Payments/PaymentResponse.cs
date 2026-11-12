@@ -9,12 +9,12 @@ namespace TailoredApps.Shared.Payments
         /// Gets or sets the URL to which the payer should be redirected
         /// to complete the payment on the provider's hosted page.
         /// </summary>
-        public string RedirectUrl { get; set; }
+        public string? RedirectUrl { get; set; }
 
         /// <summary>
         /// Gets or sets the provider-assigned unique identifier for this payment or transaction.
         /// </summary>
-        public string PaymentUniqueId { get; set; }
+        public string? PaymentUniqueId { get; set; }
 
         /// <summary>
         /// Gets or sets the normalised payment status resolved from the provider's response.
@@ -24,6 +24,6 @@ namespace TailoredApps.Shared.Payments
         /// <summary>
         /// Gets or sets the raw or provider-specific response object for advanced scenarios.
         /// </summary>
-        public object ResponseObject { get; set; }
+        public object? ResponseObject { get; set; }
     }
 }

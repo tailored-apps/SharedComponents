@@ -12,10 +12,10 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastruct
         string ModelVersion { get; }
 
         /// <summary>Absolute path to the model file on disk.</summary>
-        string ModelFilePath { get; }
+        string? ModelFilePath { get; }
 
         /// <summary>File name of the model (without directory path).</summary>
-        string ModelFileName { get; }
+        string? ModelFileName { get; }
 
         /// <summary>Array of class labels the model was trained to recognise.</summary>
         string[] Labels { get; }

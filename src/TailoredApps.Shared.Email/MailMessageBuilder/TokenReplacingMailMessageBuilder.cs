@@ -62,7 +62,7 @@ namespace TailoredApps.Shared.Email.MailMessageBuilder
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">
         /// Thrown when <paramref name="templateKey"/> cannot be found in the resolved templates dictionary.
         /// </exception>
-        public string Build(string templateKey, IDictionary<string, string> variables, IDictionary<string, string> templates)
+        public string Build(string templateKey, IDictionary<string, string>? variables, IDictionary<string, string>? templates)
         {
             if (templateKey == null) throw new ArgumentNullException(nameof(templateKey));
             variables ??= new Dictionary<string, string>();

@@ -37,7 +37,7 @@ namespace TailoredApps.Shared.Email
         /// A task that resolves to a formatted string containing the recipient address, topic, and message body
         /// that was written to the console.
         /// </returns>
-        public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
+        public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]>? attachments)
         {
             var message = $"recipent: {recipnet}; topic: {topic}; message: {messageBody}";
             Console.WriteLine(message);
