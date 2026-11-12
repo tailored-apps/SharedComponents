@@ -492,60 +492,6 @@ public class AdyenServiceCallerHttpTests
         Assert.Null(url);
         Assert.NotNull(error);
     }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_Authorised_ReturnsFinished()
-    {
-        var factory = HttpFactory.Create("""{"status":"Authorised","resultCode":"Authorised"}""");
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("psp_1");
-        Assert.Equal(PaymentStatusEnum.Finished, status);
-    }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_Refused_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("""{"resultCode":"Refused"}""");
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("psp_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
-    }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_Cancelled_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("""{"resultCode":"Cancelled"}""");
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("psp_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
-    }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_Pending_ReturnsProcessing()
-    {
-        var factory = HttpFactory.Create("""{"resultCode":"Pending"}""");
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("psp_1");
-        Assert.Equal(PaymentStatusEnum.Processing, status);
-    }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_Received_ReturnsProcessing()
-    {
-        var factory = HttpFactory.Create("""{"resultCode":"Received"}""");
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("psp_1");
-        Assert.Equal(PaymentStatusEnum.Processing, status);
-    }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_Unknown_ReturnsCreated()
-    {
-        var factory = HttpFactory.Create("""{"resultCode":"Unknown"}""");
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("psp_1");
-        Assert.Equal(PaymentStatusEnum.Created, status);
-    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────

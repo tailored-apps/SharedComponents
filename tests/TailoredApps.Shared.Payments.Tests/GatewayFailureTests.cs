@@ -80,7 +80,7 @@ public class GatewayFailureTests
     /// <summary>The status query of each provider, by provider key.</summary>
     private static Task QueryStatus(string provider, IHttpClientFactory factory) => provider switch
     {
-        "Adyen" => Adyen(factory).GetPaymentStatusAsync("psp_1"),
+        "Adyen" => Adyen(factory).GetPaymentStatusAsync(AdyenProvider.SessionResultId("CS1", "result")),
         "PayNow" => PayNow(factory).GetPaymentStatusAsync("pn_1"),
         "PayU" => PayU(factory).GetOrderStatusAsync("token", "order_1"),
         "Revolut" => Revolut(factory).GetOrderAsync("rev_1"),
@@ -146,7 +146,7 @@ public class GatewayFailureTests
         var provider = new AdyenProvider(Adyen(Gateway(HttpStatusCode.ServiceUnavailable)));
 
         // act & assert
-        var exception = await Assert.ThrowsAsync<PaymentGatewayException>(() => provider.GetStatus("psp_1"));
+        var exception = await Assert.ThrowsAsync<PaymentGatewayException>(() => provider.GetStatus(AdyenProvider.SessionResultId("CS1", "result")));
         Assert.True(exception.IsTransient);
     }
 

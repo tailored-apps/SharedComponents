@@ -69,6 +69,10 @@ file class AdyenSessionRequest
     [JsonPropertyName("amount")] public AdyenAmount Amount { get; set; } = new();
     [JsonPropertyName("reference")] public string Reference { get; set; } = string.Empty;
     [JsonPropertyName("returnUrl")] public string ReturnUrl { get; set; } = string.Empty;
+
+    // "hosted" makes Adyen return the address of its payment page; the default, "embedded", returns only
+    // session data for Drop-in / Components and no address to redirect to.
+    [JsonPropertyName("mode")] public string Mode { get; set; } = "hosted";
     [JsonPropertyName("shopperEmail")] public string? ShopperEmail { get; set; }
     [JsonPropertyName("countryCode")] public string? CountryCode { get; set; }
 }
@@ -91,10 +95,19 @@ file class AdyenStatusResponse
 /// <summary>Abstrakcja nad Adyen Checkout API v71 (Sessions).</summary>
 public interface IAdyenServiceCaller
 {
-    /// <summary>Tworzy sesję płatności Adyen i zwraca id sesji oraz URL checkout.</summary>
+    /// <summary>
+    /// Tworzy sesję płatności Adyen (Hosted Checkout) i zwraca id sesji oraz URL strony płatności.
+    /// </summary>
     Task<(string? sessionId, string? checkoutUrl, string? error)> CreateSessionAsync(PaymentRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Pobiera status płatności na podstawie pspReference lub sessionId.</summary>
+    /// <summary>Reads the outcome of a payment session.</summary>
+    /// <param name="paymentId">
+    /// The session id together with the <c>sessionResult</c> value Adyen appended to the return address,
+    /// built with <see cref="AdyenProvider.SessionResultId"/>. Adyen does not report the outcome of a
+    /// session from its id alone.
+    /// </param>
+    /// <param name="cancellationToken">Token that cancels the operation.</param>
+    /// <exception cref="ArgumentException"><paramref name="paymentId"/> carries no <c>sessionResult</c>.</exception>
     Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId, CancellationToken cancellationToken = default);
 
     /// <summary>Weryfikuje HMAC podpis powiadomienia webhooka.</summary>
@@ -165,21 +178,30 @@ public class AdyenServiceCaller : IAdyenServiceCaller
     /// <inheritdoc/>
     public async Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId, CancellationToken cancellationToken = default)
     {
+        var (sessionId, sessionResult) = AdyenProvider.SplitSessionResultId(paymentId);
+        if (sessionResult is null)
+        {
+            throw new ArgumentException(
+                "Adyen reports the outcome of a session only together with the sessionResult value it appends to the return address. "
+                + $"Pass {nameof(AdyenProvider)}.{nameof(AdyenProvider.SessionResultId)}(sessionId, sessionResult); without it, rely on the webhook.",
+                nameof(paymentId));
+        }
+
         using var client = CreateClient();
-        var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
-        var response = await client.GetAsync($"{BaseUrl}/payments/{safePaymentId}/details", cancellationToken);
+        var safeSessionId = PaymentIdentifier.EnsureSafe(sessionId, nameof(paymentId));
+        var response = await client.GetAsync($"{BaseUrl}/sessions/{safeSessionId}?sessionResult={Uri.EscapeDataString(sessionResult)}", cancellationToken);
         // A failed status query says nothing about the payment: never report it as rejected.
         await PaymentGatewayException.ThrowIfNotSuccessAsync("Adyen", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<AdyenStatusResponse>(json);
-        return result?.ResultCode switch
+        return result?.Status switch
         {
-            "Authorised" => PaymentStatusEnum.Finished,
-            "Refused" => PaymentStatusEnum.Rejected,
-            "Cancelled" => PaymentStatusEnum.Rejected,
-            "Pending" => PaymentStatusEnum.Processing,
-            "Received" => PaymentStatusEnum.Processing,
-            _ => PaymentStatusEnum.Created,
+            "completed" => PaymentStatusEnum.Finished,
+            "paymentPending" => PaymentStatusEnum.Processing,
+            "refused" => PaymentStatusEnum.Rejected,
+            "canceled" => PaymentStatusEnum.Rejected,
+            "expired" => PaymentStatusEnum.Rejected,
+            _ => PaymentStatusEnum.Created,   // "active": the shopper has not paid yet
         };
     }
 
@@ -273,7 +295,34 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
     public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
     {
         var status = await caller.GetPaymentStatusAsync(paymentId, cancellationToken);
-        return new PaymentResponse { PaymentUniqueId = paymentId, PaymentStatus = status };
+        return new PaymentResponse { PaymentUniqueId = SplitSessionResultId(paymentId).SessionId, PaymentStatus = status };
+    }
+
+    private const char SessionResultSeparator = '|';
+
+    /// <summary>
+    /// Builds the payment id <see cref="GetStatus"/> needs for Adyen: the session id returned by
+    /// <see cref="RequestPayment"/> joined with the <c>sessionResult</c> value Adyen appended to the return
+    /// address when it sent the shopper back.
+    /// </summary>
+    /// <param name="sessionId">The session id (<see cref="PaymentResponse.PaymentUniqueId"/> of <see cref="RequestPayment"/>, also in the <c>sessionId</c> query parameter of the return address).</param>
+    /// <param name="sessionResult">The <c>sessionResult</c> query parameter of the return address.</param>
+    /// <exception cref="ArgumentException">An argument is blank.</exception>
+    public static string SessionResultId(string sessionId, string sessionResult)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionResult);
+        return sessionId + SessionResultSeparator + sessionResult;
+    }
+
+    /// <summary>Splits an id built by <see cref="SessionResultId"/>; an id without the separator has no session result.</summary>
+    internal static (string SessionId, string? SessionResult) SplitSessionResultId(string paymentId)
+    {
+        ArgumentNullException.ThrowIfNull(paymentId);
+        var separator = paymentId.IndexOf(SessionResultSeparator);
+        return separator < 0
+            ? (paymentId, null)
+            : (paymentId[..separator], paymentId[(separator + 1)..] is { Length: > 0 } result ? result : null);
     }
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
