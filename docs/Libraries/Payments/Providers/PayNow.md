@@ -45,19 +45,21 @@ builder.Services
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `ApiKey` | Klucz API do autoryzacji żądań (header `Api-Key`) |
-| `SignatureKey` | Klucz do podpisywania żądań i weryfikacji webhooków |
-| `ServiceUrl` | URL API PayNow (sandbox: `https://api.sandbox.paynow.pl`) |
-| `ReturnUrl` | URL powrotu po płatności |
-| `ContinueUrl` | URL kontynuacji po powrocie ze strony PayNow |
+| Opcja | Wymagana | Opis |
+|-------|------|------|
+| `ApiKey` | tak | Klucz API do autoryzacji żądań (header `Api-Key`) |
+| `SignatureKey` | tak | Klucz do weryfikacji podpisów webhooków |
+| `ServiceUrl` | nie | URL API PayNow, domyślnie `https://api.paynow.pl` (sandbox: `https://api.sandbox.paynow.pl`) |
+| `ReturnUrl` | nie | URL powrotu po płatności |
+| `ContinueUrl` | nie | URL kontynuacji po powrocie ze strony PayNow |
+
+Opcje wymagane są sprawdzane przy starcie hosta (`OptionsValidationException`); pozostałe nie są walidowane.
 
 ---
 
 ## Obsługiwane kanały
 
-PayNow obsługuje: BLIK, szybkie przelewy bankowe, karty płatnicze (PLN). Lista kanałów pobierana dynamicznie z API.
+Provider zwraca stałą listę dla każdej waluty: `BLIK`, `CARD` (karta płatnicza), `PBL` (przelew pay-by-link), `TRANSFER` (przelew tradycyjny).
 
 ---
 
@@ -84,7 +86,7 @@ Provider key: "PayNow"
 
 Sekcja konfiguracji: "Payments:Providers:PayNow"
 
-Wymagane pola: ApiKey, SignatureKey, ReturnUrl
+Wymagane pola: ApiKey, SignatureKey
 
 Kwota w API: grosze (int), np. 1999 = 19.99 PLN — biblioteka konwertuje automatycznie
 

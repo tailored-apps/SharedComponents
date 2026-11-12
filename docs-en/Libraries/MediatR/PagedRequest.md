@@ -13,7 +13,7 @@ The class is tightly integrated with `TailoredApps.Shared.Querying` — requires
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.MediatR.PagedRequest
@@ -21,15 +21,15 @@ dotnet add package TailoredApps.Shared.MediatR.PagedRequest
 
 ---
 
-## Przykład użycia
+## Usage example
 
-### Definicja query filter, response i request
+### Defining the query filter, response and request
 
 ```csharp
 using TailoredApps.Shared.Querying;
 using TailoredApps.Shared.MediatR.PagedRequest;
 
-// 1. Filter dziedziczy po QueryBase
+// 1. The filter inherits from QueryBase
 public class ProductFilter : QueryBase
 {
     public string NameContains { get; set; }
@@ -38,26 +38,30 @@ public class ProductFilter : QueryBase
     public bool? InStock { get; set; }
 }
 
-// 2. Response implementuje IPagedResult<TModel>
+// 2. The response implements IPagedResult<TModel>
 public class ProductListResponse : IPagedResult<ProductDto>
 {
     public ICollection<ProductDto> Results { get; set; }
     public int Count { get; set; }
 }
 
-// 3. Request dziedziczy PagedAndSortedRequest
+// 3. The request inherits from PagedAndSortedRequest
 public class GetProductsQuery
     : PagedAndSortedRequest<ProductListResponse, ProductFilter, ProductDto>
 {
-    // Wszystkie parametry paginacji/sortowania są odziedziczone
-    // Można dodać własne właściwości:
+    // All paging/sorting parameters are inherited
+    // You can add your own properties:
     public bool IncludeArchived { get; set; } = false;
 }
 ```
 
 ### Handler
 
+The handler uses `ApplySorting` and `PagingAsync` from the `TailoredApps.Shared.EntityFramework` package. Both accept the request directly (it implements `ISortingParameters` and `IPagingParameters`) and validate the values the client sent.
+
 ```csharp
+using TailoredApps.Shared.EntityFramework.Querying;
+
 public class GetProductsQueryHandler
     : IRequestHandler<GetProductsQuery, ProductListResponse>
 {
@@ -71,40 +75,30 @@ public class GetProductsQueryHandler
     {
         var query = _repo.AsQueryable();
 
-        // Aplikacja filtrów
+        // Apply the filters
         if (!string.IsNullOrWhiteSpace(request.Filter?.NameContains))
             query = query.Where(p => p.Name.Contains(request.Filter.NameContains));
 
         if (request.Filter?.MinPrice.HasValue == true)
             query = query.Where(p => p.Price >= request.Filter.MinPrice.Value);
 
-        // Sortowanie
-        if (request.IsSortingSpecified)
-        {
-            query = request.SortDir == SortDirection.Asc
-                ? query.OrderBy(request.SortField)
-                : query.OrderByDescending(request.SortField);
-        }
-
-        var totalCount = await query.CountAsync(ct);
-
-        // Paginacja
-        if (request.IsPagingSpecified)
-            query = query.Skip((request.Page!.Value - 1) * request.Count!.Value)
-                         .Take(request.Count.Value);
-
-        var items = await query.Select(p => p.ToDto()).ToListAsync(ct);
+        // Sorting: SortField comes from the client, so it is checked against an allow-list.
+        // Paging: validates Page and Count, counts all matching rows and reads one page
+        // (the whole result when the request carries no paging values).
+        var page = await query
+            .ApplySorting(request, allowedSortFields: new[] { "Name", "Price" })
+            .PagingAsync(request);
 
         return new ProductListResponse
         {
-            Results = items,
-            Count = totalCount
+            Results = page.Results.Select(p => p.ToDto()).ToList(),
+            Count = page.Count   // total number of matching rows
         };
     }
 }
 ```
 
-### Wywołanie z kontrolera
+### Calling from a controller
 
 ```csharp
 [HttpGet]
@@ -120,17 +114,17 @@ public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query)
 
 ## API Reference
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
-| `PagedAndSortedRequest<TResponse, TQuery, TModel>` | Klasa bazowa | Bazowy request MediatR z paginacją i sortowaniem |
-| `Page` | Właściwość `int?` | Numer strony (1-based) |
-| `Count` | Właściwość `int?` | Liczba elementów na stronie |
-| `IsPagingSpecified` | Właściwość `bool` | `true` gdy Page i Count mają wartość |
-| `SortField` | Właściwość `string` | Nazwa pola do sortowania |
-| `SortDir` | Właściwość `SortDirection?` | Kierunek sortowania (Asc/Desc) |
-| `IsSortingSpecified` | Właściwość `bool` | `true` gdy SortField i SortDir są ustawione |
-| `Filter` | Właściwość `TQuery` | Obiekt filtra dziedziczący po `QueryBase` |
-| `IsSortBy(string)` | Metoda | Sprawdza czy sortowanie jest po danym polu (case-insensitive) |
+| `PagedAndSortedRequest<TResponse, TQuery, TModel>` | Base class | Base MediatR request with paging and sorting |
+| `Page` | Property `int?` | Page number (1-based) |
+| `Count` | Property `int?` | Number of items per page |
+| `IsPagingSpecified` | Property `bool` | `true` when Page and Count have a value |
+| `SortField` | Property `string` | Name of the field to sort by |
+| `SortDir` | Property `SortDirection?` | Sort direction (Asc/Desc) |
+| `IsSortingSpecified` | Property `bool` | `true` when SortField is not blank and SortDir has a value (also for `SortDirection.Undefined`) |
+| `Filter` | Property `TQuery` | Filter object inheriting from `QueryBase` |
+| `IsSortBy(string)` | Method | Checks whether sorting is by the given field (case-insensitive) |
 
 ---
 
@@ -142,12 +136,12 @@ public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query)
 
 ## 🤖 AI Agent Prompt
 
-```markdown
-## TailoredApps.Shared.MediatR.PagedRequest — Instrukcja dla agenta AI
+````markdown
+## TailoredApps.Shared.MediatR.PagedRequest - instructions for an AI agent
 
-Używasz PagedAndSortedRequest jako bazowej klasy dla stronicowanych requestów MediatR.
+You are using PagedAndSortedRequest as the base class for paged MediatR requests.
 
-### Definicja
+### Definition
 ```csharp
 // Filter
 public class MyFilter : QueryBase { public string Name { get; set; } }
@@ -163,22 +157,22 @@ public class MyListResponse : IPagedResult<MyDto>
 public class GetMyItemsQuery : PagedAndSortedRequest<MyListResponse, MyFilter, MyDto> { }
 ```
 
-### Parametry URL (ASP.NET Core binding)
+### URL parameters (ASP.NET Core binding)
 ?page=1&count=20&sortField=Name&sortDir=Asc&filter.name=test
 
-### W handlerze
+### In the handler
 ```csharp
-if (request.IsPagingSpecified)
-    query = query.Skip((request.Page!.Value - 1) * request.Count!.Value).Take(request.Count.Value);
-
-if (request.IsSortingSpecified)
-    query = request.SortDir == SortDirection.Asc ? query.OrderBy(...) : query.OrderByDescending(...);
+// using TailoredApps.Shared.EntityFramework.Querying;  (package TailoredApps.Shared.EntityFramework)
+var page = await query
+    .ApplySorting(request, allowedSortFields: new[] { "Name" })   // validates SortField
+    .PagingAsync(request);                                        // validates Page/Count, returns PagedResult<T>
+// page.Results - the items of the page, page.Count - the total
 ```
 
-### Zasady
-- TQuery musi dziedziczyć po QueryBase
-- TResponse musi implementować IPagedResult<TModel>
-- IsPagingSpecified = Page i Count mają wartość — sprawdzaj przed Skip/Take
-- IsSortBy("Name") — sprawdza case-insensitive
+### Rules
+- TQuery must inherit from QueryBase
+- TResponse must implement IPagedResult<TModel>
+- IsPagingSpecified = Page and Count have a value — PagingAsync pages only then; if you call Skip/Take yourself, check it and cap Count
+- IsSortBy("Name") — the check is case-insensitive
 - Never hand SortField to Dynamic LINQ yourself - use ApplySorting with an allow-list of fields
-```
+````

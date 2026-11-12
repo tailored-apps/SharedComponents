@@ -11,13 +11,13 @@ This library provides a complete implementation of the **Unit of Work** pattern 
 
 Key capabilities:
 - **Transactions** with configurable isolation levels
-- **Auditing** — automatic entity change tracking (who changed what)
-- **Hooks** — `IHook` to execute code before/after `SaveChanges` or transaction commit/rollback
+- **Auditing** — automatic collection of entity changes (which entity, its state, original and current values), handed to your `IEntityChangesAuditor` when the transaction is committed
+- **Hooks** — `IHook` implementations that execute code before/after `SaveChanges` or after a transaction commit/rollback
 - **InMemory** provider support for testing
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.EntityFramework
@@ -25,46 +25,62 @@ dotnet add package TailoredApps.Shared.EntityFramework
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 // Program.cs
-using TailoredApps.Shared.EntityFramework;
+using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
+using TailoredApps.Shared.EntityFramework.UnitOfWork;
+using TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Configuration;
 
-// Podstawowa rejestracja
+// The DbContext itself is registered the usual way (AddDbContext<ApplicationDbContext>(...))
+
+// Basic registration
+builder.Services.AddUnitOfWork<IApplicationDbContext, ApplicationDbContext>();
+
+// ...or with hooks and auditing (see the examples below)
 builder.Services.AddUnitOfWork<IApplicationDbContext, ApplicationDbContext>()
-    .WithAudit<AuditContext>(options =>
+    .WithPostSaveChangesHook<SaveLoggingHook>()
+    .WithUnitOfWorkAudit<ApplicationDbContext, AuditLogAuditor>(settings =>
     {
-        options.IgnoreProperty("RowVersion");
+        settings.TypesToCollect = new[] { typeof(Order), typeof(Customer) };
+        settings.EntityStatesToCollect = new[]
+        {
+            AuditEntityState.Added,
+            AuditEntityState.Modified,
+            AuditEntityState.Deleted
+        };
     });
 ```
 
-Gdzie `IApplicationDbContext` to interfejs Twojego DbContext, a `ApplicationDbContext` — implementacja dziedzicząca po `DbContext`.
+Where `IApplicationDbContext` is the interface of your DbContext and `ApplicationDbContext` is the implementation inheriting from `DbContext`. `AddUnitOfWork` resolves `ApplicationDbContext` from the container, so it has to be registered. `WithUnitOfWorkAudit` requires at least one entry in both `TypesToCollect` and `EntityStatesToCollect`; an empty list throws `InvalidAuditConfigurationException`.
 
 ---
 
-## Przykład użycia
+## Usage example
 
-### Definicja kontekstu
+### Context definition
 
 ```csharp
 public interface IApplicationDbContext
 {
     DbSet<Order> Orders { get; }
     DbSet<Customer> Customers { get; }
+    DbSet<Account> Accounts { get; }
 }
 
 public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     public DbSet<Order> Orders { get; set; }
     public DbSet<Customer> Customers { get; set; }
+    public DbSet<Account> Accounts { get; set; }
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options) { }
 }
 ```
 
-### Użycie w serwisie
+### Usage in a service
 
 ```csharp
 public class OrderService
@@ -93,8 +109,12 @@ public class OrderService
 
     public async Task TransferFundsAsync(int fromId, int toId, decimal amount)
     {
-        // Ręczna kontrola transakcji z poziomem izolacji
+        // Manual transaction control with an isolation level
         _uow.SetIsolationLevel(System.Data.IsolationLevel.Serializable);
+
+        // Without this call the transaction would open only on the first SaveChanges,
+        // and the reads below would run outside it
+        _uow.BeginTransactionManually();
 
         try
         {
@@ -116,21 +136,42 @@ public class OrderService
 }
 ```
 
-### Hook — przykład logowania po zapisie
+### Hook — example of logging after a save
+
+A hook implements one of the four hook interfaces - `IPreSaveChangesHook`, `IPostSaveChangesHook`, `ITransactionCommitHook`, `ITransactionRollbackHook` - which all derive from `IHook` and have a single method, `Execute()`, without parameters. Register it with the matching `With...Hook<T>()` method on the builder returned by `AddUnitOfWork`.
 
 ```csharp
-public class AuditLogHook : IHook
+using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
+
+// Runs after every SaveChanges / SaveChangesAsync of the unit of work
+public class SaveLoggingHook : IPostSaveChangesHook
 {
-    private readonly ILogger<AuditLogHook> _logger;
+    private readonly ILogger<SaveLoggingHook> _logger;
 
-    public AuditLogHook(ILogger<AuditLogHook> logger) => _logger = logger;
+    public SaveLoggingHook(ILogger<SaveLoggingHook> logger) => _logger = logger;
 
-    public Task PostSaveChangesAsync(IEnumerable<EntityChange> changes, CancellationToken ct)
+    public void Execute() => _logger.LogInformation("Unit of work saved its changes");
+}
+```
+
+### Auditing — example of logging entity changes
+
+A hook does not receive the changed entities. They are collected by the audit extension (`WithUnitOfWorkAudit`) and passed to your `IEntityChangesAuditor` after the transaction is committed; a rollback discards them.
+
+```csharp
+using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
+
+public class AuditLogAuditor : IEntityChangesAuditor
+{
+    private readonly ILogger<AuditLogAuditor> _logger;
+
+    public AuditLogAuditor(ILogger<AuditLogAuditor> logger) => _logger = logger;
+
+    public void AuditChanges(IEnumerable<EntityChange> entityChanges)
     {
-        foreach (var change in changes)
-            _logger.LogInformation("Entity {Type} {Id}: {State}", 
-                change.EntityType, change.EntityId, change.State);
-        return Task.CompletedTask;
+        foreach (var change in entityChanges)
+            _logger.LogInformation("Entity {Type}: {State}",
+                change.EntityType?.Name, change.State);
     }
 }
 ```
@@ -139,18 +180,21 @@ public class AuditLogHook : IHook
 
 ## API Reference
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
-| `IUnitOfWork` | Interfejs | Zarządzanie transakcją: `SaveChanges`, `CommitTransaction`, `RollbackTransaction` |
-| `IUnitOfWork<T>` | Interfejs | Rozszerza `IUnitOfWork` o `DataProvider` (dostęp do DbContext) |
-| `IUnitOfWorkContext` | Interfejs | Niskopoziomowe operacje: `BeginTransaction`, `SaveChanges`, `DiscardChanges` |
-| `UnitOfWorkContext<T>` | Klasa | Implementacja EF Core `IUnitOfWorkContext` |
-| `ITransaction` | Interfejs | Transakcja: `Commit()`, `Rollback()`, `Dispose()` |
-| `IHook` | Interfejs | Marker interface dla hooków cyklu życia UoW |
-| `IHooksManager` | Interfejs | Zarządza kolekcją hooków i ich wykonywaniem |
-| `IAuditSettings` | Interfejs | Konfiguracja audytingu (ignorowane właściwości itp.) |
-| `IEntityChangesAuditor` | Interfejs | Zbiera i zapisuje zmiany encji |
-| `EntityChange` | Klasa | Opis zmiany: typ encji, ID, stary/nowy stan |
+| `IUnitOfWork` | Interface | Transaction management: `SaveChanges`, `CommitTransaction`, `RollbackTransaction` |
+| `IUnitOfWork<T>` | Interface | Extends `IUnitOfWork` with `DataProvider` (access to the DbContext) |
+| `IUnitOfWorkContext` | Interface | Low-level operations: `BeginTransaction`, `SaveChanges`, `DiscardChanges` |
+| `UnitOfWorkContext<T>` | Class | EF Core implementation of `IUnitOfWorkContext` |
+| `ITransaction` | Interface | Transaction: `Commit()`, `Rollback()`, `Dispose()` |
+| `IHook` | Interface | Base contract of UoW lifecycle hooks: `Execute()` |
+| `IPreSaveChangesHook`, `IPostSaveChangesHook`, `ITransactionCommitHook`, `ITransactionRollbackHook` | Interfaces | The four hook kinds (all derive from `IHook`): before / after `SaveChanges`, after commit, after rollback |
+| `IUnitOfWorkOptionsBuilder` | Interface | Returned by `AddUnitOfWork`: `WithPreSaveChangesHook<T>()`, `WithPostSaveChangesHook<T>()`, `WithTransactionCommitHook<T>()`, `WithTransactionRollbackHook<T>()` |
+| `IHooksManager` | Interface | Manages the collection of hooks and their execution |
+| `UnitOfWorkOptionsBuilderExtensions.WithUnitOfWorkAudit<TDbContext, TAuditor>` | Ext. method | Turns on auditing with the given `IEntityChangesAuditor` |
+| `IAuditSettings` | Interface | Auditing configuration: `TypesToCollect`, `EntityStatesToCollect` |
+| `IEntityChangesAuditor` | Interface | Your receiver of the collected changes: `AuditChanges(IEnumerable<EntityChange>)`, called after a commit |
+| `EntityChange` | Class | Description of a change: `EntityType`, `State`, `Original`, `Current`, `PrimaryKeys` |
 | `AuditEntityState` | Enum | Added, Modified, Deleted |
 
 ---
@@ -175,26 +219,26 @@ var page = await db.Users
 
 ## 🤖 AI Agent Prompt
 
-```markdown
-## TailoredApps.Shared.EntityFramework — Instrukcja dla agenta AI
+````markdown
+## TailoredApps.Shared.EntityFramework - instructions for an AI agent
 
-Używasz biblioteki TailoredApps.Shared.EntityFramework (Unit of Work pattern na EF Core).
+You are using the TailoredApps.Shared.EntityFramework library (Unit of Work pattern on EF Core).
 
-### Rejestracja
+### Registration
 ```csharp
 builder.Services.AddUnitOfWork<IMyDbContext, MyDbContext>();
 ```
 
-### Użycie
+### Usage
 ```csharp
-// Wstrzyknij IUnitOfWork<IMyDbContext>
+// Inject IUnitOfWork<IMyDbContext>
 _uow.DataProvider.Orders.Add(order);
 await _uow.SaveChangesAsync();
 
-// Transakcja manualna
+// Manual transaction
 _uow.SetIsolationLevel(IsolationLevel.ReadCommitted);
 try {
-    // operacje...
+    // operations...
     await _uow.SaveChangesAsync();
     _uow.CommitTransaction();
 } catch {
@@ -203,11 +247,14 @@ try {
 }
 ```
 
-### Zasady
-- Nigdy nie wywołuj DbContext.SaveChanges() bezpośrednio — używaj _uow.SaveChangesAsync()
-- Domyślnie transakcja jest otwierana przy pierwszym SaveChanges i commitowana automatycznie przez TransactionFilter (jeśli używasz WebApiCore)
-- Dla testów: użyj InMemory provider — UnitOfWorkContext automatycznie to obsługuje
-- HasOpenTransaction sprawdza, czy jest otwarta transakcja
+### Rules
+- Never call DbContext.SaveChanges() directly — use _uow.SaveChangesAsync()
+- By default the transaction is opened on the first SaveChanges and committed automatically by TransactionFilter (if you use WebApiCore)
+- For tests: use the InMemory provider — UnitOfWorkContext handles it automatically
+- HasOpenTransaction checks whether a transaction is open
+- Reads that must run inside the transaction need BeginTransactionManually() first - otherwise it opens on the first SaveChanges
+- Hooks implement IPreSaveChangesHook / IPostSaveChangesHook / ITransactionCommitHook / ITransactionRollbackHook (one method: Execute()) and are registered with With...Hook<T>() on the builder returned by AddUnitOfWork
+- Entity changes are not passed to hooks: implement IEntityChangesAuditor and register it with WithUnitOfWorkAudit<TDbContext, TAuditor>(settings => ...) setting TypesToCollect and EntityStatesToCollect
 - For entities with sensitive columns always pass allowedSortFields to ApplySorting
 - Do not raise PagingQuery<T>.MaxPageSize without need - the limit prevents dumping a table in one request
-```
+````

@@ -7,7 +7,7 @@
 
 ## Opis
 
-Implementacja `IEmailProvider` wysyłająca wiadomości e-mail przez Microsoft 365 z wykorzystaniem protokołu IMAP i uwierzytelniania OAuth2 (client credentials flow). Biblioteka uwierzytelnia się w Azure AD jako confidential client application — obsługuje zarówno client secret, jak i certyfikat.
+Implementacja `IEmailProvider` odczytująca wiadomości e-mail z Microsoft 365 z wykorzystaniem protokołu IMAP i uwierzytelniania OAuth2 (client credentials flow). Biblioteka uwierzytelnia się w Azure AD jako confidential client application — obsługuje zarówno client secret, jak i certyfikat.
 
 Dzięki temu możesz odbierać wiadomości ze skrzynki Office 365 bez przechowywania hasła użytkownika. Biblioteka automatycznie obsługuje pobieranie i cache'owanie tokenów dostępu przez Microsoft Identity.
 
@@ -41,7 +41,6 @@ builder.Services.RegisterOffice365Provider();
     "Providers": {
       "Office365": {
         "Instance": "https://login.microsoftonline.com/{0}",
-        "ApiUrl": "https://graph.microsoft.com/",
         "Tenant": "your-tenant-id-or-domain.onmicrosoft.com",
         "ClientId": "your-application-client-id",
         "MailBox": "shared-mailbox@yourdomain.com",
@@ -51,6 +50,8 @@ builder.Services.RegisterOffice365Provider();
   }
 }
 ```
+
+`Instance` jest opcjonalne — powyższa wartość to jego wartość domyślna. `AuthenticationConfig` wiąże też `ApiUrl` (domyślnie `https://graph.microsoft.com/`), ale provider go nie używa: zawsze łączy się przez IMAP z `outlook.office365.com:993` i prosi o token dla `https://outlook.office365.com/.default`.
 
 ### Konfiguracja Azure AD
 
@@ -77,7 +78,7 @@ public class MailboxMonitorService
     {
         // Pobierz wiadomości z ostatnich 24 godzin od konkretnego nadawcy
         var messages = await _emailProvider.GetMail(
-            folder: "Orders",
+            folder: "Orders",                     // podfolder skrzynki odbiorczej (Inbox/Orders)
             sender: "orders@partner.com",
             fromLast: TimeSpan.FromHours(24)
         );
@@ -85,13 +86,15 @@ public class MailboxMonitorService
         return messages;
     }
 
-    public async Task<ICollection<MailMessage>> GetUnreadFromInboxAsync()
+    public async Task<ICollection<MailMessage>> GetAllFromInboxAsync()
     {
-        // Pobierz wszystkie wiadomości ze skrzynki odbiorczej
+        // Pobierz wszystkie wiadomości ze skrzynki odbiorczej (przeczytane i nieprzeczytane)
         return await _emailProvider.GetMail();
     }
 }
 ```
+
+`folder` to nazwa **podfolderu skrzynki odbiorczej (Inbox)**; pusta wartość (domyślna) oznacza samą skrzynkę odbiorczą, więc `folder: "Inbox"` szukałoby `Inbox/Inbox`. Folder jest otwierany tylko do odczytu. `sender` i `recipent` to filtry typu „zawiera”, a `fromLast` ogranicza wynik do wiadomości dostarczonych po chwili „teraz minus ten przedział”; bez filtrów pobierane są wszystkie wiadomości z folderu.
 
 ---
 
@@ -102,6 +105,7 @@ public class MailboxMonitorService
 | `Office365EmailProvider` | Klasa | Implementacja `IEmailProvider` przez IMAP + OAuth2 |
 | `AuthenticationConfig` | Klasa | Konfiguracja Azure AD (tenant, clientId, secret/cert) |
 | `AuthenticationConfig.Instance` | Właściwość | URL instancji AAD (domyślnie Azure Public) |
+| `AuthenticationConfig.ApiUrl` | Właściwość | Wiązane z konfiguracji (domyślnie `https://graph.microsoft.com/`), ale nieużywane przez provider |
 | `AuthenticationConfig.Tenant` | Właściwość | Tenant ID lub domena |
 | `AuthenticationConfig.ClientId` | Właściwość | Application ID w Azure AD |
 | `AuthenticationConfig.MailBox` | Właściwość | Adres skrzynki do obsługi |
@@ -120,7 +124,7 @@ public class MailboxMonitorService
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.Email.Office365 — Instrukcja dla agenta AI
 
 Używasz biblioteki TailoredApps.Shared.Email.Office365 w projekcie .NET.
@@ -144,7 +148,7 @@ builder.Services.RegisterOffice365Provider();
 ```csharp
 // Tylko odczyt — SendMail rzuca NotImplementedException!
 var messages = await _emailProvider.GetMail(
-    folder: "Inbox",
+    folder: "Orders",                 // podfolder skrzynki odbiorczej; "" (domyślnie) = sama skrzynka odbiorcza
     sender: "filter@domain.com",
     fromLast: TimeSpan.FromHours(24)
 );
@@ -152,8 +156,10 @@ var messages = await _emailProvider.GetMail(
 
 ### Zasady
 - SendMail() nie jest zaimplementowane — użyj SmtpEmailProvider do wysyłki
+- folder to podfolder skrzynki odbiorczej — nigdy nie podawaj "Inbox"; zostaw pusty, aby czytać skrzynkę odbiorczą
+- ApiUrl jest wiązane, ale nieużywane; host IMAP (outlook.office365.com:993) nie jest konfigurowalny
 - Wymaga uprawnień aplikacyjnych IMAP.AccessAsApp w Azure AD
 - Tokeny OAuth2 są automatycznie cache'owane przez MSAL
 - Sekcja konfiguracji: "Mail:Providers:Office365"
 - Ogranicz aplikację Azure AD polityką Application Access Policy do konkretnych skrzynek
-```
+````

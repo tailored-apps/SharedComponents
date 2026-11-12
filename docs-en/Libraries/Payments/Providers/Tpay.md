@@ -3,11 +3,11 @@
 [![NuGet](https://img.shields.io/nuget/v/TailoredApps.Shared.Payments.Provider.Tpay)](https://www.nuget.org/packages/TailoredApps.Shared.Payments.Provider.Tpay/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tailored-apps/SharedComponents/blob/master/LICENSE)
 
-Integracja z **Tpay** — polskim operatorem płatności online obsługującym szybkie przelewy, BLIK, karty i inne metody.
+Integration with **Tpay** — a Polish online payment operator that handles fast transfers, BLIK, cards and other methods.
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Payments.Provider.Tpay
@@ -15,7 +15,7 @@ dotnet add package TailoredApps.Shared.Payments.Provider.Tpay
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 using TailoredApps.Shared.Payments.Provider.Tpay;
@@ -27,7 +27,7 @@ builder.Services
 
 ---
 
-## Konfiguracja `appsettings.json`
+## Configuration `appsettings.json`
 
 ```json
 {
@@ -48,29 +48,32 @@ builder.Services
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `ClientId` | Identyfikator klienta OAuth2 |
-| `ClientSecret` | Sekret klienta OAuth2 |
-| `MerchantId` | Identyfikator sprzedawcy |
-| `ServiceUrl` | URL API Tpay (sandbox: `https://openapi.sandbox.tpay.com`) |
-| `ReturnUrl` | URL powrotu po płatności |
-| `NotifyUrl` | URL do powiadomień (webhook) |
-| `SecurityCode` | Security code (the notification verification code from the Tpay panel) - the secret of the `md5sum` field |
-| `JwsCertificateBaseUrl` | The origin Tpay serves its notification signing certificates from. Default `https://secure.tpay.com`; sandbox: `https://secure.sandbox.tpay.com` |
-| `JwsRootCertificatePem` | Optional: the content of `tpay-jws-root.pem` (PEM). When set, trust is pinned to it and the file is not downloaded |
+| Option | Required | Description |
+|-------|------|------|
+| `ClientId` | yes | OAuth2 client identifier |
+| `ClientSecret` | yes | OAuth2 client secret |
+| `MerchantId` | no | Merchant identifier - bound from configuration, but not used by the provider |
+| `ServiceUrl` | no | Tpay API URL, default `https://api.tpay.com` (sandbox: `https://openapi.sandbox.tpay.com`) |
+| `ReturnUrl` | no | Return URL after payment (used for both the success and the error case) |
+| `NotifyUrl` | no | URL for notifications (webhook) |
+| `SecurityCode` | yes | Security code (the notification verification code from the Tpay panel) - the secret of the `md5sum` field |
+| `JwsCertificateBaseUrl` | no | The origin Tpay serves its notification signing certificates from. Default `https://secure.tpay.com`; sandbox: `https://secure.sandbox.tpay.com`. Must be an absolute https address |
+| `JwsRootCertificatePem` | no | Optional: the content of `tpay-jws-root.pem` (PEM). When set, trust is pinned to it and the file is not downloaded |
+
+Required options are checked when the host starts (`OptionsValidationException`), together with the format of
+`JwsCertificateBaseUrl` and `JwsRootCertificatePem`; the others are not validated.
 
 ---
 
-## Obsługiwane kanały
+## Supported channels
 
-Tpay obsługuje PLN przez: szybkie przelewy bankowe, BLIK, karty, Google Pay, Apple Pay. Lista kanałów pobierana z API.
+The provider returns a fixed list for every currency: `blik` (BLIK), `card` (payment card), `bank` (online transfer).
 
 ---
 
-## Autoryzacja
+## Authorization
 
-Provider automatycznie pobiera token OAuth2 przez endpoint `/oauth/auth` i odświeża go po wygaśnięciu.
+The provider obtains an OAuth2 token through the `/oauth/auth` endpoint for every `RegisterPayment` and `GetStatus` call. The token is not cached.
 
 ---
 
@@ -141,19 +144,19 @@ the provider sends it as `hiddenDescription` and Tpay returns it in `tr_crc`.
 ## 🤖 AI Agent Prompt
 
 ```markdown
-## Tpay Provider — Instrukcja dla agenta AI
+## Tpay Provider - instructions for an AI agent
 
 Provider key: "Tpay"
 
-Sekcja konfiguracji: "Payments:Providers:Tpay"
+Configuration section: "Payments:Providers:Tpay"
 
-Wymagane pola: ClientId, ClientSecret, MerchantId, ReturnUrl, NotifyUrl, SecurityCode
+Required fields: ClientId, ClientSecret, SecurityCode
 
-Autoryzacja: OAuth2 — automatyczna, token cache'owany
+Authorization: OAuth2 — automatic, a token is requested for every call (not cached)
 
 Sandbox: ServiceUrl = "https://openapi.sandbox.tpay.com"
 
-Rejestracja: builder.Services.AddPayments().RegisterTpayProvider();
+Registration: builder.Services.AddPayments().RegisterTpayProvider();
 
 Webhook: POST application/x-www-form-urlencoded; verified with md5sum + the X-JWS-Signature header (RS256, chain to the Tpay root)
 

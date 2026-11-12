@@ -270,7 +270,7 @@ płatności — `Rejected` albo `JsonException`.
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.Payments — Instrukcja dla agenta AI
 
 Używasz TailoredApps.Shared.Payments do integracji z bramkami płatności.
@@ -345,4 +345,4 @@ var response = result switch
 - Rejestruj tylko skonfigurowanych providerów: brak danych dostępowych lub sekretu webhooka zatrzymuje start aplikacji (OptionsValidationException)
 - Przekazuj CancellationToken (w kontrolerze HttpContext.RequestAborted) do każdego wywołania IPaymentService — token dociera do wywołań HTTP bramki
 - Własny provider: każda metoda asynchroniczna przyjmuje CancellationToken cancellationToken = default i przekazuje go dalej do HttpClient
-```
+````

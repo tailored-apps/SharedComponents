@@ -140,7 +140,7 @@ The `field` property is omitted (`WhenWritingNull`) when the error is not tied t
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.ExceptionHandling - AI agent instructions
 
 You are using TailoredApps.Shared.ExceptionHandling to standardize API errors.
@@ -187,4 +187,4 @@ public class MyProvider : IExceptionHandlingProvider
 - [HandleException] works at both the action AND the controller class level
 - For nested exceptions use GetBaseException() to find the root cause
 - AddExceptionHAndlingFilterAttribute (typo) is [Obsolete] - use AddExceptionHandlingFilterAttribute
-```
+````

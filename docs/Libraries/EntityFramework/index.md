@@ -11,8 +11,8 @@ Biblioteka dostarcza kompletną implementację wzorca **Unit of Work** na bazie 
 
 Kluczowe możliwości:
 - **Transakcje** z konfigurowalnymi poziomami izolacji
-- **Auditing** — automatyczne śledzenie zmian encji (kto i co zmienił)
-- **Hooks** — `IHook` do wykonywania kodu przed/po `SaveChanges` lub commit/rollback transakcji
+- **Auditing** — automatyczne zbieranie zmian encji (która encja, jej stan, wartości pierwotne i bieżące), przekazywanych do Twojego `IEntityChangesAuditor` po zatwierdzeniu transakcji
+- **Hooks** — implementacje `IHook` wykonujące kod przed/po `SaveChanges` albo po commicie/rollbacku transakcji
 - Obsługa **InMemory** provider na potrzeby testów
 
 ---
@@ -29,17 +29,31 @@ dotnet add package TailoredApps.Shared.EntityFramework
 
 ```csharp
 // Program.cs
-using TailoredApps.Shared.EntityFramework;
+using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
+using TailoredApps.Shared.EntityFramework.UnitOfWork;
+using TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Configuration;
+
+// Sam DbContext rejestrujesz standardowo (AddDbContext<ApplicationDbContext>(...))
 
 // Podstawowa rejestracja
+builder.Services.AddUnitOfWork<IApplicationDbContext, ApplicationDbContext>();
+
+// ...albo z hookami i audytem (patrz przykłady niżej)
 builder.Services.AddUnitOfWork<IApplicationDbContext, ApplicationDbContext>()
-    .WithAudit<AuditContext>(options =>
+    .WithPostSaveChangesHook<SaveLoggingHook>()
+    .WithUnitOfWorkAudit<ApplicationDbContext, AuditLogAuditor>(settings =>
     {
-        options.IgnoreProperty("RowVersion");
+        settings.TypesToCollect = new[] { typeof(Order), typeof(Customer) };
+        settings.EntityStatesToCollect = new[]
+        {
+            AuditEntityState.Added,
+            AuditEntityState.Modified,
+            AuditEntityState.Deleted
+        };
     });
 ```
 
-Gdzie `IApplicationDbContext` to interfejs Twojego DbContext, a `ApplicationDbContext` — implementacja dziedzicząca po `DbContext`.
+Gdzie `IApplicationDbContext` to interfejs Twojego DbContext, a `ApplicationDbContext` — implementacja dziedzicząca po `DbContext`. `AddUnitOfWork` pobiera `ApplicationDbContext` z kontenera, więc musi on być zarejestrowany. `WithUnitOfWorkAudit` wymaga co najmniej jednego wpisu w `TypesToCollect` i w `EntityStatesToCollect`; pusta lista kończy się `InvalidAuditConfigurationException`.
 
 ---
 
@@ -52,12 +66,14 @@ public interface IApplicationDbContext
 {
     DbSet<Order> Orders { get; }
     DbSet<Customer> Customers { get; }
+    DbSet<Account> Accounts { get; }
 }
 
 public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     public DbSet<Order> Orders { get; set; }
     public DbSet<Customer> Customers { get; set; }
+    public DbSet<Account> Accounts { get; set; }
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options) { }
@@ -96,6 +112,10 @@ public class OrderService
         // Ręczna kontrola transakcji z poziomem izolacji
         _uow.SetIsolationLevel(System.Data.IsolationLevel.Serializable);
 
+        // Bez tego wywołania transakcja zostałaby otwarta dopiero przy pierwszym SaveChanges,
+        // a poniższe odczyty działałyby poza nią
+        _uow.BeginTransactionManually();
+
         try
         {
             var from = await _uow.DataProvider.Accounts.FindAsync(fromId);
@@ -118,19 +138,40 @@ public class OrderService
 
 ### Hook — przykład logowania po zapisie
 
+Hook implementuje jeden z czterech interfejsów hooków — `IPreSaveChangesHook`, `IPostSaveChangesHook`, `ITransactionCommitHook`, `ITransactionRollbackHook` — które wszystkie dziedziczą po `IHook` i mają jedną metodę `Execute()` bez parametrów. Rejestrujesz go odpowiednią metodą `With...Hook<T>()` na builderze zwracanym przez `AddUnitOfWork`.
+
 ```csharp
-public class AuditLogHook : IHook
+using TailoredApps.Shared.EntityFramework.Interfaces.UnitOfWork;
+
+// Wykonywany po każdym SaveChanges / SaveChangesAsync Unit of Work
+public class SaveLoggingHook : IPostSaveChangesHook
 {
-    private readonly ILogger<AuditLogHook> _logger;
+    private readonly ILogger<SaveLoggingHook> _logger;
 
-    public AuditLogHook(ILogger<AuditLogHook> logger) => _logger = logger;
+    public SaveLoggingHook(ILogger<SaveLoggingHook> logger) => _logger = logger;
 
-    public Task PostSaveChangesAsync(IEnumerable<EntityChange> changes, CancellationToken ct)
+    public void Execute() => _logger.LogInformation("Unit of work saved its changes");
+}
+```
+
+### Auditing — przykład logowania zmian encji
+
+Hook nie dostaje zmienionych encji. Zbiera je rozszerzenie audytu (`WithUnitOfWorkAudit`) i przekazuje do Twojego `IEntityChangesAuditor` po zatwierdzeniu transakcji; rollback je odrzuca.
+
+```csharp
+using TailoredApps.Shared.EntityFramework.Interfaces.Audit;
+
+public class AuditLogAuditor : IEntityChangesAuditor
+{
+    private readonly ILogger<AuditLogAuditor> _logger;
+
+    public AuditLogAuditor(ILogger<AuditLogAuditor> logger) => _logger = logger;
+
+    public void AuditChanges(IEnumerable<EntityChange> entityChanges)
     {
-        foreach (var change in changes)
-            _logger.LogInformation("Entity {Type} {Id}: {State}", 
-                change.EntityType, change.EntityId, change.State);
-        return Task.CompletedTask;
+        foreach (var change in entityChanges)
+            _logger.LogInformation("Entity {Type}: {State}",
+                change.EntityType?.Name, change.State);
     }
 }
 ```
@@ -146,11 +187,14 @@ public class AuditLogHook : IHook
 | `IUnitOfWorkContext` | Interfejs | Niskopoziomowe operacje: `BeginTransaction`, `SaveChanges`, `DiscardChanges` |
 | `UnitOfWorkContext<T>` | Klasa | Implementacja EF Core `IUnitOfWorkContext` |
 | `ITransaction` | Interfejs | Transakcja: `Commit()`, `Rollback()`, `Dispose()` |
-| `IHook` | Interfejs | Marker interface dla hooków cyklu życia UoW |
+| `IHook` | Interfejs | Bazowy kontrakt hooków cyklu życia UoW: `Execute()` |
+| `IPreSaveChangesHook`, `IPostSaveChangesHook`, `ITransactionCommitHook`, `ITransactionRollbackHook` | Interfejsy | Cztery rodzaje hooków (wszystkie dziedziczą po `IHook`): przed / po `SaveChanges`, po commicie, po rollbacku |
+| `IUnitOfWorkOptionsBuilder` | Interfejs | Zwracany przez `AddUnitOfWork`: `WithPreSaveChangesHook<T>()`, `WithPostSaveChangesHook<T>()`, `WithTransactionCommitHook<T>()`, `WithTransactionRollbackHook<T>()` |
 | `IHooksManager` | Interfejs | Zarządza kolekcją hooków i ich wykonywaniem |
-| `IAuditSettings` | Interfejs | Konfiguracja audytingu (ignorowane właściwości itp.) |
-| `IEntityChangesAuditor` | Interfejs | Zbiera i zapisuje zmiany encji |
-| `EntityChange` | Klasa | Opis zmiany: typ encji, ID, stary/nowy stan |
+| `UnitOfWorkOptionsBuilderExtensions.WithUnitOfWorkAudit<TDbContext, TAuditor>` | Metoda ext. | Włącza audyt ze wskazanym `IEntityChangesAuditor` |
+| `IAuditSettings` | Interfejs | Konfiguracja audytu: `TypesToCollect`, `EntityStatesToCollect` |
+| `IEntityChangesAuditor` | Interfejs | Twój odbiorca zebranych zmian: `AuditChanges(IEnumerable<EntityChange>)`, wywoływane po commicie |
+| `EntityChange` | Klasa | Opis zmiany: `EntityType`, `State`, `Original`, `Current`, `PrimaryKeys` |
 | `AuditEntityState` | Enum | Added, Modified, Deleted |
 
 ---
@@ -176,7 +220,7 @@ var page = await db.Users
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.EntityFramework — Instrukcja dla agenta AI
 
 Używasz biblioteki TailoredApps.Shared.EntityFramework (Unit of Work pattern na EF Core).
@@ -209,6 +253,9 @@ try {
 - Domyślnie transakcja jest otwierana przy pierwszym SaveChanges i commitowana automatycznie przez TransactionFilter (jeśli używasz WebApiCore)
 - Dla testów: użyj InMemory provider — UnitOfWorkContext automatycznie to obsługuje
 - HasOpenTransaction sprawdza, czy jest otwarta transakcja
+- Odczyty, które mają działać w ramach transakcji, wymagają wcześniejszego BeginTransactionManually() — inaczej transakcja otwiera się przy pierwszym SaveChanges
+- Hooki implementują IPreSaveChangesHook / IPostSaveChangesHook / ITransactionCommitHook / ITransactionRollbackHook (jedna metoda: Execute()) i są rejestrowane przez With...Hook<T>() na builderze zwracanym przez AddUnitOfWork
+- Zmiany encji nie są przekazywane do hooków: zaimplementuj IEntityChangesAuditor i zarejestruj go przez WithUnitOfWorkAudit<TDbContext, TAuditor>(settings => ...), ustawiając TypesToCollect i EntityStatesToCollect
 - Dla encji z wrażliwymi kolumnami zawsze podawaj allowedSortFields w ApplySorting
 - Nie podnoś PagingQuery<T>.MaxPageSize bez potrzeby — limit chroni przed zrzutem całej tabeli jednym żądaniem
-```
+````

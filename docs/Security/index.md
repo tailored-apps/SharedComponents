@@ -18,7 +18,7 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
 
 | # | Waga | Obszar | Znalezisko | Status |
 |---|------|--------|------------|--------|
-| 1 | Krytyczne | Payments (testy) | Produkcyjny sekret sklepu CashBill wraz z pasującymi podpisami był zakomitowany w pliku testowym (nieużywane dane). | **Usunięty** ze źródeł. Rotacja i wyczyszczenie historii wymagają właściciela — zobacz [Zadania dla właściciela](#zadania-dla-wlasciciela-repozytorium). |
+| 1 | Krytyczne | Payments (testy) | Produkcyjny sekret sklepu CashBill wraz z pasującymi podpisami był zakomitowany w pliku testowym (nieużywane dane). | **Usunięty** ze źródeł. Rotacja i wyczyszczenie historii wymagają właściciela — zobacz [Zadania dla właściciela](#zadania-dla-wasciciela-repozytorium). |
 | 2 | Wysokie | ExceptionHandling | Domyślny provider zwracał komunikat najgłębszego wyjątku (błędy SQL, hosty, ścieżki) anonimowym klientom jako HTTP 400 w każdym środowisku. | **Naprawione**: 500 + ogólny komunikat; szczegóły tylko w Development lub po jawnym włączeniu. |
 | 3 | Wysokie | Payments (wszyscy providerzy) | Weryfikacja podpisu przy braku sekretu degradowała się do hasha bez klucza — każdy mógł sfałszować „poprawne” powiadomienie. | **Naprawione**: fail-closed w 9 providerach (w tym Stripe). |
 | 4 | Wysokie | Payments (CashBill) | Komunikat błędu webhooka zwracał oczekiwany podpis (wyrocznia do fałszowania); starsza ścieżka `TransactionStatusChange` nie weryfikowała podpisu. | **Naprawione**. |

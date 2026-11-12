@@ -46,25 +46,29 @@ builder.Services
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `ApiKey` | Klucz API Adyen (header `X-API-Key`) |
-| `MerchantAccount` | Identyfikator konta merchant |
-| `ClientKey` | Klucz klienta Drop-in/Components (opcjonalny) |
-| `ReturnUrl` | URL powrotu po płatności |
-| `NotificationHmacKey` | Klucz HMAC (hex) do weryfikacji webhooków |
-| `Environment` | `"test"` lub `"live"` |
-| `CheckoutUrl` | Nadpisuje domyślny URL API (opcjonalne) |
+| Opcja | Wymagana | Opis |
+|-------|------|------|
+| `ApiKey` | tak | Klucz API Adyen (header `X-API-Key`) |
+| `MerchantAccount` | tak | Identyfikator konta merchant |
+| `NotificationHmacKey` | tak | Klucz HMAC (hex) do weryfikacji webhooków |
+| `ReturnUrl` | nie | URL powrotu po płatności |
+| `Environment` | nie | `"test"` (domyślnie) wywołuje `https://checkout-test.adyen.com/v71`; każda inna wartość, np. `"live"`, wywołuje `https://checkout-live.adyen.com/v71` |
+| `CheckoutUrl` | nie | Pełny bazowy URL Checkout API; gdy ustawiony, zastępuje adres wynikający z `Environment` |
+| `ClientKey` | nie | Klucz klienta Drop-in/Components — wczytywany z konfiguracji, ale nieużywany przez providera |
+
+Opcje wymagane są sprawdzane przy starcie hosta (`OptionsValidationException`); pozostałe nie są walidowane.
 
 ---
 
 ## Obsługiwane kanały płatności
 
+Lista jest stała w providerze:
+
 | Waluta | Kanały |
 |--------|--------|
-| PLN | `card` (Visa, Mastercard), `blik` |
-| EUR | `card`, `sepa` |
-| Inne | `card` |
+| PLN | `scheme` (karta płatnicza: Visa, Mastercard), `blik`, `onlineBanking_PL` (przelew online) |
+| EUR | `scheme`, `ideal`, `sepadirectdebit` |
+| Inne | `scheme` |
 
 ---
 
@@ -169,7 +173,7 @@ Provider key: "Adyen"
 
 Sekcja konfiguracji: "Payments:Providers:Adyen"
 
-Wymagane pola: ApiKey, MerchantAccount, NotificationHmacKey, ReturnUrl
+Wymagane pola: ApiKey, MerchantAccount, NotificationHmacKey
 
 Webhook: HMAC-SHA256 z ośmiu pól elementu (pspReference:originalReference:merchantAccountCode:merchantReference:amount.value:amount.currency:eventCode:success), klucz NotificationHmacKey (hex), podpis w additionalData.hmacSignature
 

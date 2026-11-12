@@ -149,7 +149,7 @@ app.MapPrometheusScrapingEndpoint(); // /metrics
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.WebApi — Instrukcja dla agenta AI
 
 Używasz biblioteki TailoredApps.Shared.WebApi, aby jednym wywołaniem podłączyć produkcyjne defaulty Web API (OpenTelemetry, health checks, resilience HTTP).
@@ -179,4 +179,4 @@ app.MapTailoredWebApiDefaults(); // /health + /alive
 - /alive używaj jako liveness probe, /health jako readiness probe
 - Aby wystawić Prometheus /metrics, użyj hooka Observability.ConfigureMetrics
 - Nie włączaj `HttpClient:RetryUnsafeHttpMethods` bez kluczy idempotencji — ponowienie POST może zduplikować płatność/zamówienie
-```
+````

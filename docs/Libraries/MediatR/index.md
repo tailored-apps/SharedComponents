@@ -33,13 +33,19 @@ using TailoredApps.Shared.MediatR.DI;
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
-// Rejestracja pipeline behaviors
 var pipeline = new PipelineRegistration(builder.Services);
+
+// 1. Pięć pipeline behaviors + HybridCache
 pipeline.RegisterPipelineBehaviors();
 
-// Opcjonalnie: auto-discovery cache policies, fallback, retry z assembly
+// 2. Skan assembly w poszukiwaniu implementacji ICachePolicy<,>, IFallbackHandler<,> i IRetryableRequest<,>
 pipeline.RegisterPipelineBehaviors(typeof(Program).Assembly);
+
+// Biblioteka nie skanuje walidatorów — zarejestruj te, które masz
+builder.Services.AddTransient<IValidator<GetProductQuery>, GetProductQueryValidator>();
 ```
+
+Potrzebne są oba wywołania `RegisterPipelineBehaviors`. Przeciążenie bez parametrów rejestruje behaviory (i `HybridCache`), ale żadnych polityk; przeciążenie przyjmujące assembly tylko je skanuje i nie dodaje behaviorów. Bez pierwszego wywołania w pipeline nic nie działa; bez drugiego żaden request nie jest cache'owany, ponawiany ani obsługiwany przez fallback, bo behaviory nie znajdują dla niego polityki.
 
 `RegisterPipelineBehaviors()` rejestruje też `HybridCache`, w którym `CachingBehavior` przechowuje odpowiedzi. Sam z siebie to cache w pamięci procesu; gdy w kontenerze jest `IDistributedCache` (np. Redis), `HybridCache` używa go automatycznie jako poziomu współdzielonego między instancjami:
 
@@ -65,7 +71,7 @@ public class GetProductQuery : IRequest<ProductDto>
     public int ProductId { get; set; }
 }
 
-// Validator (automatycznie przechwycony przez ValidationBehavior)
+// Validator (uruchamiany przez ValidationBehavior, gdy jest zarejestrowany w DI jako IValidator<GetProductQuery>)
 public class GetProductQueryValidator : AbstractValidator<GetProductQuery>
 {
     public GetProductQueryValidator()
@@ -108,14 +114,23 @@ public class GetProductQueryCachePolicy : ICachePolicy<GetProductQuery, ProductD
 ```csharp
 public class GetProductQueryFallback : IFallbackHandler<GetProductQuery, ProductDto>
 {
-    public Task<ProductDto> HandleFallbackAsync(
-        GetProductQuery request,
-        Exception exception,
-        CancellationToken ct)
+    public Task<ProductDto> HandleFallback(GetProductQuery request, CancellationToken cancellationToken)
     {
-        // Zwróć cached/default wartość gdy handler rzuci
+        // Zwróć wartość domyślną, gdy handler rzuci (wyjątek nie jest przekazywany)
         return Task.FromResult(ProductDto.Empty);
     }
+}
+```
+
+### Konfiguracja retry
+
+```csharp
+public class GetProductQueryRetry : IRetryableRequest<GetProductQuery, ProductDto>
+{
+    public int RetryAttempts => 3;                        // ponowienia po pierwszym błędzie; domyślnie 1
+    public int RetryDelay => 200;                         // milisekundy; domyślnie 250
+    public bool RetryWithExponentialBackoff => true;      // domyślnie false
+    public int ExceptionsAllowedBeforeCircuitTrip => 5;   // domyślnie 1
 }
 ```
 
@@ -130,11 +145,11 @@ public class GetProductQueryFallback : IFallbackHandler<GetProductQuery, Product
 | `CachingBehavior<TRequest, TResponse>` | Pipeline Behavior | Cache'uje odpowiedź w `HybridCache` zgodnie z `ICachePolicy<TRequest, TResponse>`; równoległe identyczne żądania wykonują handler raz |
 | `FallbackBehavior<TRequest, TResponse>` | Pipeline Behavior | Przy wyjątku wywołuje `IFallbackHandler<TRequest, TResponse>` |
 | `RetryBehavior<TRequest, TResponse>` | Pipeline Behavior | Ponawia request zgodnie z `IRetryableRequest<TRequest, TResponse>`; po `ExceptionsAllowedBeforeCircuitTrip` kolejnych nieudanych requestach otwiera circuit breaker (współdzielony per typ requestu) i przez 5 s odrzuca wywołania wyjątkiem `CircuitBreakerOpenException` (`RequestType`, `RetryAfter`); potem jedno żądanie próbne zamyka lub ponownie otwiera obwód. Bez zewnętrznych bibliotek |
-| `PipelineRegistration` | Klasa | Rejestruje wszystkie behaviors + auto-discovery z assembly |
+| `PipelineRegistration` | Klasa | `RegisterPipelineBehaviors()` rejestruje pięć behaviorów i `HybridCache`; `RegisterPipelineBehaviors(assembly)` tylko skanuje assembly w poszukiwaniu polityk cache, handlerów fallbacku i konfiguracji retry |
 | `IPipelineRegistration` | Interfejs | Kontrakt PipelineRegistration |
 | `ICachePolicy<TRequest, TResponse>` | Interfejs | Konfiguracja cache: klucz, czas życia (`AbsoluteExpirationRelativeToNow`, domyślnie 5 min, lub `AbsoluteExpiration`), `LocalCacheExpiration`, `Tags` |
-| `IFallbackHandler<TRequest, TResponse>` | Interfejs | Handler fallbacku przy wyjątku |
-| `IRetryableRequest<TRequest, TResponse>` | Interfejs | Konfiguracja retry dla requestu |
+| `IFallbackHandler<TRequest, TResponse>` | Interfejs | Handler fallbacku przy wyjątku: `HandleFallback(request, cancellationToken)` |
+| `IRetryableRequest<TRequest, TResponse>` | Interfejs | Konfiguracja retry dla requestu: `RetryAttempts` (1), `RetryDelay` w ms (250), `RetryWithExponentialBackoff` (false), `ExceptionsAllowedBeforeCircuitTrip` (1) |
 | `HybridCache` | Klasa (.NET) | Magazyn odpowiedzi używany przez `CachingBehavior`; rejestrowany przez `RegisterPipelineBehaviors()`. Unieważnianie: `RemoveAsync(key)`, `RemoveByTagAsync(tag)` |
 
 ---
@@ -149,7 +164,7 @@ public class GetProductQueryFallback : IFallbackHandler<GetProductQuery, Product
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.MediatR — Instrukcja dla agenta AI
 
 Używasz biblioteki TailoredApps.Shared.MediatR z pipeline behaviors w projekcie .NET.
@@ -158,16 +173,17 @@ Używasz biblioteki TailoredApps.Shared.MediatR z pipeline behaviors w projekcie
 ```csharp
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 var pipeline = new PipelineRegistration(builder.Services);
-pipeline.RegisterPipelineBehaviors();
-pipeline.RegisterPipelineBehaviors(typeof(Program).Assembly); // auto-discovery
+pipeline.RegisterPipelineBehaviors();                         // pięć behaviorów + HybridCache
+pipeline.RegisterPipelineBehaviors(typeof(Program).Assembly); // skan: ICachePolicy<,>, IFallbackHandler<,>, IRetryableRequest<,>
+builder.Services.AddTransient<IValidator<MyQuery>, MyQueryValidator>(); // walidatory nie są skanowane
 ```
 
 ### Kolejność behaviors
 Logging → Validation → Caching → Fallback → Retry → Handler
 
-### Walidacja (automatyczna)
+### Walidacja
 ```csharp
-// Validator automatycznie przechwycony — rzuca ValidationException gdy błąd
+// Uruchamiana dla każdego IValidator<MyQuery> zarejestrowanego w DI — rzuca ValidationException gdy błąd
 public class MyQueryValidator : AbstractValidator<MyQuery>
 {
     public MyQueryValidator() { RuleFor(x => x.Id).GreaterThan(0); }
@@ -185,9 +201,26 @@ public class MyCachePolicy : ICachePolicy<MyQuery, MyResponse>
 }
 ```
 
+### Fallback i retry
+```csharp
+public class MyFallback : IFallbackHandler<MyQuery, MyResponse>
+{
+    public Task<MyResponse> HandleFallback(MyQuery request, CancellationToken cancellationToken)
+        => Task.FromResult(MyResponse.Empty);
+}
+
+public class MyRetry : IRetryableRequest<MyQuery, MyResponse>
+{
+    public int RetryAttempts => 3;                       // domyślnie 1
+    public int ExceptionsAllowedBeforeCircuitTrip => 5;  // domyślnie 1
+}
+```
+
 ### Zasady
-- Wszystkie FluentValidation validators są automatycznie wykrywane przez DI
-- Aby cache działał, zaimplementuj ICachePolicy<TRequest, TResponse> i zarejestruj (auto-discovery)
+- Wywołaj oba: RegisterPipelineBehaviors() i RegisterPipelineBehaviors(assembly) — pierwsze dodaje behaviory, drugie tylko skanuje polityki
+- ValidationBehavior uruchamia instancje IValidator<TRequest> zarejestrowane w DI — biblioteka nie rejestruje walidatorów, zrób to sam
+- Aby cache działał, zaimplementuj ICachePolicy<TRequest, TResponse> w skanowanym assembly (albo zarejestruj ją samodzielnie)
+- IFallbackHandler ma jedną metodę: HandleFallback(request, cancellationToken) — wyjątek nie jest do niej przekazywany
 - LoggingBehavior loguje na poziomie DEBUG — włącz odpowiedni log level
 - Każdy request ma unikalne correlation ID w logach
 - Domyślny klucz cache to hash treści żądania; dla danych per użytkownik nadpisz GetCacheKey i dodaj identyfikator użytkownika/tenanta
@@ -200,4 +233,4 @@ public class MyCachePolicy : ICachePolicy<MyQuery, MyResponse>
 - Żądanie anulowane przez wywołującego nie jest ponawiane, nie otwiera circuit breakera i nie trafia do fallbacku
 - Otwarty obwód zgłasza CircuitBreakerOpenException (w 1.x: BrokenCircuitException z Polly); odpowiedz 503 i nagłówkiem Retry-After z właściwości RetryAfter
 - Biblioteka nie zależy od Polly ani Newtonsoft.Json — nie dodawaj ich, by skonfigurować retry lub cache
-```
+````

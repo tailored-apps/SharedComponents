@@ -23,12 +23,12 @@ Key architectural elements:
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Payments
 
-# Dodaj wybrane providery:
+# Add the selected providers:
 dotnet add package TailoredApps.Shared.Payments.Provider.Stripe
 dotnet add package TailoredApps.Shared.Payments.Provider.PayU
 dotnet add package TailoredApps.Shared.Payments.Provider.CashBill
@@ -36,7 +36,7 @@ dotnet add package TailoredApps.Shared.Payments.Provider.CashBill
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 // Program.cs
@@ -46,15 +46,22 @@ using TailoredApps.Shared.Payments.Provider.PayU;
 
 builder.Services
     .AddPayments()
-    .RegisterPaymentProvider<StripeProvider>()
-    .RegisterPaymentProvider<PayUProvider>();
+    .RegisterStripeProvider()
+    .RegisterPayUProvider();
 ```
+
+Every provider package has a `Register<Name>Provider()` method on the builder returned by `AddPayments()`: it registers the provider's
+dependencies (options from configuration, the HTTP client, webhook handling) and adds the provider to `IPaymentService`. The calls chain.
+
+`RegisterPaymentProvider<T>()` is for plugging in **your own** `IPaymentProvider` implementation. For the providers from the packages that
+call alone is not enough - it does not register their dependencies. The former two-step form
+(`builder.Services.RegisterStripeProvider();` plus `AddPayments().RegisterPaymentProvider<StripeProvider>()`) still works.
 
 ---
 
-## Przykład użycia
+## Usage example
 
-### Inicjowanie płatności
+### Initiating a payment
 
 ```csharp
 public class CheckoutService
@@ -67,11 +74,11 @@ public class CheckoutService
     {
         var response = await _payments.RegisterPayment(new PaymentRequest
         {
-            PaymentProvider = "Stripe",       // lub "PayU", "CashBill" itp.
+            PaymentProvider = "Stripe",       // or "PayU", "CashBill" etc.
             PaymentChannel = "card",
             PaymentModel = PaymentModel.OneTime,
-            Title = $"Zamówienie #{cart.OrderId}",
-            Description = "Zakup w sklepie MyShop",
+            Title = $"Order #{cart.OrderId}",
+            Description = "Purchase in the MyShop store",
             Currency = "PLN",
             Amount = cart.TotalAmount,
             Email = email,
@@ -79,7 +86,7 @@ public class CheckoutService
             Surname = cart.CustomerLastName
         });
 
-        // Przekieruj użytkownika na stronę płatności
+        // Redirect the user to the payment page
         return response.RedirectUrl;
     }
 
@@ -105,7 +112,7 @@ or currency (`ArgumentException`) and an amount of zero or less (`ArgumentOutOfR
 
 **Breaking change (2.0):** code that creates a `PaymentRequest` without one of these three members no longer compiles.
 
-### Obsługa webhooków
+### Handling webhooks
 
 ```csharp
 [ApiController]
@@ -141,10 +148,10 @@ public class PaymentWebhookController : ControllerBase
 }
 ```
 
-### Pobieranie dostępnych kanałów płatności
+### Getting the available payment channels
 
 ```csharp
-// Wyświetl dostępne metody płatności dla waluty PLN
+// Show the payment methods available for the PLN currency
 var providers = await _payments.GetProviders();
 
 foreach (var provider in providers)
@@ -160,23 +167,23 @@ foreach (var provider in providers)
 
 ### Core Interfaces
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
 | `IPaymentService` | Interface | Facade: `GetProviders`, `GetChannels`, `RegisterPayment`, `GetStatus`, `HandleWebhookAsync`. Every method takes an optional `CancellationToken` |
 | `IPaymentProvider` | Interface | Provider contract: `Key`, `Name`, `GetPaymentChannels`, `RequestPayment`, `GetStatus`, `TransactionStatusChange`. Every asynchronous method takes an optional `CancellationToken` |
-| `IWebhookPaymentProvider` | Interfejs | Rozszerzenie: `HandleWebhookAsync(PaymentWebhookRequest)` |
-| `IPaymentOptionsBuilder` | Interfejs | Fluent builder: `RegisterPaymentProvider<T>()` |
+| `IWebhookPaymentProvider` | Interface | Extension: `HandleWebhookAsync(PaymentWebhookRequest, CancellationToken)` |
+| `IPaymentOptionsBuilder` | Interface | Fluent builder: `RegisterPaymentProvider<T>()` |
 
 ### Models
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
 | `PaymentRequest` | Class | Payment data. Required (`required`): `PaymentProvider`, `Amount`, `Currency`; optional: channel, title, description, payer details, `AdditionalData`. Constructor `PaymentRequest(paymentProvider, amount, currency)` |
-| `PaymentResponse` | Klasa | Wynik: `RedirectUrl`, `PaymentUniqueId`, `PaymentStatus` |
+| `PaymentResponse` | Class | Result: `RedirectUrl`, `PaymentUniqueId`, `PaymentStatus` |
 | `PaymentStatusEnum` | Enum | `Created`, `Processing`, `Finished`, `Rejected` |
 | `PaymentModel` | Enum | `OneTime`, `Subscription` |
-| `PaymentChannel` | Klasa | Kanał płatności: `Id`, `Name`, `Description`, `PaymentModel` |
-| `PaymentProvider` | Klasa | Metadane providera: `Key`, `Name`, `Description`, `Url` |
+| `PaymentChannel` | Class | Payment channel: `Id`, `Name`, `Description`, `PaymentModel` |
+| `PaymentProvider` | Class | Provider metadata: `Key`, `Name`, `Description`, `Url` |
 | `PaymentWebhookRequest` | Class | HTTP data of the webhook request: `Body`, `Headers`, `Query` |
 | `PaymentWebhookResult` | Record (closed hierarchy) | Exactly one of: `PaymentWebhookProcessed` (`Payment`), `PaymentWebhookIgnored` (`Reason`, `Payment`), `PaymentWebhookRejected` (`Rejection`, `Message`). For compatibility: `Success`, `Ignored`, `PaymentResponse`, `ErrorMessage` |
 | `PaymentWebhookRejection` | Enum | Why a webhook was rejected: `InvalidSignature`, `NotConfigured`, `MalformedPayload`, `ProcessingFailed`, `UnknownProvider`, `NotSupported`, `Unspecified` |
@@ -200,12 +207,13 @@ Every `Register*Provider()` checks the settings the provider cannot work without
 
 Register only the providers you actually use and have configured in the given environment.
 
-### DI Registration
+### Registration methods
 
-| Metoda | Opis |
+| Method | Description |
 |--------|------|
-| `services.AddPayments()` | Rejestruje `IPaymentService`/`PaymentService` |
-| `builder.RegisterPaymentProvider<T>()` | Dodaje implementację `IPaymentProvider` |
+| `services.AddPayments()` | Registers `IPaymentService`/`PaymentService` |
+| `builder.Register<Name>Provider()` | Registers a provider from a package (its dependencies + adding it to `IPaymentService`), e.g. `RegisterTpayProvider()`; returns the builder |
+| `builder.RegisterPaymentProvider<T>()` | Adds your own `IPaymentProvider` implementation |
 
 ---
 
@@ -262,33 +270,33 @@ returned `Rejected` or threw `JsonException`.
 
 ## 🤖 AI Agent Prompt
 
-```markdown
-## TailoredApps.Shared.Payments — Instrukcja dla agenta AI
+````markdown
+## TailoredApps.Shared.Payments - instructions for an AI agent
 
-Używasz TailoredApps.Shared.Payments do integracji z bramkami płatności.
+You use TailoredApps.Shared.Payments to integrate with payment gateways.
 
-### Rejestracja
+### Registration
 ```csharp
 builder.Services.AddPayments()
-    .RegisterPaymentProvider<StripeProvider>()
-    .RegisterPaymentProvider<PayUProvider>();
+    .RegisterStripeProvider()
+    .RegisterPayUProvider();
 ```
 
-### Inicjowanie płatności
+### Initiating a payment
 ```csharp
 var response = await _payments.RegisterPayment(new PaymentRequest
 {
-    PaymentProvider = "Stripe",   // klucz providera
+    PaymentProvider = "Stripe",   // provider key
     PaymentChannel = "card",
     Currency = "PLN",
     Amount = 99.99m,
     Email = "user@example.com",
-    Title = "Zamówienie #123"
+    Title = "Order #123"
 });
-string redirectUrl = response.RedirectUrl;  // → przeglądarka
+string redirectUrl = response.RedirectUrl;  // → browser
 ```
 
-### Sprawdzanie statusu
+### Checking the status
 ```csharp
 try
 {
@@ -301,7 +309,7 @@ catch (HttpRequestException)
 }
 ```
 
-### Obsługa webhooków
+### Handling webhooks
 ```csharp
 var result = await _payments.HandleWebhookAsync(providerKey, new PaymentWebhookRequest
 {
@@ -319,16 +327,17 @@ var response = result switch
 };
 ```
 
-### Zasady
-- Każdy provider ma unikalny Key (np. "Stripe", "PayU", "CashBill")
+### Rules
+- Every provider has a unique Key (e.g. "Stripe", "PayU", "CashBill")
+- Register a provider from a package with one call on the builder: AddPayments().Register<Name>Provider(); RegisterPaymentProvider<T>() is for your own implementations
 - PaymentRequest: always set PaymentProvider, Amount (greater than zero) and Currency - they are required; leaving one out is compile error CS9035
 - Catch HttpRequestException (covers PaymentGatewayException) around RegisterPayment and GetStatus: a failing gateway means an unknown state - do not cancel the order, check again later
 - Treat Rejected as a refusal only when the call returned without an exception
 - A webhook result is always one of three records: PaymentWebhookProcessed (act on Payment), PaymentWebhookIgnored (answer 2xx, do nothing), PaymentWebhookRejected (trust nothing in the request)
 - Read the rejection reason from PaymentWebhookRejected.Rejection (e.g. InvalidSignature -> 401, MalformedPayload -> 400) - never parse the Message text
 - Do not add a default branch to a switch over the result: the hierarchy is closed and the C# 15 compiler checks completeness
-- Kwota Amount w walucie bazowej (nie w groszach — chyba że provider wymaga inaczej)
-- Dla webhooków wymagany jest endpoint HTTP POST z raw body
+- The Amount is in the base currency (not in grosze — unless the provider requires otherwise)
+- Webhooks require an HTTP POST endpoint with the raw body
 - Never run a provider without its webhook secret configured - verification rejects every notification (fail-closed)
 - In custom providers compare signatures with WebhookSignature.FixedTimeEquals and pass URL identifiers through PaymentIdentifier.EnsureSafe
 - Do not echo the webhook ErrorMessage to the caller - log it server-side
@@ -336,4 +345,4 @@ var response = result switch
 - Register only configured providers: missing credentials or a missing webhook secret stop the application at startup (OptionsValidationException)
 - Pass a CancellationToken (HttpContext.RequestAborted in a controller) to every IPaymentService call - it reaches the gateway HTTP calls
 - Custom provider: every asynchronous method takes CancellationToken cancellationToken = default and forwards it to HttpClient
-```
+````

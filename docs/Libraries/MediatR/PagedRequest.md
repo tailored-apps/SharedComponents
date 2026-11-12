@@ -57,7 +57,11 @@ public class GetProductsQuery
 
 ### Handler
 
+Handler korzysta z `ApplySorting` i `PagingAsync` z pakietu `TailoredApps.Shared.EntityFramework`. Obie metody przyjmują request bezpośrednio (implementuje on `ISortingParameters` i `IPagingParameters`) i walidują wartości przysłane przez klienta.
+
 ```csharp
+using TailoredApps.Shared.EntityFramework.Querying;
+
 public class GetProductsQueryHandler
     : IRequestHandler<GetProductsQuery, ProductListResponse>
 {
@@ -78,27 +82,17 @@ public class GetProductsQueryHandler
         if (request.Filter?.MinPrice.HasValue == true)
             query = query.Where(p => p.Price >= request.Filter.MinPrice.Value);
 
-        // Sortowanie
-        if (request.IsSortingSpecified)
-        {
-            query = request.SortDir == SortDirection.Asc
-                ? query.OrderBy(request.SortField)
-                : query.OrderByDescending(request.SortField);
-        }
-
-        var totalCount = await query.CountAsync(ct);
-
-        // Paginacja
-        if (request.IsPagingSpecified)
-            query = query.Skip((request.Page!.Value - 1) * request.Count!.Value)
-                         .Take(request.Count.Value);
-
-        var items = await query.Select(p => p.ToDto()).ToListAsync(ct);
+        // Sortowanie: SortField pochodzi od klienta, więc jest sprawdzane względem listy dozwolonych pól.
+        // Paginacja: waliduje Page i Count, liczy wszystkie pasujące wiersze i odczytuje jedną stronę
+        // (cały wynik, gdy request nie zawiera wartości stronicowania).
+        var page = await query
+            .ApplySorting(request, allowedSortFields: new[] { "Name", "Price" })
+            .PagingAsync(request);
 
         return new ProductListResponse
         {
-            Results = items,
-            Count = totalCount
+            Results = page.Results.Select(p => p.ToDto()).ToList(),
+            Count = page.Count   // łączna liczba pasujących wierszy
         };
     }
 }
@@ -128,7 +122,7 @@ public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query)
 | `IsPagingSpecified` | Właściwość `bool` | `true` gdy Page i Count mają wartość |
 | `SortField` | Właściwość `string` | Nazwa pola do sortowania |
 | `SortDir` | Właściwość `SortDirection?` | Kierunek sortowania (Asc/Desc) |
-| `IsSortingSpecified` | Właściwość `bool` | `true` gdy SortField i SortDir są ustawione |
+| `IsSortingSpecified` | Właściwość `bool` | `true` gdy SortField nie jest pusty, a SortDir ma wartość (także dla `SortDirection.Undefined`) |
 | `Filter` | Właściwość `TQuery` | Obiekt filtra dziedziczący po `QueryBase` |
 | `IsSortBy(string)` | Metoda | Sprawdza czy sortowanie jest po danym polu (case-insensitive) |
 
@@ -142,7 +136,7 @@ public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query)
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.MediatR.PagedRequest — Instrukcja dla agenta AI
 
 Używasz PagedAndSortedRequest jako bazowej klasy dla stronicowanych requestów MediatR.
@@ -168,17 +162,17 @@ public class GetMyItemsQuery : PagedAndSortedRequest<MyListResponse, MyFilter, M
 
 ### W handlerze
 ```csharp
-if (request.IsPagingSpecified)
-    query = query.Skip((request.Page!.Value - 1) * request.Count!.Value).Take(request.Count.Value);
-
-if (request.IsSortingSpecified)
-    query = request.SortDir == SortDirection.Asc ? query.OrderBy(...) : query.OrderByDescending(...);
+// using TailoredApps.Shared.EntityFramework.Querying;  (pakiet TailoredApps.Shared.EntityFramework)
+var page = await query
+    .ApplySorting(request, allowedSortFields: new[] { "Name" })   // waliduje SortField
+    .PagingAsync(request);                                        // waliduje Page/Count, zwraca PagedResult<T>
+// page.Results — elementy strony, page.Count — łączna liczba
 ```
 
 ### Zasady
 - TQuery musi dziedziczyć po QueryBase
 - TResponse musi implementować IPagedResult<TModel>
-- IsPagingSpecified = Page i Count mają wartość — sprawdzaj przed Skip/Take
+- IsPagingSpecified = Page i Count mają wartość — PagingAsync stronicuje tylko wtedy; jeśli sam wywołujesz Skip/Take, sprawdź to i ogranicz Count
 - IsSortBy("Name") — sprawdza case-insensitive
 - Nie przekazuj SortField do Dynamic LINQ samodzielnie — używaj ApplySorting z listą dozwolonych pól
-```
+````

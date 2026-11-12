@@ -7,7 +7,7 @@
 
 ## Description
 
-This library provides a complete abstraction for sending email messages in .NET applications. It is built around the `IEmailProvider` interface, which can be swapped depending on the environment — in production use `SmtpEmailProvider` (sends via SMTP), in local development use `EmailServiceToConsoleWriter` (prints to console without actual delivery).
+This library provides a complete abstraction for sending email messages in .NET applications. It is built around the `IEmailProvider` interface, which can be swapped depending on the environment — in production use `SmtpEmailProvider` (sends via SMTP), in local development use `EmailServiceToConsolleWritter` (prints to console without actual delivery).
 
 The library also includes a template-based email body building system (`IMailMessageBuilder`), supporting simple token substitution (`DefaultMessageBuilder`) or file-system templates with `{{token}}` placeholders (`TokenReplacingMailMessageBuilder`).
 
@@ -149,15 +149,15 @@ public class NotificationService
 | Type | Kind | Description |
 |-----|--------|------|
 | `IEmailProvider` | Interface | Main contract: `SendMail`, `GetMail` |
-| `SmtpEmailProvider` | Class | Sends via SMTP; options from `SmtpEmailServiceOptions` |
-| `EmailServiceToConsoleWriter` | Class | Writes the email data to the console (dev/test) |
-| `SmtpEmailServiceOptions` | Class | SMTP configuration: Host, Port, UserName, Password, From, IsProd, CatchAll |
+| `SmtpEmailProvider` | Class | Sends via SMTP; options from `SmtpEmailServiceOptions`. `GetMail` is not implemented (`NotImplementedException`) |
+| `EmailServiceToConsolleWritter` | Class | Writes the email data to the console (dev/test); `GetMail` returns an empty list. The class name is spelled this way in the API |
+| `SmtpEmailServiceOptions` | Class | SMTP configuration: Host, Port, UserName, Password, From, EnableSsl, IsProd, CatchAll |
 | `IMailMessageBuilder` | Interface | Contract: `Build(templateKey, variables, templates)` |
 | `DefaultMessageBuilder` | Class | Substitutes tokens in the template dictionary |
 | `TokenReplacingMailMessageBuilder` | Class | Loads templates from the file system; `{{token}}` placeholders |
 | `TokenReplacingMailMessageBuilderOptions` | Class | `Location` (template directory path), `FileExtension` |
 | `SmtpEmailProviderExtensions.RegisterSmtpProvider` | Ext. method | Registers `SmtpEmailProvider` in DI |
-| `SmtpEmailProviderExtensions.RegisterConsoleProvider` | Ext. method | Registers `EmailServiceToConsoleWriter` in DI |
+| `SmtpEmailProviderExtensions.RegisterConsoleProvider` | Ext. method | Registers `EmailServiceToConsolleWritter` in DI |
 
 ---
 
@@ -173,7 +173,7 @@ public class NotificationService
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.Email — AI agent instructions
 
 You are using the TailoredApps.Shared.Email library in a .NET project.
@@ -220,4 +220,4 @@ await _emailProvider.SendMail(email, subject, body, attachments);
 - {{token}} values are HTML-encoded; insert HTML deliberately through {{{token}}}
 - SendMail takes a single address - loop over recipients in the application
 - EnableSsl defaults to true; CatchAll is required when IsProd = false
-```
+````

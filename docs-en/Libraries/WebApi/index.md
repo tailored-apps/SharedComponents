@@ -149,7 +149,7 @@ app.MapPrometheusScrapingEndpoint(); // /metrics
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.WebApi — AI agent instructions
 
 You are using the TailoredApps.Shared.WebApi library to wire production-ready Web API defaults (OpenTelemetry, health checks, HTTP resilience) with a single call.
@@ -179,4 +179,4 @@ app.MapTailoredWebApiDefaults(); // /health + /alive
 - Use /alive as the liveness probe and /health as the readiness probe
 - To expose Prometheus /metrics, use the Observability.ConfigureMetrics hook
 - Do not enable `HttpClient:RetryUnsafeHttpMethods` without idempotency keys - a retried POST can duplicate a payment or order
-```
+````

@@ -140,7 +140,7 @@ Właściwość `field` jest pomijana (serializacja `WhenWritingNull`), gdy błą
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.ExceptionHandling — Instrukcja dla agenta AI
 
 Używasz biblioteki TailoredApps.Shared.ExceptionHandling do standaryzacji błędów API.
@@ -187,4 +187,4 @@ public class MyProvider : IExceptionHandlingProvider
 - [HandleException] działa na poziomie akcji ORAZ klasy kontrolera
 - Dla zagnieżdżonych wyjątków użyj GetBaseException(), by znaleźć pierwotną przyczynę
 - AddExceptionHAndlingFilterAttribute (literówka) jest [Obsolete] — używaj AddExceptionHandlingFilterAttribute
-```
+````

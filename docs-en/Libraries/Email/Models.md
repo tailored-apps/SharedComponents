@@ -11,7 +11,7 @@ A lightweight package containing only the `MailMessage` data model — a represe
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Email.Models
@@ -19,12 +19,12 @@ dotnet add package TailoredApps.Shared.Email.Models
 
 ---
 
-## Przykład użycia
+## Usage example
 
 ```csharp
 using TailoredApps.Shared.Email.Models;
 
-// Przykład: wyświetlenie listy odebranych wiadomości
+// Example: listing the received messages
 ICollection<MailMessage> messages = await emailProvider.GetMail(
     folder: "Inbox",
     sender: "boss@company.com",
@@ -33,15 +33,15 @@ ICollection<MailMessage> messages = await emailProvider.GetMail(
 
 foreach (var msg in messages)
 {
-    Console.WriteLine($"[{msg.Date:yyyy-MM-dd}] Od: {msg.Sender}");
-    Console.WriteLine($"  Temat: {msg.Topic}");
-    Console.WriteLine($"  Do:    {msg.Recipent}");
+    Console.WriteLine($"[{msg.Date:yyyy-MM-dd}] From: {msg.Sender}");
+    Console.WriteLine($"  Subject: {msg.Topic}");
+    Console.WriteLine($"  To:      {msg.Recipent}");
 
     if (!string.IsNullOrEmpty(msg.HtmlBody))
-        Console.WriteLine($"  (HTML body, {msg.HtmlBody.Length} znaków)");
+        Console.WriteLine($"  (HTML body, {msg.HtmlBody.Length} characters)");
 
     if (msg.Attachements?.Count > 0)
-        Console.WriteLine($"  Załączniki: {string.Join(", ", msg.Attachements.Keys)}");
+        Console.WriteLine($"  Attachments: {string.Join(", ", msg.Attachements.Keys)}");
 }
 ```
 
@@ -49,43 +49,43 @@ foreach (var msg in messages)
 
 ## API Reference
 
-### Klasa `MailMessage`
+### `MailMessage` class
 
-| Właściwość | Typ | Opis |
+| Property | Type | Description |
 |------------|-----|------|
-| `Topic` | `string` | Temat wiadomości |
-| `Sender` | `string` | Adres nadawcy |
-| `Recipent` | `string` | Adres odbiorcy |
-| `Copy` | `string` | Adres CC (kopia) |
-| `Body` | `string` | Treść tekstowa (plain-text) |
-| `HtmlBody` | `string` | Treść HTML |
-| `Attachements` | `Dictionary<string, string>` | Załączniki: nazwa pliku → zawartość Base64 |
-| `Date` | `DateTimeOffset` | Data i czas wysłania wiadomości |
+| `Topic` | `string` | Message subject |
+| `Sender` | `string` | Sender address |
+| `Recipent` | `string` | Recipient address |
+| `Copy` | `string` | CC address (copy) |
+| `Body` | `string` | Text body (plain-text) |
+| `HtmlBody` | `string` | HTML body |
+| `Attachements` | `Dictionary<string, string>` | Attachments: file name → Base64 content |
+| `Date` | `DateTimeOffset` | Date and time the message was sent |
 
 ---
 
 ## 🤖 AI Agent Prompt
 
-```markdown
-## TailoredApps.Shared.Email.Models — Instrukcja dla agenta AI
+````markdown
+## TailoredApps.Shared.Email.Models - instructions for an AI agent
 
-Używasz modelu `MailMessage` z biblioteki TailoredApps.Shared.Email.Models.
+You are using the `MailMessage` model from the TailoredApps.Shared.Email.Models library.
 
-### Model MailMessage
+### MailMessage model
 ```csharp
-// Właściwości:
-msg.Topic       // temat
-msg.Sender      // nadawca
-msg.Recipent    // odbiorca  
+// Properties:
+msg.Topic       // subject
+msg.Sender      // sender
+msg.Recipent    // recipient  
 msg.Copy        // CC
-msg.Body        // treść plain-text
-msg.HtmlBody    // treść HTML
-msg.Attachements // Dictionary<string, string> — Base64 załączniki
-msg.Date        // DateTimeOffset — data wysłania
+msg.Body        // plain-text body
+msg.HtmlBody    // HTML body
+msg.Attachements // Dictionary<string, string> — Base64 attachments
+msg.Date        // DateTimeOffset — date sent
 ```
 
-### Zasady
-- Model jest używany jako zwracana wartość przez IEmailProvider.GetMail()
-- Załączniki przechowywane jako Base64 — dekoduj przez Convert.FromBase64String() gdy potrzebujesz byte[]
-- Właściwość Recipent (nie Recipient) — literówka w API, nie zmieniaj
-```
+### Rules
+- The model is used as the return value of IEmailProvider.GetMail()
+- Attachments are stored as Base64 — decode with Convert.FromBase64String() when you need byte[]
+- The property is Recipent (not Recipient) — a typo in the API, do not change it
+````

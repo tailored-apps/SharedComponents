@@ -76,6 +76,15 @@ Each `docs/Libraries/<LibraryName>/index.md` page must contain:
 
 After adding a library page, update the `nav:` section in `mkdocs.yml` and the library table on `docs/index.md`.
 
+### Both languages and the package README
+
+- The site has two trees: `docs/` (Polish) and `docs-en/` (English). Every page exists in both, with the same relative path, and is registered
+  in both `mkdocs.yml` and `mkdocs-en.yml`; the library table is on both `docs/index.md` and `docs-en/index.md`. A change to a library updates both.
+- Every library has a `README.md` next to its csproj: what the package is, installation, registration, a usage example, configuration, and a link
+  to its page on this site. It is packed into the NuGet package automatically (`src/Directory.Build.props`) and is what nuget.org shows - nothing
+  has to be added to the csproj.
+- Code samples must compile against the current source: check type, method and configuration key names in the code, not from memory.
+
 ### Library page template
 
 ```markdown
@@ -92,20 +101,20 @@ After adding a library page, update the `nav:` section in `mkdocs.yml` and the l
 
 [Full description in English...]
 
-## Instalacja
+## Installation
 
 \`\`\`bash
 dotnet add package TailoredApps.Shared.XXXXX
 \`\`\`
 
-## Rejestracja w DI
+## DI registration
 
 \`\`\`csharp
 // Program.cs
 builder.Services.AddXxx();
 \`\`\`
 
-## Przykład użycia
+## Usage example
 
 \`\`\`csharp
 // ...

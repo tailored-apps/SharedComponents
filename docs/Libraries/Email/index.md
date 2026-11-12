@@ -7,7 +7,7 @@
 
 ## Opis
 
-Biblioteka dostarcza kompletną abstrakcję do wysyłania wiadomości e-mail w aplikacjach .NET. Opiera się na interfejsie `IEmailProvider`, który możesz wymieniać w zależności od środowiska — w produkcji używasz `SmtpEmailProvider` (wysyłka przez SMTP), w lokalnym środowisku deweloperskim `EmailServiceToConsoleWriter` (wypisuje do konsoli bez wysyłki).
+Biblioteka dostarcza kompletną abstrakcję do wysyłania wiadomości e-mail w aplikacjach .NET. Opiera się na interfejsie `IEmailProvider`, który możesz wymieniać w zależności od środowiska — w produkcji używasz `SmtpEmailProvider` (wysyłka przez SMTP), w lokalnym środowisku deweloperskim `EmailServiceToConsolleWritter` (wypisuje do konsoli bez wysyłki).
 
 Biblioteka zawiera też system budowania treści emaili oparty na szablonach (`IMailMessageBuilder`), który obsługuje proste podstawianie tokenów (`DefaultMessageBuilder`) lub szablony ładowane z pliku z placeholderami `{{token}}` (`TokenReplacingMailMessageBuilder`).
 
@@ -149,15 +149,15 @@ public class NotificationService
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
 | `IEmailProvider` | Interfejs | Główny kontrakt: `SendMail`, `GetMail` |
-| `SmtpEmailProvider` | Klasa | Wysyłka przez SMTP; opcje z `SmtpEmailServiceOptions` |
-| `EmailServiceToConsoleWriter` | Klasa | Wypisuje dane emaila do konsoli (dev/test) |
-| `SmtpEmailServiceOptions` | Klasa | Konfiguracja SMTP: Host, Port, UserName, Password, From, IsProd, CatchAll |
+| `SmtpEmailProvider` | Klasa | Wysyłka przez SMTP; opcje z `SmtpEmailServiceOptions`. `GetMail` nie jest zaimplementowane (`NotImplementedException`) |
+| `EmailServiceToConsolleWritter` | Klasa | Wypisuje dane emaila do konsoli (dev/test); `GetMail` zwraca pustą listę. Nazwa klasy ma taką pisownię w API |
+| `SmtpEmailServiceOptions` | Klasa | Konfiguracja SMTP: Host, Port, UserName, Password, From, EnableSsl, IsProd, CatchAll |
 | `IMailMessageBuilder` | Interfejs | Kontrakt: `Build(templateKey, variables, templates)` |
 | `DefaultMessageBuilder` | Klasa | Podstawia tokeny w słowniku szablonów |
 | `TokenReplacingMailMessageBuilder` | Klasa | Ładuje szablony z systemu plików; placeholdery `{{token}}` |
 | `TokenReplacingMailMessageBuilderOptions` | Klasa | `Location` (ścieżka do katalogu szablonów), `FileExtension` |
 | `SmtpEmailProviderExtensions.RegisterSmtpProvider` | Metoda ext. | Rejestruje `SmtpEmailProvider` w DI |
-| `SmtpEmailProviderExtensions.RegisterConsoleProvider` | Metoda ext. | Rejestruje `EmailServiceToConsoleWriter` w DI |
+| `SmtpEmailProviderExtensions.RegisterConsoleProvider` | Metoda ext. | Rejestruje `EmailServiceToConsolleWritter` w DI |
 
 ---
 
@@ -173,7 +173,7 @@ public class NotificationService
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.Email — Instrukcja dla agenta AI
 
 Używasz biblioteki TailoredApps.Shared.Email w projekcie .NET.
@@ -220,4 +220,4 @@ await _emailProvider.SendMail(email, subject, body, attachments);
 - Wartości {{token}} są HTML-encodowane; HTML wstawiaj świadomie przez {{{token}}}
 - SendMail przyjmuje jeden adres — listy odbiorców obsługuj pętlą po stronie aplikacji
 - EnableSsl jest domyślnie true; CatchAll jest wymagany gdy IsProd = false
-```
+````
