@@ -1,39 +1,105 @@
+name: Create Release
+
 on:
   push:
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-name: Create Release
+
+# The workflow never writes to the repository. Packages are published through nuget.org Trusted
+# Publishing: the job proves its identity with a GitHub OIDC token and receives an API key that is
+# valid for one hour. No long-lived NuGet key is stored in this repository.
+#
+# The matching policy on nuget.org (Account > Trusted Publishing) must name:
+#   Repository Owner: tailored-apps    Repository: SharedComponents
+#   Workflow File:    release.yml      Environment: nuget
+permissions:
+  contents: read
+
 jobs:
   build:
-    name: Create Release
+    name: Build, test and publish packages
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
+    # The trusted publishing policy is restricted to this environment. Protect it with required
+    # reviewers in the repository settings to gate publishing.
+    environment: nuget
+    permissions:
+      contents: read
+      id-token: write # lets the job request the OIDC token that nuget.org exchanges for an API key
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v7
-
-        # Install .NET Core SDK
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: 11.0.x
-
-    - name: Dotnet Pack
-      working-directory: .
-      run: dotnet build TailoredApps.Shared.slnx -c Release -p:Version=${GITHUB_REF##*/v}
-
-    # UseArtifactsOutput (Directory.Build.props) collects every package in one folder.
-    # Each package is pushed on its own so that one failure (for example a version that
-    # is already published) does not stop the remaining packages from being released.
-    - name: Dotnet Nuget Push
-      working-directory: artifacts/package/release
-      env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: |
-        for package in TailoredApps.Shared.*.nupkg; do
-          echo "::group::$package"
-          if ! dotnet nuget push "$package" -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY"; then
-            echo "::warning::Failed to push $package"
+      # Fail in seconds, not after the build, when publishing is not configured.
+      - name: Check publishing configuration
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+        run: |
+          if [ -z "$NUGET_USER" ]; then
+            echo "::error::The NUGET_USER secret is not set. It must hold the nuget.org profile name of the account that owns the trusted publishing policy."
+            exit 1
           fi
-          echo "::endgroup::"
-        done
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The 11.0 SDK builds every target framework (net8.0 - net11.0). The tests run on net10.0 and
+      # net11.0, so the 10.0 runtime has to be present as well - it comes with the 10.0 SDK.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+
+      - name: Restore Workloads
+        run: dotnet workload restore
+
+      - name: Build and pack
+        env:
+          # Passed through the environment, never interpolated into the script: a tag name may
+          # contain shell metacharacters.
+          TAG: ${{ github.ref_name }}
+        run: dotnet build TailoredApps.Shared.slnx -c Release -p:Version="${TAG#v}"
+
+      - name: Test
+        run: dotnet test TailoredApps.Shared.slnx -c Release --no-build
+
+      # Requested after the tests and right before pushing: the key expires after one hour.
+      - name: NuGet login (OIDC -> short-lived API key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      # UseArtifactsOutput (Directory.Build.props) collects every package in one folder.
+      # Every package is attempted so that one failure does not hide the state of the others, but the
+      # job fails if any push failed: a release that published nothing must never look green.
+      # --skip-duplicate makes a re-run safe after a partial publish.
+      - name: Push packages to nuget.org
+        working-directory: artifacts/package/release
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          set -uo pipefail
+          shopt -s nullglob
+          packages=(TailoredApps.Shared.*.nupkg)
+          if [ "${#packages[@]}" -eq 0 ]; then
+            echo "::error::No packages were produced."
+            exit 1
+          fi
+
+          failed=0
+          for package in "${packages[@]}"; do
+            echo "::group::$package"
+            if ! dotnet nuget push "$package" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate; then
+              echo "::error::Failed to push $package"
+              failed=$((failed + 1))
+            fi
+            echo "::endgroup::"
+          done
+
+          if [ "$failed" -gt 0 ]; then
+            echo "::error::$failed of ${#packages[@]} packages were not published."
+            exit 1
+          fi
+          echo "Published ${#packages[@]} packages."

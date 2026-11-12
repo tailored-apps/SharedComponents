@@ -21,7 +21,8 @@ namespace TailoredApps.Shared.Payments
 
         /// <summary>
         /// Gets or sets the query-string parameters received with the notification request.
+        /// Never <c>null</c> by default; initialised to an empty, case-insensitive dictionary.
         /// </summary>
-        public Dictionary<string, StringValues> QueryParameters { get; set; }
+        public Dictionary<string, StringValues> QueryParameters { get; set; } = new(System.StringComparer.OrdinalIgnoreCase);
     }
 }

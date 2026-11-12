@@ -168,17 +168,26 @@ namespace TailoredApps.Shared.Email.Office365
             var result = new Dictionary<string, string>();
             foreach (var attachement in attachments)
             {
-                if (attachement is MimePart)
+                if (attachement is MimePart res)
                 {
-
-                    var res = attachement as MimePart;
                     byte[] bytes;
                     using (var memoryStream = new MemoryStream())
                     {
-                        res.Content.Stream.CopyTo(memoryStream);
+                        // DecodeTo removes the MIME transfer encoding (usually base64); copying the raw
+                        // stream would hand the caller base64-of-base64.
+                        res.Content.DecodeTo(memoryStream);
                         bytes = memoryStream.ToArray();
                     }
-                    result.Add(res.ContentType.ToString(), Convert.ToBase64String(bytes));
+
+                    // Key by file name (as MailMessage.Attachements documents); content type is not unique.
+                    var name = string.IsNullOrEmpty(res.FileName) ? $"attachment-{result.Count + 1}" : res.FileName;
+                    var key = name;
+                    var suffix = 1;
+                    while (result.ContainsKey(key))
+                    {
+                        key = $"{name} ({++suffix})";
+                    }
+                    result.Add(key, Convert.ToBase64String(bytes));
                 }
             }
             return result;

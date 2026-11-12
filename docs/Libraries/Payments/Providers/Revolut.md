@@ -65,6 +65,19 @@ Revolut podpisuje powiadomienia podpisem `Revolut-Signature` w nagłówku HTTP. 
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+- Podpisywany ładunek to `v1.{Revolut-Request-Timestamp}.{surowe body}` (kropki — zgodnie z dokumentacją Revolut; poprzedni format `v1:` odrzucał każde prawdziwe powiadomienie).
+- **Ochrona przed powtórką.** Znacznik czasu (milisekundy) musi mieścić się w `WebhookToleranceSeconds` (domyślnie 300 s) względem zegara serwera; `0` wyłącza sprawdzenie.
+- Nagłówek `Revolut-Signature` może zawierać kilka podpisów (`v1=a,v1=b`) podczas rotacji sekretu — akceptowany jest dowolny pasujący.
+- Pusty `WebhookSecret` → odrzucenie (fail-closed).
+
+```json
+{ "Payments": { "Providers": { "Revolut": { "WebhookSecret": "...", "WebhookToleranceSeconds": 300 } } } }
+```
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -81,4 +94,5 @@ Kwota: grosze/centy (int) — biblioteka konwertuje automatycznie
 Test API key: sk_test_...
 
 Rejestracja: builder.Services.AddPayments().RegisterRevolutProvider();
+- Nie ustawiaj WebhookToleranceSeconds = 0 na produkcji — wyłącza ochronę przed powtórką powiadomień
 ```

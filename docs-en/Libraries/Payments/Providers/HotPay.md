@@ -65,6 +65,13 @@ HotPay wysyła powiadomienie POST na `NotifyUrl`. Podpis weryfikowany przez SHA-
 
 ---
 
+## 🔒 Security
+
+- Empty `SecretHash` or an empty `HASH` → rejected (fail-closed); constant-time comparison.
+- The signed service name (`NAZWA_USLUGI`) is exactly the one sent in the payment-initiation request.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -77,4 +84,5 @@ Sekcja konfiguracji: "Payments:Providers:HotPay"
 Wymagane pola: SecretHash, ReturnUrl, NotifyUrl
 
 Rejestracja: builder.Services.AddPayments().RegisterHotPayProvider();
+- Keep SecretHash out of the repository; without it every notification is rejected
 ```

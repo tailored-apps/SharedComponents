@@ -137,6 +137,16 @@ app.MapPrometheusScrapingEndpoint(); // /metrics
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+- **Retry tylko dla metod idempotentnych.** Standardowy handler odporności (`AddStandardResilienceHandler`) domyślnie ponawiał także `POST`/`PATCH`. Ponowiony `POST /charge`, którego pierwsza próba dotarła do serwera, to podwójne obciążenie. Od tej wersji ponawianie metod nieidempotentnych jest **wyłączone** (`HttpClientSettings.RetryUnsafeHttpMethods = false`). Włącz je tylko wtedy, gdy każdy klient HTTP w hoście używa kluczy idempotencji.
+
+```json
+{ "WebApiDefaults": { "HttpClient": { "EnableStandardResilience": true, "RetryUnsafeHttpMethods": false } } }
+```
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -168,4 +178,5 @@ app.MapTailoredWebApiDefaults(); // /health + /alive
 - Nie rejestruj OpenTelemetry ani health checków ręcznie — biblioteka robi to za Ciebie
 - /alive używaj jako liveness probe, /health jako readiness probe
 - Aby wystawić Prometheus /metrics, użyj hooka Observability.ConfigureMetrics
+- Nie włączaj `HttpClient:RetryUnsafeHttpMethods` bez kluczy idempotencji — ponowienie POST może zduplikować płatność/zamówienie
 ```

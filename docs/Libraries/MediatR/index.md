@@ -128,6 +128,14 @@ public class GetProductQueryFallback : IFallbackHandler<GetProductQuery, Product
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+- **Klucz cache nie zawiera danych żądania.** Domyślny `ICachePolicy.GetCacheKey` buduje klucz jako `{TypRequestu.FullName}:{SHA-256 z JSON żądania}` (`CacheKeyGenerator.Generate`). Poprzedni format `Prop:ToString()` sprawiał, że żądania różniące się tylko zawartością kolekcji (`CustomerIds = [1]` vs `[2]`) dostawały ten sam klucz i zwracały cudze dane.
+- **Klucz nie zawiera tożsamości użytkownika.** Dla danych per użytkownik/tenant nadpisz `GetCacheKey` i dodaj prefiks z identyfikatorem wywołującego — inaczej odpowiedź jednego użytkownika trafi do drugiego.
+- **`LoggingBehavior` nie serializuje żądania.** W scope logowania trafia tylko nazwa typu i correlation id; hasła, tokeny i binaria z requestu nie lądują w logach.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -171,5 +179,7 @@ public class MyCachePolicy : ICachePolicy<MyQuery, MyResponse>
 - Aby cache działał, zaimplementuj ICachePolicy<TRequest, TResponse> i zarejestruj (auto-discovery)
 - LoggingBehavior loguje na poziomie DEBUG — włącz odpowiedni log level
 - Każdy request ma unikalne correlation ID w logach
+- Domyślny klucz cache to hash treści żądania; dla danych per użytkownik nadpisz GetCacheKey i dodaj identyfikator użytkownika/tenanta
+- LoggingBehavior loguje tylko nazwę requestu i correlation id — dane żądania loguj jawnie w handlerze, nigdy całe obiekty z hasłami
 - Cache a typy wartościowe: ICache zgłasza brak wpisu jako default(TResponse), więc zapisana odpowiedź równa default (0, false, default struktury) jest traktowana jak brak wpisu i handler wykona się ponownie — dla takich odpowiedzi użyj typu referencyjnego lub Nullable<T>
 ```

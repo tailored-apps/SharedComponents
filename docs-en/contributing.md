@@ -148,6 +148,22 @@ You are using the TailoredApps.Shared.XXXXX library in a .NET project.
 
 ---
 
+## Releasing (maintainers)
+
+Pushing a tag `vX.Y.Z` (or a pre-release such as `v2.0.0-preview.1`) runs the *Create Release* workflow (`.github/workflows/release.yml`): it builds every library with the version taken from the tag, runs the tests, and publishes the packages from `artifacts/package/release` to nuget.org. The job fails if any package could not be published. *Release notes* creates the GitHub Release from the merged pull requests.
+
+Packages are published through **nuget.org Trusted Publishing** — the repository stores no NuGet API key. The job requests a GitHub OIDC token and nuget.org exchanges it for an API key that is valid for one hour. This needs a one-time setup:
+
+| Where | Setting |
+|-------|---------|
+| nuget.org → account menu → **Trusted Publishing** → new policy | Repository Owner `tailored-apps`, Repository `SharedComponents`, Workflow File `release.yml` (file name only), Environment `nuget` |
+| GitHub → repository settings → **Secrets and variables → Actions** | Secret `NUGET_USER`: the nuget.org profile name (not the e-mail address) of the account that owns the policy |
+| GitHub → repository settings → **Environments** | Environment `nuget`; add required reviewers to make every release wait for approval |
+
+The policy covers every package owned by the account or organisation chosen as its owner. The same workflow file serves the `release/*` maintenance branches, so one policy is enough for all release lines.
+
+---
+
 ## Questions
 
 Open an [Issue on GitHub](https://github.com/tailored-apps/SharedComponents/issues) or contact the project maintainers.

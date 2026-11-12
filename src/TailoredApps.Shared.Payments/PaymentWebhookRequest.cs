@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Primitives;
 
@@ -25,15 +26,37 @@ namespace TailoredApps.Shared.Payments
         /// <summary>Full query string, e.g. "cmd=transStatusChanged&amp;args=TX123&amp;sign=abc".</summary>
         public string? QueryString { get; init; }
 
+        private Dictionary<string, StringValues> headers = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, StringValues> query = new(StringComparer.OrdinalIgnoreCase);
+
         /// <summary>
         /// Parsed HTTP headers (e.g. Stripe-Signature, X-CashBill-Hmac).
-        /// Keys are treated case-insensitively.
+        /// Keys are always compared case-insensitively (HTTP/2 lower-cases header names), even when
+        /// a case-sensitive dictionary is assigned.
         /// </summary>
-        public Dictionary<string, StringValues> Headers { get; init; } = new();
+        public Dictionary<string, StringValues> Headers
+        {
+            get => headers;
+            init => headers = CopyIgnoreCase(value);
+        }
 
         /// <summary>
         /// Parsed query-string parameters (e.g. cmd, args, sign for CashBill).
+        /// Keys are compared case-insensitively.
         /// </summary>
-        public Dictionary<string, StringValues> Query { get; init; } = new();
+        public Dictionary<string, StringValues> Query
+        {
+            get => query;
+            init => query = CopyIgnoreCase(value);
+        }
+
+        private static Dictionary<string, StringValues> CopyIgnoreCase(Dictionary<string, StringValues>? source)
+        {
+            var copy = new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase);
+            if (source is null) return copy;
+            foreach (var pair in source)
+                copy[pair.Key] = pair.Value;
+            return copy;
+        }
     }
 }

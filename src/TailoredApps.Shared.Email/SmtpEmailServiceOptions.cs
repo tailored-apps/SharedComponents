@@ -29,8 +29,9 @@ namespace TailoredApps.Shared.Email
 
         /// <summary>
         /// Gets or sets a value indicating whether SSL/TLS encryption is enabled for the SMTP connection.
+        /// Defaults to <c>true</c>; disabling it sends credentials and message content in clear text.
         /// </summary>
-        public bool EnableSsl { get; set; }
+        public bool EnableSsl { get; set; } = true;
 
         /// <summary>
         /// Gets or sets the username used to authenticate with the SMTP server.

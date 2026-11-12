@@ -27,14 +27,18 @@ jobs:
       DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
-          dotnet-version: 11.0.x
+          # 11.0.x builds every target framework; 10.0.x supplies the runtime for the net10.0 tests.
+          dotnet-version: |
+            10.0.x
+            11.0.x
 
       - name: Run bump script
         id: bump
@@ -64,15 +68,19 @@ jobs:
           ./scripts/New-BumpDocs.ps1 -RecordsPath $env:RECORDS_PATH -RunUrl $env:RUN_URL
           git --no-pager diff --stat -- docs docs-en
 
-      - name: Verify build
+      # PRs opened with GITHUB_TOKEN do not trigger the pull_request workflows, so the bump
+      # is verified here: restore, build and the full test suite must pass before a PR exists.
+      - name: Verify build and tests
         if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'
         run: |
+          dotnet workload restore
           dotnet restore TailoredApps.Shared.slnx
           dotnet build TailoredApps.Shared.slnx --no-restore --nologo
+          dotnet test TailoredApps.Shared.slnx --no-build --nologo
 
       - name: Create pull request
         if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
         with:
           commit-message: 'chore(deps): automated dependency bump'
           title: 'chore(deps): automated dependency bump'
@@ -90,8 +98,8 @@ jobs:
             ### Test plan
             - [x] `dotnet restore` (workflow)
             - [x] `dotnet build` (workflow)
+            - [x] `dotnet test` (workflow)
             - [x] Dependency docs regenerated (`scripts/New-BumpDocs.ps1`)
-            - [ ] CI green
             - [ ] Spot-check API surface for any breaking changes
           branch: chore/auto-bump-deps
           base: master

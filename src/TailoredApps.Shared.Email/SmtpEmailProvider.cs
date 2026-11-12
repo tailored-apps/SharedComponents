@@ -71,6 +71,9 @@ namespace TailoredApps.Shared.Email
                     From = new MailAddress(options.Value.From),
                     Subject = topic
                 };
+                // MailAddressCollection.Add(string) accepts a comma-separated list, which would let a
+                // caller-controlled value add extra recipients; insist on exactly one address.
+                var recipient = ParseSingleAddress(options.Value.IsProd ? recipnet : RequireCatchAll(), nameof(recipnet));
                 if (attachments != null)
                 {
                     foreach (var attachment in attachments)
@@ -78,23 +81,47 @@ namespace TailoredApps.Shared.Email
                         mailMessage.Attachments.Add(new Attachment(new MemoryStream(attachment.Value), attachment.Key));
                     }
                 }
-                if (options.Value.IsProd)
-                {
-                    mailMessage.To.Add(recipnet);
-                }
-                else
-                {
-                    mailMessage.To.Add(options.Value.CatchAll);
-                }
+                mailMessage.To.Add(recipient);
 
                 mailMessage.Body = messageBody;
                 mailMessage.IsBodyHtml = true;
                 mailMessage.BodyEncoding = System.Text.Encoding.UTF8;
-                var msgId = $"<{Guid.NewGuid().ToString().Replace(" - ", "")}@{mailMessage.Sender.Host}>";
+                var msgId = $"<{Guid.NewGuid().ToString("N")}@{mailMessage.Sender.Host}>";
                 mailMessage.Headers.Add(new System.Collections.Specialized.NameValueCollection() { { "Message-ID", msgId } });
                 await client.SendMailAsync(mailMessage);
                 return msgId;
             }
+        }
+
+        /// <summary>
+        /// Parses exactly one e-mail address. List separators and line breaks are rejected so that a
+        /// value taken from user input cannot smuggle additional recipients into the message.
+        /// </summary>
+        internal static MailAddress ParseSingleAddress(string address, string paramName)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                throw new ArgumentException("A recipient address is required.", paramName);
+            }
+
+            if (address.IndexOfAny(new[] { ',', ';', '\r', '\n' }) >= 0)
+            {
+                throw new FormatException("Exactly one recipient address is expected; lists are not accepted.");
+            }
+
+            return new MailAddress(address);
+        }
+
+        private string RequireCatchAll()
+        {
+            var catchAll = options.Value.CatchAll;
+            if (string.IsNullOrWhiteSpace(catchAll))
+            {
+                throw new InvalidOperationException(
+                    $"'{SmtpEmailServiceOptions.ConfigurationKey}:CatchAll' must be configured when IsProd is false; outgoing mail is redirected there.");
+            }
+
+            return catchAll;
         }
     }
 

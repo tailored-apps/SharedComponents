@@ -162,20 +162,23 @@ foreach (var provider in providers)
 | `PaymentWebhookRequest` | Klasa | Dane HTTP żądania webhook: `Body`, `Headers`, `QueryParams` |
 | `PaymentWebhookResult` | Enum | `Success`, `Ignored`, `Fail` |
 
-### Security
-
-| Typ | Rodzaj | Opis |
-|-----|--------|------|
-| `SignatureComparer` | Klasa statyczna | `FixedTimeEquals(expected, actual, ignoreCase)` — porównanie podpisu w stałym czasie; brak lub pusta wartość nigdy nie jest zgodnością |
-
-Wszystkie wbudowane providery weryfikują podpisy powiadomień przez `SignatureComparer`. Zwykłe porównanie stringów kończy się na pierwszym różnym znaku, więc czas odpowiedzi zdradza, jak duża część podrobionego podpisu była poprawna. Komunikat błędu nieudanej weryfikacji nie zawiera oczekiwanego podpisu.
-
 ### DI Registration
 
 | Metoda | Opis |
 |--------|------|
 | `services.AddPayments()` | Rejestruje `IPaymentService`/`PaymentService` |
 | `builder.RegisterPaymentProvider<T>()` | Dodaje implementację `IPaymentProvider` |
+
+---
+
+## 🔒 Bezpieczeństwo webhooków
+
+- **Fail-closed.** Każdy provider odrzuca powiadomienie, gdy sekret (klucz HMAC, `SignatureKey`, `CrcKey`, `SecurityCode`, `ShopSecretPhrase`, `WebhookSecret`) nie jest skonfigurowany lub podpis jest pusty. Wcześniej pusty sekret oznaczał podpis liczony z pustym kluczem, który mógł policzyć każdy.
+- **Porównanie w stałym czasie.** Podpisy porównuje `WebhookSignature.FixedTimeEquals` / `FixedTimeEqualsIgnoreCase` (`TailoredApps.Shared.Payments.Security`), więc czas odpowiedzi nie zdradza oczekiwanej wartości. Użyj tych helperów we własnych providerach.
+- **Nagłówki i query są case-insensitive.** `PaymentWebhookRequest.Headers`/`Query` znajdują `stripe-signature` i `Stripe-Signature` — HTTP/2 przesyła nazwy małymi literami.
+- **Identyfikatory w URL.** `PaymentIdentifier.EnsureSafe` odrzuca identyfikatory z `/`, `?`, `#`, spacjami itp., zanim trafią do adresu żądania do bramki (ochrona przed przekierowaniem żądania z poświadczeniami sklepu na inny endpoint).
+- **Komunikaty błędów nie ujawniają podpisu.** `PaymentWebhookResult.ErrorMessage` zawiera tylko krótki opis („Invalid signature.”), nigdy oczekiwaną wartość.
+- **Wynik webhooka identyfikuje płatność.** `PaymentResponse.PaymentUniqueId` jest wypełniany z payloadu (orderId, paymentId, sessionId, merchantReference, order_id, transactionId) — na tej podstawie de-duplikuj zdarzenia. Zdarzenia niekońcowe (`Processing`) są zwracane jako `Ignore`.
 
 ---
 
@@ -228,6 +231,8 @@ var result = await _payments.HandleWebhookAsync(providerKey, new PaymentWebhookR
 - Zawsze sprawdź PaymentWebhookResult — Ignored to OK, Fail to błąd podpisu/konfiguracji
 - Kwota Amount w walucie bazowej (nie w groszach — chyba że provider wymaga inaczej)
 - Dla webhooków wymagany jest endpoint HTTP POST z raw body
-- Własny provider: podpisy (HMAC, hash, CRC) porównuj wyłącznie przez SignatureComparer.FixedTimeEquals — nigdy przez == ani string.Equals
-- Nigdy nie umieszczaj oczekiwanego podpisu ani sekretu w ErrorMessage, logach ani odpowiedzi HTTP
+- Nigdy nie uruchamiaj providera bez skonfigurowanego sekretu webhooka — weryfikacja odrzuci wszystkie powiadomienia (fail-closed)
+- We własnych providerach porównuj podpisy przez WebhookSignature.FixedTimeEquals, a identyfikatory do URL przepuszczaj przez PaymentIdentifier.EnsureSafe
+- Nie zwracaj klientowi ErrorMessage z webhooka w treści odpowiedzi — loguj go po stronie serwera
+- De-duplikuj zdarzenia po PaymentUniqueId; konsument webhooka musi być idempotentny
 ```
