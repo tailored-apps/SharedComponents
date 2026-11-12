@@ -106,6 +106,9 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// checkout.session.completed, checkout.session.expired.
     /// </remarks>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+        => Task.FromResult(ProcessEvent(payload).ToPaymentResponse());
+
+    private PaymentWebhookResult ProcessEvent(TransactionStatusChangePayload payload)
     {
         var rawBody = payload.Payload?.ToString() ?? string.Empty;
         var stripeSignature = payload.QueryParameters.TryGetValue("Stripe-Signature", out var sig)
@@ -120,11 +123,9 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
         catch (StripeException ex)
         {
             // Nieprawidłowy podpis — zwracamy Rejected i nie przetwarzamy zdarzenia.
-            return Task.FromResult(new PaymentResponse
-            {
-                PaymentStatus = PaymentStatusEnum.Rejected,
-                ResponseObject = $"Webhook signature verification failed: {ex.Message}",
-            });
+            return PaymentWebhookResult.Reject(
+                PaymentWebhookRejection.InvalidSignature,
+                $"Webhook signature verification failed: {ex.Message}");
         }
 
         var response = stripeEvent.Type switch
@@ -148,7 +149,7 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        return Task.FromResult(response);
+        return PaymentWebhookResult.Ok(response);
     }
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
@@ -160,10 +161,10 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// </summary>
     /// <remarks>
     /// Events that do not represent a terminal payment state
-    /// (e.g. <c>payment_method.attached</c>) result in <see cref="PaymentWebhookResult.Ignore"/>.
+    /// (e.g. <c>payment_method.attached</c>) result in <see cref="PaymentWebhookIgnored"/>.
     /// </remarks>
     /// <param name="request">Unified HTTP webhook request.</param>
-    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
         var rawBody = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("Stripe-Signature", out var sig)
@@ -179,23 +180,16 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        var response = await ((IPaymentProvider)this).TransactionStatusChange(payload);
+        var result = ProcessEvent(payload);
 
-        // Signature failure — TransactionStatusChange returns Rejected + message containing "signature"
-        if (response.PaymentStatus == PaymentStatusEnum.Rejected
-            && response.ResponseObject?.ToString()?.Contains("signature", StringComparison.OrdinalIgnoreCase) == true)
+        // Non-actionable event (payment_method.attached, customer.created, ...) or one without a payment id
+        if (result is PaymentWebhookProcessed { Payment: var payment }
+            && (payment.PaymentStatus == PaymentStatusEnum.Processing || string.IsNullOrEmpty(payment.PaymentUniqueId)))
         {
-            return PaymentWebhookResult.Fail(response.ResponseObject?.ToString() ?? "Invalid signature");
+            return Task.FromResult(PaymentWebhookResult.Ignore("Non-actionable Stripe event", payment));
         }
 
-        // Non-actionable event (payment_method.attached, customer.created, …)
-        if (response.PaymentStatus == PaymentStatusEnum.Processing
-            || string.IsNullOrEmpty(response.PaymentUniqueId))
-        {
-            return PaymentWebhookResult.Ignore("Non-actionable Stripe event");
-        }
-
-        return PaymentWebhookResult.Ok(response);
+        return Task.FromResult(result);
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────

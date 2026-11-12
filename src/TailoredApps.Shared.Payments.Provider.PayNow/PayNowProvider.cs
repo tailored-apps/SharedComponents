@@ -211,7 +211,7 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
     /// <inheritdoc/>
-    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
         var body = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("Signature", out var s) ? s.ToString() : string.Empty;
@@ -225,32 +225,20 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        var response = await TransactionStatusChange(payload);
-
-        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
-        {
-            var msg = response.ResponseObject?.ToString() ?? string.Empty;
-            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
-                return PaymentWebhookResult.Fail(msg);
-        }
-
-        if (response.PaymentStatus == PaymentStatusEnum.Processing)
-            return PaymentWebhookResult.Ignore("Non-actionable event");
-
-        return PaymentWebhookResult.Ok(response);
+        return Task.FromResult(ProcessNotification(payload));
     }
 
     /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+        => Task.FromResult(ProcessNotification(payload).ToPaymentResponse());
+
+    private PaymentWebhookResult ProcessNotification(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
         var sig = payload.QueryParameters.TryGetValue("Signature", out var s) ? s.ToString() : string.Empty;
 
         if (!caller.VerifySignature(body, sig))
-            return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" });
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.InvalidSignature, "Invalid signature");
 
         var status = PaymentStatusEnum.Processing;
         string? paymentUniqueId = null;
@@ -272,7 +260,7 @@ public class PayNowProvider : IPaymentProvider, IWebhookPaymentProvider
         }
         catch { /* ignore */ }
 
-        return Task.FromResult(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
+        return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
     }
 }
 

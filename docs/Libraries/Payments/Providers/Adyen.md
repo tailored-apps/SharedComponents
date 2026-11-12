@@ -81,7 +81,7 @@ public async Task<IActionResult> AdyenWebhook([FromBody] JsonElement body)
         Body = body.GetRawText(),
         Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString())
     });
-    return result == PaymentWebhookResult.Success ? Ok("[accepted]") : BadRequest();
+    return result is PaymentWebhookRejected ? BadRequest() : Ok("[accepted]");
 }
 ```
 

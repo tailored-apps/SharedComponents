@@ -74,10 +74,10 @@ namespace TailoredApps.Shared.Payments
         {
             var provider = paymentService.FirstOrDefault(x => x.Key == providerKey);
             if (provider is null)
-                return PaymentWebhookResult.Fail($"Provider '{providerKey}' not found.");
+                return PaymentWebhookResult.Reject(PaymentWebhookRejection.UnknownProvider, $"Provider '{providerKey}' not found.");
 
             if (provider is not IWebhookPaymentProvider webhookProvider)
-                return PaymentWebhookResult.Fail($"Provider '{providerKey}' does not support webhook handling.");
+                return PaymentWebhookResult.Reject(PaymentWebhookRejection.NotSupported, $"Provider '{providerKey}' does not support webhook handling.");
 
             return await webhookProvider.HandleWebhookAsync(request);
         }

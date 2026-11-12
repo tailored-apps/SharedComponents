@@ -107,17 +107,18 @@ public class PaymentWebhookController : ControllerBase
         var request = new PaymentWebhookRequest
         {
             Body = body.GetRawText(),
-            Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()),
-            QueryParams = Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString())
+            Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value),
+            Query = Request.Query.ToDictionary(q => q.Key, q => q.Value)
         };
 
         var result = await _payments.HandleWebhookAsync(providerKey, request);
 
         return result switch
         {
-            PaymentWebhookResult.Success => Ok(),
-            PaymentWebhookResult.Ignored => NoContent(),
-            _ => BadRequest()
+            PaymentWebhookProcessed => Ok(),
+            PaymentWebhookIgnored => NoContent(),
+            PaymentWebhookRejected { Rejection: PaymentWebhookRejection.InvalidSignature } => Unauthorized(),
+            PaymentWebhookRejected => BadRequest(),
         };
     }
 }
@@ -155,12 +156,13 @@ foreach (var provider in providers)
 |-----|--------|------|
 | `PaymentRequest` | Klasa | Dane płatności: provider, kanał, kwota, waluta, dane płatnika |
 | `PaymentResponse` | Klasa | Wynik: `RedirectUrl`, `PaymentUniqueId`, `PaymentStatus` |
-| `PaymentStatusEnum` | Enum | `Created`, `Pending`, `Completed`, `Failed`, `Cancelled` |
+| `PaymentStatusEnum` | Enum | `Created`, `Processing`, `Finished`, `Rejected` |
 | `PaymentModel` | Enum | `OneTime`, `Subscription` |
 | `PaymentChannel` | Klasa | Kanał płatności: `Id`, `Name`, `Description`, `PaymentModel` |
 | `PaymentProvider` | Klasa | Metadane providera: `Key`, `Name`, `Description`, `Url` |
-| `PaymentWebhookRequest` | Klasa | Dane HTTP żądania webhook: `Body`, `Headers`, `QueryParams` |
-| `PaymentWebhookResult` | Enum | `Success`, `Ignored`, `Fail` |
+| `PaymentWebhookRequest` | Klasa | Dane HTTP żądania webhook: `Body`, `Headers`, `Query` |
+| `PaymentWebhookResult` | Rekord (zamknięta hierarchia) | Dokładnie jeden z: `PaymentWebhookProcessed` (`Payment`), `PaymentWebhookIgnored` (`Reason`, `Payment`), `PaymentWebhookRejected` (`Rejection`, `Message`). Zgodnościowo: `Success`, `Ignored`, `PaymentResponse`, `ErrorMessage` |
+| `PaymentWebhookRejection` | Enum | Powód odrzucenia: `InvalidSignature`, `NotConfigured`, `MalformedPayload`, `ProcessingFailed`, `UnknownProvider`, `NotSupported`, `Unspecified` |
 
 ### DI Registration
 
@@ -213,7 +215,7 @@ string redirectUrl = response.RedirectUrl;  // → przeglądarka
 ### Sprawdzanie statusu
 ```csharp
 var status = await _payments.GetStatus("Stripe", paymentId);
-// status.PaymentStatus: Created/Pending/Completed/Failed/Cancelled
+// status.PaymentStatus: Created/Processing/Finished/Rejected
 ```
 
 ### Obsługa webhooków
@@ -222,13 +224,23 @@ var result = await _payments.HandleWebhookAsync(providerKey, new PaymentWebhookR
 {
     Body = rawBody,
     Headers = httpHeaders,
-    QueryParams = queryParams
+    Query = query
 });
+
+var response = result switch
+{
+    PaymentWebhookProcessed processed => Handle(processed.Payment),   // PaymentUniqueId + PaymentStatus
+    PaymentWebhookIgnored => NoContent(),                             // authentic, nothing to do
+    PaymentWebhookRejected { Rejection: PaymentWebhookRejection.InvalidSignature } => Unauthorized(),
+    PaymentWebhookRejected => BadRequest(),
+};
 ```
 
 ### Zasady
 - Każdy provider ma unikalny Key (np. "Stripe", "PayU", "CashBill")
-- Zawsze sprawdź PaymentWebhookResult — Ignored to OK, Fail to błąd podpisu/konfiguracji
+- Wynik webhooka to zawsze jeden z trzech rekordów: PaymentWebhookProcessed (działaj na Payment), PaymentWebhookIgnored (odpowiedz 2xx, nic nie rób), PaymentWebhookRejected (nie ufaj niczemu z żądania)
+- Powód odrzucenia czytaj z PaymentWebhookRejected.Rejection (np. InvalidSignature → 401, MalformedPayload → 400) — nigdy nie analizuj treści Message
+- W switch po wyniku nie dodawaj gałęzi domyślnej: hierarchia jest zamknięta i kompilator C# 15 pilnuje kompletności
 - Kwota Amount w walucie bazowej (nie w groszach — chyba że provider wymaga inaczej)
 - Dla webhooków wymagany jest endpoint HTTP POST z raw body
 - Nigdy nie uruchamiaj providera bez skonfigurowanego sekretu webhooka — weryfikacja odrzuci wszystkie powiadomienia (fail-closed)

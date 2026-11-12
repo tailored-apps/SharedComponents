@@ -159,7 +159,7 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
     /// <inheritdoc/>
-    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
         var hash = request.Query.TryGetValue("HASH", out var h) ? h.ToString() : string.Empty;
         var kwota = request.Query.TryGetValue("KWOTA", out var k) ? k.ToString() : string.Empty;
@@ -177,26 +177,14 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        var response = await TransactionStatusChange(payload);
-
-        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
-        {
-            var msg = response.ResponseObject?.ToString() ?? string.Empty;
-            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
-                return PaymentWebhookResult.Fail(msg);
-        }
-
-        if (response.PaymentStatus == PaymentStatusEnum.Processing)
-            return PaymentWebhookResult.Ignore("Non-actionable event");
-
-        return PaymentWebhookResult.Ok(response);
+        return Task.FromResult(ProcessNotification(payload));
     }
 
     /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+        => Task.FromResult(ProcessNotification(payload).ToPaymentResponse());
+
+    private PaymentWebhookResult ProcessNotification(TransactionStatusChangePayload payload)
     {
         var qs = payload.QueryParameters;
         var hash = qs.TryGetValue("HASH", out var h) ? h.ToString() : string.Empty;
@@ -205,10 +193,10 @@ public class HotPayProvider : IPaymentProvider, IWebhookPaymentProvider
         var status = qs.TryGetValue("STATUS", out var s) ? s.ToString() : string.Empty;
 
         if (!caller.VerifyNotification(hash, kwota, idPlatnosci, status))
-            return Task.FromResult(new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid hash" });
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.InvalidSignature, "Invalid hash");
 
         var payStatus = status == "SUCCESS" ? PaymentStatusEnum.Finished : PaymentStatusEnum.Rejected;
-        return Task.FromResult(new PaymentResponse { PaymentUniqueId = idPlatnosci, PaymentStatus = payStatus, ResponseObject = "OK" });
+        return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = idPlatnosci, PaymentStatus = payStatus, ResponseObject = "OK" });
     }
 }
 

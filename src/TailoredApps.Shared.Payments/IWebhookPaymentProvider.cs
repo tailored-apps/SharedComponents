@@ -23,10 +23,10 @@ namespace TailoredApps.Shared.Payments
         /// (body, headers, query parameters, etc.).
         /// </param>
         /// <returns>
-        /// <see cref="PaymentWebhookResult.Ok"/> — notification was processed,
-        ///   <see cref="PaymentWebhookResult.PaymentResponse"/> contains the resolved status.<br/>
-        /// <see cref="PaymentWebhookResult.Ignore"/> — notification was valid but irrelevant.<br/>
-        /// <see cref="PaymentWebhookResult.Fail"/> — signature invalid, parse error, etc.
+        /// <see cref="PaymentWebhookProcessed"/> — the notification was authentic and carries the resolved payment state.<br/>
+        /// <see cref="PaymentWebhookIgnored"/> — the notification was authentic but requires no action.<br/>
+        /// <see cref="PaymentWebhookRejected"/> — the notification was not accepted;
+        ///   <see cref="PaymentWebhookRejected.Rejection"/> says why (invalid signature, malformed payload, …).
         /// </returns>
         Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request);
     }

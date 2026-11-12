@@ -311,30 +311,18 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
             QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>(),
         };
 
-        var response = await TransactionStatusChange(payload);
-
-        if (response.PaymentStatus == PaymentStatusEnum.Rejected)
-        {
-            var msg = response.ResponseObject?.ToString() ?? string.Empty;
-            if (msg.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hash", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("sign", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("hmac", StringComparison.OrdinalIgnoreCase))
-                return PaymentWebhookResult.Fail(msg);
-        }
-
-        if (response.PaymentStatus == PaymentStatusEnum.Processing)
-            return PaymentWebhookResult.Ignore("Non-actionable event");
-
-        return PaymentWebhookResult.Ok(response);
+        return await ProcessNotificationAsync(payload);
     }
 
     /// <inheritdoc/>
     public async Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload)
+        => (await ProcessNotificationAsync(payload)).ToPaymentResponse();
+
+    private async Task<PaymentWebhookResult> ProcessNotificationAsync(TransactionStatusChangePayload payload)
     {
         var body = payload.Payload?.ToString() ?? string.Empty;
         if (!caller.VerifyNotification(body))
-            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Invalid signature" };
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.InvalidSignature, "Invalid signature");
 
         try
         {
@@ -345,7 +333,7 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
                 !root.TryGetProperty("amount", out var amt) ||
                 !root.TryGetProperty("currency", out var cur) ||
                 !root.TryGetProperty("orderId", out var oid))
-                return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Missing fields" };
+                return PaymentWebhookResult.Reject(PaymentWebhookRejection.MalformedPayload, "Missing fields");
 
             var sessionId = sid.GetString()!;
             var status = await caller.VerifyTransactionAsync(
@@ -354,11 +342,11 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
                 cur.GetString()!,
                 oid.GetInt32());
 
-            return new PaymentResponse { PaymentUniqueId = sessionId, PaymentStatus = status, ResponseObject = "OK" };
+            return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = sessionId, PaymentStatus = status, ResponseObject = "OK" });
         }
         catch
         {
-            return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = "Parse error" };
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.ProcessingFailed, "Parse error");
         }
     }
 }

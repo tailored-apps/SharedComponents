@@ -154,7 +154,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
 
             var verification = await VerifySignatureAsync(request);
             if (verification is not null)
-                return new PaymentResponse { PaymentStatus = PaymentStatusEnum.Rejected, ResponseObject = verification };
+                return verification.ToPaymentResponse();
 
             var status = await cashbillService.GetPaymentStatus(request.TransactionId);
 
@@ -166,10 +166,10 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         /// otherwise a short, non-sensitive error message. The expected signature is never disclosed,
         /// because returning it would give a caller an oracle for forging notifications.
         /// </summary>
-        private async Task<string?> VerifySignatureAsync(TransactionStatusChanged notification)
+        private async Task<PaymentWebhookRejected?> VerifySignatureAsync(TransactionStatusChanged notification)
         {
             if (string.IsNullOrEmpty(notification.Sign))
-                return "Missing signature.";
+                return new PaymentWebhookRejected(PaymentWebhookRejection.InvalidSignature, "Missing signature.");
 
             string expectedSign;
             try
@@ -178,12 +178,12 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             }
             catch (InvalidOperationException)
             {
-                return "Signature verification is not configured.";
+                return new PaymentWebhookRejected(PaymentWebhookRejection.NotConfigured, "Signature verification is not configured.");
             }
 
             return WebhookSignature.FixedTimeEqualsIgnoreCase(expectedSign, notification.Sign)
                 ? null
-                : "Invalid signature.";
+                : new PaymentWebhookRejected(PaymentWebhookRejection.InvalidSignature, "Invalid signature.");
         }
 
         // ─── IWebhookPaymentProvider ─────────────────────────────────────────
@@ -210,13 +210,13 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             var sign = request.Query.TryGetValue("sign", out var s) ? s.ToString() : string.Empty;
 
             if (string.IsNullOrEmpty(transactionId))
-                return PaymentWebhookResult.Fail("Missing transactionId (args) in query string.");
+                return PaymentWebhookResult.Reject(PaymentWebhookRejection.MalformedPayload, "Missing transactionId (args) in query string.");
 
             // Verify MD5 signature: MD5(cmd + args + shopSecretPhrase), compared in constant time.
             var notification = new TransactionStatusChanged { Command = cmd, TransactionId = transactionId, Sign = sign };
             var verification = await VerifySignatureAsync(notification);
             if (verification is not null)
-                return PaymentWebhookResult.Fail(verification);
+                return verification;
 
             // Signature valid — poll the API for the actual payment status
             var statusResponse = await GetStatus(transactionId);

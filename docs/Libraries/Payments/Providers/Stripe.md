@@ -89,7 +89,7 @@ public async Task<IActionResult> StripeWebhook()
         Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString())
     });
 
-    return result == PaymentWebhookResult.Fail ? BadRequest() : Ok();
+    return result is PaymentWebhookRejected ? BadRequest() : Ok();
 }
 ```
 
