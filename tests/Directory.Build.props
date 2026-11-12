@@ -1,0 +1,11 @@
+<Project>
+
+	<!-- MSBuild only imports the nearest Directory.Build.props, so pull in the repository-wide one first. -->
+	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+	<!-- Test projects are never packed or published. -->
+	<PropertyGroup>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+</Project>

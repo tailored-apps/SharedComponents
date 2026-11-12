@@ -11,6 +11,7 @@ Thank you for your interest in contributing to **TailoredApps Shared Components*
 3. One PR = one substantive change
 4. All tests must pass before opening a PR
 5. Code must have XML docs (summary) for public types and methods
+6. One namespace per file, declared without a block (`namespace TailoredApps.Shared.Xxx;`). `.editorconfig` enforces the style; fix existing code with `dotnet format style TailoredApps.Shared.slnx --diagnostics IDE0161 --severity info`
 
 ---
 
@@ -49,7 +50,7 @@ The root `Directory.Build.props` enables `UseArtifactsOutput`, so projects **no 
 | `artifacts/obj/<Project>/` | intermediate files |
 | `artifacts/package/<configuration>/` | NuGet packages (`*.nupkg`) for every library — the release workflow publishes from here |
 
-To clean the build, delete the `artifacts/` directory. Add a new library to the solution with `dotnet sln TailoredApps.Shared.slnx add <path to .csproj>` — the settings from `Directory.Build.props` apply automatically. `*.user` files and the `.vs/`, `.idea/`, `.vscode/` folders are never committed (they are in `.gitignore`).
+To clean the build, delete the `artifacts/` directory. Add a new library to the solution with `dotnet sln TailoredApps.Shared.slnx add <path to .csproj>` — the settings from `Directory.Build.props` apply automatically: target frameworks, language version, nullable, package metadata (author, MIT licence, project URL) and NuGet package generation. Package versions live in `Directory.Packages.props`, and `nuget.config` limits the sources to nuget.org. `*.user` files and the `.vs/`, `.idea/`, `.vscode/` folders are never committed (they are in `.gitignore`).
 
 ---
 

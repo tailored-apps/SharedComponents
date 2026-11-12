@@ -11,6 +11,7 @@ Dziękujemy za zainteresowanie współtworzeniem **TailoredApps Shared Component
 3. Jeden PR = jedna zmiana merytoryczna
 4. Wszystkie testy muszą przechodzić przed otwarciem PR
 5. Kod musi posiadać XML docs (summary) dla publicznych typów i metod
+6. Jedna przestrzeń nazw na plik, deklarowana bez bloku (`namespace TailoredApps.Shared.Xxx;`). Styl wymusza `.editorconfig`; istniejący kod poprawisz poleceniem `dotnet format style TailoredApps.Shared.slnx --diagnostics IDE0161 --severity info`
 
 ---
 
@@ -49,7 +50,7 @@ Plik `Directory.Build.props` w katalogu głównym włącza `UseArtifactsOutput`,
 | `artifacts/obj/<Projekt>/` | pliki pośrednie |
 | `artifacts/package/<konfiguracja>/` | paczki NuGet (`*.nupkg`) wszystkich bibliotek — stąd publikuje je workflow release |
 
-Aby wyczyścić build, wystarczy usunąć katalog `artifacts/`. Nową bibliotekę dodaj do solution poleceniem `dotnet sln TailoredApps.Shared.slnx add <ścieżka do .csproj>` — ustawienia z `Directory.Build.props` zostaną zastosowane automatycznie. Plików `*.user` oraz folderów `.vs/`, `.idea/`, `.vscode/` nie commitujemy (są w `.gitignore`).
+Aby wyczyścić build, wystarczy usunąć katalog `artifacts/`. Nową bibliotekę dodaj do solution poleceniem `dotnet sln TailoredApps.Shared.slnx add <ścieżka do .csproj>` — ustawienia z `Directory.Build.props` zostaną zastosowane automatycznie: platformy docelowe, wersja języka, nullable, metadane paczki (autor, licencja MIT, adres projektu) i generowanie paczki NuGet. Wersje paczek są w `Directory.Packages.props`, a `nuget.config` ogranicza źródła do nuget.org. Plików `*.user` oraz folderów `.vs/`, `.idea/`, `.vscode/` nie commitujemy (są w `.gitignore`).
 
 ---
 

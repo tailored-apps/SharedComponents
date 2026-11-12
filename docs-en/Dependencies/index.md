@@ -14,8 +14,9 @@ History of automated NuGet reference updates across the libraries in this reposi
 ## How the automated bump works
 
 The workflow runs every Monday at 06:00 UTC (and on demand via *workflow dispatch*). It executes
-`scripts/Bump-Deps.ps1`, which walks every `*.csproj` and queries nuget.org for the latest stable
-version of each `PackageReference`.
+`scripts/Bump-Deps.ps1`, which takes every package in `Directory.Packages.props` (the central
+`PackageVersion` items) and queries nuget.org for its latest stable version. Entries from before
+version 2.0 name individual `*.csproj` files, because each project then carried its own versions.
 
 | Rule | Behaviour |
 |---|---|

@@ -3,8 +3,8 @@
     Bump NuGet PackageReference versions to latest stable, with license-awareness.
 
 .DESCRIPTION
-    Scans all *.csproj files, queries nuget.org for latest stable versions, and
-    rewrites <PackageReference Version="..."> values when safe.
+    Scans Directory.Packages.props (central <PackageVersion> items) and all *.csproj files, queries
+    nuget.org for latest stable versions, and rewrites the Version values when safe.
 
     Rules:
       - Wildcard versions (e.g. "10.*", "2.*") are left alone — they self-update at restore.
@@ -147,13 +147,16 @@ function New-BumpRecord {
 
 $root = Resolve-Path $Path
 $rootPrefix = $root.Path.TrimEnd('\', '/')
-$csprojs = @(Get-ChildItem -Path $root -Recurse -Filter *.csproj | Where-Object {
-    # Skip anything inside a dot-directory — nested checkouts (.claude/worktrees),
-    # tool caches and the like are not part of this repository's sources.
+# Package versions are managed centrally: Directory.Packages.props holds a <PackageVersion> item for
+# every package. Project files are scanned as well, so a <PackageReference> that still carries its
+# own Version is handled the same way.
+$csprojs = @(Get-ChildItem -Path $root -Recurse -Include *.csproj, Directory.Packages.props -File | Where-Object {
+    # Skip anything inside a dot-directory - nested checkouts (.claude/worktrees),
+    # tool caches and the like are not part of this repository's sources - and build output.
     $rel = $_.FullName.Substring($rootPrefix.Length).TrimStart('\', '/')
-    -not ($rel -split '[\\/]' | Where-Object { $_.StartsWith('.') })
+    -not ($rel -split '[\\/]' | Where-Object { $_.StartsWith('.') -or $_ -eq 'artifacts' })
 })
-Write-Host "Scanning $($csprojs.Count) csproj files under $root" -ForegroundColor Cyan
+Write-Host "Scanning $($csprojs.Count) project and package-version files under $root" -ForegroundColor Cyan
 
 $bumpedAny = $false
 $summary = @()
@@ -168,7 +171,7 @@ foreach ($file in $csprojs) {
     $projPath = $file.FullName.Substring($rootPrefix.Length).TrimStart('\', '/') -replace '\\', '/'
 
     $changed = $false
-    $refs = $xml.SelectNodes('//PackageReference')
+    $refs = $xml.SelectNodes('//PackageReference | //PackageVersion')
     foreach ($ref in $refs) {
         $name = $ref.GetAttribute('Include')
         if (-not $name) { continue }

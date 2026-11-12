@@ -8,64 +8,47 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace TailoredApps.Shared.Payments.Provider.CashBill
+namespace TailoredApps.Shared.Payments.Provider.CashBill;
+
+/// <summary>
+/// Concrete implementation of <see cref="ICashbillHttpClient"/>.
+/// Sends HTTP requests to the CashBill REST API using <see cref="WebRequest"/>
+/// with form-encoded payloads.
+/// </summary>
+public class CashbillHttpClient : ICashbillHttpClient
 {
+    private readonly ILogger logger;
+
     /// <summary>
-    /// Concrete implementation of <see cref="ICashbillHttpClient"/>.
-    /// Sends HTTP requests to the CashBill REST API using <see cref="WebRequest"/>
-    /// with form-encoded payloads.
+    /// Initializes a new instance of <see cref="CashbillHttpClient"/>.
     /// </summary>
-    public class CashbillHttpClient : ICashbillHttpClient
+    /// <param name="logger">Logger instance for error reporting.</param>
+    public CashbillHttpClient(ILogger<CashbillHttpClient> logger)
     {
-        private readonly ILogger logger;
+        this.logger = logger;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of <see cref="CashbillHttpClient"/>.
-        /// </summary>
-        /// <param name="logger">Logger instance for error reporting.</param>
-        public CashbillHttpClient(ILogger<CashbillHttpClient> logger)
+    /// <inheritdoc/>
+    public async Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData, CancellationToken cancellationToken = default)
+    {
+        // The request itself is synchronous and cannot be interrupted; at least do not start it.
+        cancellationToken.ThrowIfCancellationRequested();
+        try
         {
-            this.logger = logger;
-        }
-
-        /// <inheritdoc/>
-        public async Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData, CancellationToken cancellationToken = default)
-        {
-            // The request itself is synchronous and cannot be interrupted; at least do not start it.
-            cancellationToken.ThrowIfCancellationRequested();
-            try
+            var newUrl = new Uri(url);
+            WebRequest request22 = WebRequest.Create(newUrl.ToString());
+            request22.Method = method;
+            if (method != "GET")
             {
-                var newUrl = new Uri(url);
-                WebRequest request22 = WebRequest.Create(newUrl.ToString());
-                request22.Method = method;
-                if (method != "GET")
+                ArgumentNullException.ThrowIfNull(requestFormData);
+                byte[] byteArray = Encoding.UTF8.GetBytes(await requestFormData.ReadAsStringAsync(cancellationToken));
+                request22.ContentType = "application/x-www-form-urlencoded; charset=UTF8";
+                request22.ContentLength = byteArray.Length;
+                using (Stream dataStream = request22.GetRequestStream())
                 {
-                    ArgumentNullException.ThrowIfNull(requestFormData);
-                    byte[] byteArray = Encoding.UTF8.GetBytes(await requestFormData.ReadAsStringAsync(cancellationToken));
-                    request22.ContentType = "application/x-www-form-urlencoded; charset=UTF8";
-                    request22.ContentLength = byteArray.Length;
-                    using (Stream dataStream = request22.GetRequestStream())
-                    {
-                        dataStream.Write(byteArray, 0, byteArray.Length);
-                        dataStream.Close();
+                    dataStream.Write(byteArray, 0, byteArray.Length);
+                    dataStream.Close();
 
-                        using (WebResponse response22 = request22.GetResponse())
-                        {
-                            using (var responseStream = response22.GetResponseStream())
-                            {
-                                using (StreamReader reader22 = new StreamReader(responseStream))
-                                {
-                                    string responseFromServer = reader22.ReadToEnd();
-                                    T payment = JsonSerializer.Deserialize<T>(responseFromServer)
-                                        ?? throw new InvalidOperationException("CashBill returned an empty response.");
-                                    return payment;
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
                     using (WebResponse response22 = request22.GetResponse())
                     {
                         using (var responseStream = response22.GetResponseStream())
@@ -74,57 +57,73 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
                             {
                                 string responseFromServer = reader22.ReadToEnd();
                                 T payment = JsonSerializer.Deserialize<T>(responseFromServer)
-                                        ?? throw new InvalidOperationException("CashBill returned an empty response.");
+                                    ?? throw new InvalidOperationException("CashBill returned an empty response.");
                                 return payment;
                             }
                         }
                     }
-
                 }
             }
-            catch (Exception ex)
+            else
             {
-                logger.LogError(ex, ex.Message + ex.StackTrace);
-                throw;
+                using (WebResponse response22 = request22.GetResponse())
+                {
+                    using (var responseStream = response22.GetResponseStream())
+                    {
+                        using (StreamReader reader22 = new StreamReader(responseStream))
+                        {
+                            string responseFromServer = reader22.ReadToEnd();
+                            T payment = JsonSerializer.Deserialize<T>(responseFromServer)
+                                    ?? throw new InvalidOperationException("CashBill returned an empty response.");
+                            return payment;
+                        }
+                    }
+                }
+
             }
         }
-
-        /// <inheritdoc/>
-        public async Task MakeFormRequest(string url, string method, FormUrlEncodedContent requestFormData, CancellationToken cancellationToken = default)
+        catch (Exception ex)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            try
+            logger.LogError(ex, ex.Message + ex.StackTrace);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task MakeFormRequest(string url, string method, FormUrlEncodedContent requestFormData, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            var newUrl = new Uri(url);
+            WebRequest request22 = WebRequest.Create(newUrl.ToString());
+            request22.Method = method;
+            byte[] byteArray = Encoding.UTF8.GetBytes(await requestFormData.ReadAsStringAsync(cancellationToken));
+            request22.ContentType = "application/x-www-form-urlencoded; charset=UTF8";
+            request22.ContentLength = byteArray.Length;
+            using (Stream dataStream = request22.GetRequestStream())
             {
-                var newUrl = new Uri(url);
-                WebRequest request22 = WebRequest.Create(newUrl.ToString());
-                request22.Method = method;
-                byte[] byteArray = Encoding.UTF8.GetBytes(await requestFormData.ReadAsStringAsync(cancellationToken));
-                request22.ContentType = "application/x-www-form-urlencoded; charset=UTF8";
-                request22.ContentLength = byteArray.Length;
-                using (Stream dataStream = request22.GetRequestStream())
+                if (method != "GET")
                 {
-                    if (method != "GET")
+                    dataStream.Write(byteArray, 0, byteArray.Length);
+                    dataStream.Close();
+                }
+                using (WebResponse response22 = request22.GetResponse())
+                {
+                    using (var responseStream = response22.GetResponseStream())
                     {
-                        dataStream.Write(byteArray, 0, byteArray.Length);
-                        dataStream.Close();
-                    }
-                    using (WebResponse response22 = request22.GetResponse())
-                    {
-                        using (var responseStream = response22.GetResponseStream())
+                        using (StreamReader reader22 = new StreamReader(responseStream))
                         {
-                            using (StreamReader reader22 = new StreamReader(responseStream))
-                            {
-                                string responseFromServer = reader22.ReadToEnd();
-                            }
+                            string responseFromServer = reader22.ReadToEnd();
                         }
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message + ex.StackTrace);
-                throw;
-            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, ex.Message + ex.StackTrace);
+            throw;
         }
     }
 }

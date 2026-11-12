@@ -20,7 +20,7 @@ Every `TailoredApps.Shared.*` package is built for several target frameworks at 
 
 ### Framework-aligned dependencies
 
-Packages tied to the runtime generation (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) are referenced separately for each target framework: the `net11.0` asset depends on the `11.x` line and `net10.0` on `10.x`. An application on .NET 11 therefore does not pull in packages from the previous generation.
+Packages tied to the runtime generation (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) have a separate version for each target framework: the `net11.0` asset depends on the `11.x` line and `net10.0` on `10.x`. Every package version is recorded in one place, `Directory.Packages.props`; project files name packages without a version. An application on .NET 11 therefore does not pull in packages from the previous generation.
 
 !!! note "Exception: WebApi on net11.0"
     On the day .NET 11 was released, nuget.org had no `11.x` line of `Microsoft.Extensions.Http.Resilience` and `Microsoft.Extensions.ServiceDiscovery` yet, so the `net11.0` asset of `WebApi` temporarily uses their `10.x` line.
@@ -98,10 +98,10 @@ dotnet test TailoredApps.Shared.slnx
 
 ### Adding a new library
 
-- Use `<TargetFrameworks>net10.0;net11.0</TargetFrameworks>`.
-- Reference runtime-aligned packages conditionally, once per target framework (`Condition="'$(TargetFramework)' == 'net11.0'"` → `Version="11.*"`).
+- Do not set `TargetFrameworks`, author, licence or language version in the `.csproj` — they are inherited from `Directory.Build.props` and `src/Directory.Build.props`. A project file holds only what is its own: `PackageId`, `Title`, `Description`, `PackageTags`, references.
+- Add packages as `<PackageReference Include="Name" />` without a version; put the version in `Directory.Packages.props`. A runtime-aligned package goes into both conditional groups (`10.*` for `net10.0`, `11.*` for `net11.0`).
 - Do not set `Features` in the `.csproj` — runtime async is inherited from `src/Directory.Build.targets`.
-- Add `net11.0` to the test project's `<TargetFrameworks>` so the `net11.0` asset is actually tested.
+- Put the test project under `tests/` — it inherits the same target frameworks, so the `net11.0` asset is actually tested.
 
 ---
 
@@ -136,7 +136,8 @@ You are working with TailoredApps.Shared.* packages or with the SharedComponents
   SYSLIB5007 / CA2252.
 - Do not use the net11.0 assets of libraries containing async code in Blazor WebAssembly (Mono
   does not support runtime async in .NET 11) — build them with UseRuntimeAsync=false.
-- New library: TargetFrameworks net10.0;net11.0, runtime-aligned dependencies
-  conditioned per framework, test project on net10.0;net11.0.
+- New library: do not set TargetFrameworks or package metadata in the csproj (they are inherited);
+  PackageReference without a version, versions in Directory.Packages.props (runtime-aligned packages
+  in both conditional groups: 10.* and 11.*); test project under tests/.
 - Build the repository with .NET SDK 11.0.100 or newer.
 ```

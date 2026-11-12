@@ -1,7 +1,9 @@
 <Project>
 
 	<!--
-		Settings shared by every project in the repository (src/ and tests/).
+		Settings shared by every project in the repository (src/ and tests/). Libraries add their own in
+		src/Directory.Build.props, tests in tests/Directory.Build.props. Package versions live in
+		Directory.Packages.props.
 
 		UseArtifactsOutput moves all build output out of the project folders and into a single
 		artifacts/ directory next to this file:
@@ -22,13 +24,19 @@
 	</PropertyGroup>
 
 	<!--
-		One C# version for every target framework. Without this each framework compiles with its own
-		default (net10.0 as C# 14, net11.0 as C# 15), so shared source could only use the older one.
-		Language features that need runtime support on net10.0 (union types, closed hierarchies) are
-		not part of the public API - see docs/Platform/index.md.
+		Every library and every test project targets the same frameworks, with one C# version. Without
+		LangVersion each framework would compile with its own default (net10.0 as C# 14, net11.0 as C# 15),
+		so shared source could only use the older one. Language features that need runtime support on
+		net10.0 (union types) are not part of the public API - see docs/Platform/index.md.
 	-->
 	<PropertyGroup>
+		<TargetFrameworks>net10.0;net11.0</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<!-- Stamps the build time into the informational version of every assembly. -->
+		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
 	</PropertyGroup>
 
 </Project>

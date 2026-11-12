@@ -14,8 +14,9 @@ Historia automatycznych aktualizacji referencji NuGet w bibliotekach tego repozy
 ## Jak działa automatyczny bump
 
 Workflow uruchamia się w każdy poniedziałek o 06:00 UTC (oraz ręcznie przez *workflow dispatch*)
-i wykonuje `scripts/Bump-Deps.ps1`, który dla każdego `*.csproj` sprawdza w nuget.org najnowszą
-stabilną wersję każdej referencji `PackageReference`.
+i wykonuje `scripts/Bump-Deps.ps1`, który dla każdej paczki z `Directory.Packages.props` (centralne
+wersje, elementy `PackageVersion`) sprawdza w nuget.org najnowszą stabilną wersję. Wpisy sprzed
+wersji 2.0 wymieniają pojedyncze pliki `*.csproj`, bo wtedy każdy projekt miał własne wersje.
 
 | Reguła | Zachowanie |
 |---|---|

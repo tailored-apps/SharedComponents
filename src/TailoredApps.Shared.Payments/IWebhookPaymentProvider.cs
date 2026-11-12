@@ -1,35 +1,34 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TailoredApps.Shared.Payments
+namespace TailoredApps.Shared.Payments;
+
+/// <summary>
+/// Extension of <see cref="IPaymentProvider"/> for gateways that push
+/// payment-status notifications via HTTP webhooks or back-channel calls.
+/// </summary>
+/// <remarks>
+/// Providers that support webhooks implement this interface in addition to
+/// <see cref="IPaymentProvider"/>.  The <see cref="IPaymentService"/> dispatches
+/// incoming HTTP requests to the correct provider automatically based on
+/// <see cref="IPaymentProvider.Key"/>.
+/// </remarks>
+public interface IWebhookPaymentProvider : IPaymentProvider
 {
     /// <summary>
-    /// Extension of <see cref="IPaymentProvider"/> for gateways that push
-    /// payment-status notifications via HTTP webhooks or back-channel calls.
+    /// Processes an incoming HTTP webhook/back-channel notification
+    /// from the payment gateway.
     /// </summary>
-    /// <remarks>
-    /// Providers that support webhooks implement this interface in addition to
-    /// <see cref="IPaymentProvider"/>.  The <see cref="IPaymentService"/> dispatches
-    /// incoming HTTP requests to the correct provider automatically based on
-    /// <see cref="IPaymentProvider.Key"/>.
-    /// </remarks>
-    public interface IWebhookPaymentProvider : IPaymentProvider
-    {
-        /// <summary>
-        /// Processes an incoming HTTP webhook/back-channel notification
-        /// from the payment gateway.
-        /// </summary>
-        /// <param name="request">
-        /// Unified representation of the raw HTTP request
-        /// (body, headers, query parameters, etc.).
-        /// </param>
-        /// <param name="cancellationToken">Token that cancels the operation.</param>
-        /// <returns>
-        /// <see cref="PaymentWebhookProcessed"/> — the notification was authentic and carries the resolved payment state.<br/>
-        /// <see cref="PaymentWebhookIgnored"/> — the notification was authentic but requires no action.<br/>
-        /// <see cref="PaymentWebhookRejected"/> — the notification was not accepted;
-        ///   <see cref="PaymentWebhookRejected.Rejection"/> says why (invalid signature, malformed payload, …).
-        /// </returns>
-        Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default);
-    }
+    /// <param name="request">
+    /// Unified representation of the raw HTTP request
+    /// (body, headers, query parameters, etc.).
+    /// </param>
+    /// <param name="cancellationToken">Token that cancels the operation.</param>
+    /// <returns>
+    /// <see cref="PaymentWebhookProcessed"/> — the notification was authentic and carries the resolved payment state.<br/>
+    /// <see cref="PaymentWebhookIgnored"/> — the notification was authentic but requires no action.<br/>
+    /// <see cref="PaymentWebhookRejected"/> — the notification was not accepted;
+    ///   <see cref="PaymentWebhookRejected.Rejection"/> says why (invalid signature, malformed payload, …).
+    /// </returns>
+    Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default);
 }

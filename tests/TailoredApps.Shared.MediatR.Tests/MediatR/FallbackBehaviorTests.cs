@@ -8,92 +8,91 @@ using TailoredApps.Shared.MediatR.Interfaces.Handlers;
 using TailoredApps.Shared.MediatR.PipelineBehaviours;
 using Xunit;
 
-namespace TailoredApps.Shared.MediatR.Tests
+namespace TailoredApps.Shared.MediatR.Tests;
+
+public class FallbackBehaviorTests
 {
-    public class FallbackBehaviorTests
+    private static FallbackBehavior<FallbackRequest, string> CreateSut(params IFallbackHandler<FallbackRequest, string>[] fallbackHandlers)
+        => new FallbackBehavior<FallbackRequest, string>(fallbackHandlers, NullLogger<FallbackBehavior<FallbackRequest, string>>.Instance);
+
+    [Fact]
+    public async Task When_No_Fallback_Handler_Is_Registered_Should_Invoke_Next_Once_And_Return_Its_Response()
     {
-        private static FallbackBehavior<FallbackRequest, string> CreateSut(params IFallbackHandler<FallbackRequest, string>[] fallbackHandlers)
-            => new FallbackBehavior<FallbackRequest, string>(fallbackHandlers, NullLogger<FallbackBehavior<FallbackRequest, string>>.Instance);
-
-        [Fact]
-        public async Task When_No_Fallback_Handler_Is_Registered_Should_Invoke_Next_Once_And_Return_Its_Response()
+        // arrange
+        var sut = CreateSut();
+        var nextCalls = 0;
+        RequestHandlerDelegate<string> next = (ct) =>
         {
-            // arrange
-            var sut = CreateSut();
-            var nextCalls = 0;
-            RequestHandlerDelegate<string> next = (ct) =>
-            {
-                nextCalls++;
-                return Task.FromResult("handler-response");
-            };
+            nextCalls++;
+            return Task.FromResult("handler-response");
+        };
 
-            // act
-            var response = await sut.Handle(new FallbackRequest(), next, CancellationToken.None);
+        // act
+        var response = await sut.Handle(new FallbackRequest(), next, CancellationToken.None);
 
-            // assert
-            Assert.Equal("handler-response", response);
-            Assert.Equal(1, nextCalls);
-        }
+        // assert
+        Assert.Equal("handler-response", response);
+        Assert.Equal(1, nextCalls);
+    }
 
-        [Fact]
-        public async Task When_Next_Throws_Should_Return_Fallback_Handler_Response()
+    [Fact]
+    public async Task When_Next_Throws_Should_Return_Fallback_Handler_Response()
+    {
+        // arrange
+        var request = new FallbackRequest();
+        var fallbackMock = new Mock<IFallbackHandler<FallbackRequest, string>>();
+        fallbackMock
+            .Setup(h => h.HandleFallback(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("fallback-response");
+        var sut = CreateSut(fallbackMock.Object);
+        RequestHandlerDelegate<string> next = (ct) => throw new InvalidOperationException("primary handler failed");
+
+        // act
+        var response = await sut.Handle(request, next, CancellationToken.None);
+
+        // assert
+        Assert.Equal("fallback-response", response);
+        fallbackMock.Verify(h => h.HandleFallback(request, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task When_Next_Succeeds_Should_Return_Its_Response_And_Never_Invoke_Fallback()
+    {
+        // arrange
+        var request = new FallbackRequest();
+        var fallbackMock = new Mock<IFallbackHandler<FallbackRequest, string>>(MockBehavior.Strict);
+        var sut = CreateSut(fallbackMock.Object);
+        var nextCalls = 0;
+        RequestHandlerDelegate<string> next = (ct) =>
         {
-            // arrange
-            var request = new FallbackRequest();
-            var fallbackMock = new Mock<IFallbackHandler<FallbackRequest, string>>();
-            fallbackMock
-                .Setup(h => h.HandleFallback(request, It.IsAny<CancellationToken>()))
-                .ReturnsAsync("fallback-response");
-            var sut = CreateSut(fallbackMock.Object);
-            RequestHandlerDelegate<string> next = (ct) => throw new InvalidOperationException("primary handler failed");
+            nextCalls++;
+            return Task.FromResult("handler-response");
+        };
 
-            // act
-            var response = await sut.Handle(request, next, CancellationToken.None);
+        // act
+        var response = await sut.Handle(request, next, CancellationToken.None);
 
-            // assert
-            Assert.Equal("fallback-response", response);
-            fallbackMock.Verify(h => h.HandleFallback(request, It.IsAny<CancellationToken>()), Times.Once);
-        }
+        // assert
+        Assert.Equal("handler-response", response);
+        Assert.Equal(1, nextCalls);
+        fallbackMock.Verify(h => h.HandleFallback(It.IsAny<FallbackRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 
-        [Fact]
-        public async Task When_Next_Succeeds_Should_Return_Its_Response_And_Never_Invoke_Fallback()
+    [Fact]
+    public async Task When_Request_Is_Cancelled_Should_Propagate_The_Cancellation_And_Never_Invoke_Fallback()
+    {
+        // arrange: a strict mock fails the test if the fallback is asked to answer a request nobody waits for
+        var request = new FallbackRequest();
+        var fallbackMock = new Mock<IFallbackHandler<FallbackRequest, string>>(MockBehavior.Strict);
+        var sut = CreateSut(fallbackMock.Object);
+        using var cancellation = new CancellationTokenSource();
+        RequestHandlerDelegate<string> next = (ct) =>
         {
-            // arrange
-            var request = new FallbackRequest();
-            var fallbackMock = new Mock<IFallbackHandler<FallbackRequest, string>>(MockBehavior.Strict);
-            var sut = CreateSut(fallbackMock.Object);
-            var nextCalls = 0;
-            RequestHandlerDelegate<string> next = (ct) =>
-            {
-                nextCalls++;
-                return Task.FromResult("handler-response");
-            };
+            cancellation.Cancel();
+            throw new OperationCanceledException(cancellation.Token);
+        };
 
-            // act
-            var response = await sut.Handle(request, next, CancellationToken.None);
-
-            // assert
-            Assert.Equal("handler-response", response);
-            Assert.Equal(1, nextCalls);
-            fallbackMock.Verify(h => h.HandleFallback(It.IsAny<FallbackRequest>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task When_Request_Is_Cancelled_Should_Propagate_The_Cancellation_And_Never_Invoke_Fallback()
-        {
-            // arrange: a strict mock fails the test if the fallback is asked to answer a request nobody waits for
-            var request = new FallbackRequest();
-            var fallbackMock = new Mock<IFallbackHandler<FallbackRequest, string>>(MockBehavior.Strict);
-            var sut = CreateSut(fallbackMock.Object);
-            using var cancellation = new CancellationTokenSource();
-            RequestHandlerDelegate<string> next = (ct) =>
-            {
-                cancellation.Cancel();
-                throw new OperationCanceledException(cancellation.Token);
-            };
-
-            // act & assert
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sut.Handle(request, next, cancellation.Token));
-        }
+        // act & assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sut.Handle(request, next, cancellation.Token));
     }
 }

@@ -14,4 +14,26 @@
 		<WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
 	</PropertyGroup>
 
+	<!--
+		Packaging. Every library is a NuGet package built together with the project, with XML docs.
+		The metadata below is the same for all of them; a project file only adds what is its own
+		(PackageId, Title, Description, PackageTags, PackageReadmeFile).
+	-->
+	<PropertyGroup>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+		<Authors>Lukasz Kowalski</Authors>
+		<Company>Tailored Apps.</Company>
+		<Copyright>Copyright © Lukasz Kowalski</Copyright>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<PackageProjectUrl>https://shared.tailoredapps.pl</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+		<!-- iconUrl is deprecated by NuGet (NU5048) but still shown by nuget.org; there is no icon file to pack yet. -->
+		<PackageIconUrl>https://www.nuget.org/profiles/TailoredApps/avatar?imageSize=512</PackageIconUrl>
+		<NoWarn>$(NoWarn);NU5048</NoWarn>
+	</PropertyGroup>
+
 </Project>
