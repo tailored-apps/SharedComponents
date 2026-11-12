@@ -11,7 +11,7 @@ Welcome to the documentation of **TailoredApps Shared Components** — a set of 
 
 | Library | NuGet | Description |
 |---|---|---|
-| [DateTime](Libraries/DateTime/index.md) | `TailoredApps.Shared.DateTime` | `IDateTimeProvider` abstraction for mocking time in tests |
+| [DateTime](Libraries/DateTime/index.md) | `TailoredApps.Shared.DateTime` | `IDateTimeProvider` abstraction for mocking time in tests - obsolete since 2.0, use `System.TimeProvider` |
 | [Email](Libraries/Email/index.md) | `TailoredApps.Shared.Email` | SMTP provider, email template builder, console mode |
 | [Email.Models](Libraries/Email/Models.md) | `TailoredApps.Shared.Email.Models` | `MailMessage` data model |
 | [Email.Office365](Libraries/Email/Office365.md) | `TailoredApps.Shared.Email.Office365` | Sending via Microsoft Graph API (IMAP OAuth2) |

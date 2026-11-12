@@ -1,3 +1,6 @@
+// The types under test are obsolete on purpose: they stay until 3.0 for code that has not moved to TimeProvider.
+#pragma warning disable TAS0001
+
 using System;
 using Xunit;
 
@@ -92,9 +95,9 @@ public class DateTimeProviderTests
     public void As_Library_User_When_Get_UtcTimeOfDay_I_Get_TimeSpan_In_Utc_Timezone()
     {
         //arrange
-        var dateTimeBeforeTest = System.DateTime.Now.TimeOfDay;
-        var dateFromProvider = provider.TimeOfDay;
-        var dateTimeAfterTest = System.DateTime.Now.TimeOfDay;
+        var dateTimeBeforeTest = System.DateTime.UtcNow.TimeOfDay;
+        var dateFromProvider = provider.UtcTimeOfDay;
+        var dateTimeAfterTest = System.DateTime.UtcNow.TimeOfDay;
 
         //verify
 
