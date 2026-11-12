@@ -26,7 +26,7 @@ public class HotPayServiceOptions
     public string NotifyUrl { get; set; } = string.Empty;
 }
 
-file class HotPayRequest
+internal sealed class HotPayRequest
 {
     [JsonPropertyName("SEKRET")] public string Secret { get; set; } = string.Empty;
     [JsonPropertyName("KWOTA")] public string Amount { get; set; } = string.Empty;
@@ -37,7 +37,7 @@ file class HotPayRequest
     [JsonPropertyName("HASH")] public string Hash { get; set; } = string.Empty;
 }
 
-file class HotPayResponse
+internal sealed class HotPayResponse
 {
     [JsonPropertyName("STATUS")] public string? Status { get; set; }
     [JsonPropertyName("PRZEKIERUJ_DO")] public string? RedirectUrl { get; set; }
@@ -87,7 +87,7 @@ public class HotPayServiceCaller : IHotPayServiceCaller
         };
 
         using var client = httpClientFactory.CreateClient("HotPay");
-        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body, HotPayJsonContext.Default.HotPayRequest), Encoding.UTF8, "application/json");
         var response = await client.PostAsync(options.ServiceUrl, content, cancellationToken);
         // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal the caller reports.
         await PaymentGatewayException.ThrowIfUnavailableAsync("HotPay", response, cancellationToken);
@@ -98,7 +98,7 @@ public class HotPayServiceCaller : IHotPayServiceCaller
             return (null, null);
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JsonSerializer.Deserialize<HotPayResponse>(json);
+        var result = JsonSerializer.Deserialize(json, HotPayJsonContext.Default.HotPayResponse);
         return (result?.PaymentId ?? paymentId, result?.RedirectUrl);
     }
 
@@ -266,3 +266,11 @@ public class HotPayConfigureOptions : IConfigureOptions<HotPayServiceOptions>
         options.NotifyUrl = s.NotifyUrl;
     }
 }
+
+/// <summary>
+/// JSON metadata for the requests and answers of the HotPay API, generated at compile time: serialization
+/// uses no reflection, so it survives trimming and works under NativeAOT.
+/// </summary>
+[JsonSerializable(typeof(HotPayRequest))]
+[JsonSerializable(typeof(HotPayResponse))]
+internal sealed partial class HotPayJsonContext : JsonSerializerContext;

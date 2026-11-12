@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using TailoredApps.Shared.Payments.Provider.CashBill.Models;
 
 namespace TailoredApps.Shared.Payments.Provider.CashBill;
 
@@ -58,9 +62,15 @@ public class CashbillHttpClient : ICashbillHttpClient
 
     /// <inheritdoc/>
     /// <exception cref="PaymentGatewayException">CashBill answered with a status outside 200-299.</exception>
+    /// <exception cref="NotSupportedException">
+    /// <typeparamref name="T"/> is not one of the CashBill response models. They are read with JSON metadata
+    /// generated at compile time, with no reflection, so that the client works in a trimmed or NativeAOT
+    /// application; the request is not sent for any other type.
+    /// </exception>
     public async Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var responseType = ResponseType<T>();   // before the request: an unreadable answer must not follow a sent payment
         try
         {
             var address = new Uri(url);
@@ -69,7 +79,7 @@ public class CashbillHttpClient : ICashbillHttpClient
 
             using var response = await SendAsync(address, method, method == "GET" ? null : requestFormData, cancellationToken);
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            return JsonSerializer.Deserialize<T>(json)
+            return JsonSerializer.Deserialize(json, responseType)
                 ?? throw new InvalidOperationException("CashBill returned an empty response.");
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
@@ -78,6 +88,11 @@ public class CashbillHttpClient : ICashbillHttpClient
             throw;
         }
     }
+
+    private static JsonTypeInfo<T> ResponseType<T>()
+        => CashBillJsonContext.Default.GetTypeInfo(typeof(T)) as JsonTypeInfo<T>
+            ?? throw new NotSupportedException(
+                $"CashBill answers are read as {nameof(Payment)}, {nameof(PaymentStatus)} or List<{nameof(PaymentChannels)}>; '{typeof(T)}' is not one of them.");
 
     /// <inheritdoc/>
     /// <exception cref="PaymentGatewayException">CashBill answered with a status outside 200-299.</exception>
@@ -136,3 +151,12 @@ public class CashbillHttpClient : ICashbillHttpClient
         logger.LogError(exception, "CashBill request {Method} {Address} failed.", method, address);
     }
 }
+
+/// <summary>
+/// JSON metadata for the answers of the CashBill API, generated at compile time: reading them uses no
+/// reflection, so it survives trimming and works under NativeAOT.
+/// </summary>
+[JsonSerializable(typeof(Payment))]
+[JsonSerializable(typeof(PaymentStatus))]
+[JsonSerializable(typeof(List<PaymentChannels>))]
+internal sealed partial class CashBillJsonContext : JsonSerializerContext;

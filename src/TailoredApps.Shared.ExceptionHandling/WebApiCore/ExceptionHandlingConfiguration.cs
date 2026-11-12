@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
@@ -23,7 +24,7 @@ public static class ExceptionHandlingConfiguration
     /// </typeparam>
     /// <param name="service">The service collection to register into.</param>
     /// <returns>An <see cref="IExceptionHandlingOptionsBuilder"/> for further configuration.</returns>
-    public static IExceptionHandlingOptionsBuilder AddExceptionHandlingForWebApi<TExceptionHandlingProviderInterface, TTExceptionHandlingProvider>(this IServiceCollection service)
+    public static IExceptionHandlingOptionsBuilder AddExceptionHandlingForWebApi<TExceptionHandlingProviderInterface, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TTExceptionHandlingProvider>(this IServiceCollection service)
         where TTExceptionHandlingProvider : class, TExceptionHandlingProviderInterface
         where TExceptionHandlingProviderInterface : class, IExceptionHandlingProvider
     {

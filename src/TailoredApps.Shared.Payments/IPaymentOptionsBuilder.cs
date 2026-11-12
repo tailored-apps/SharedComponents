@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace TailoredApps.Shared.Payments;
@@ -14,7 +15,7 @@ public interface IPaymentOptionsBuilder
     /// </summary>
     /// <typeparam name="TPaymentProvider">Concrete provider type that implements <see cref="IPaymentProvider"/>.</typeparam>
     /// <returns>The same builder instance for method chaining.</returns>
-    IPaymentOptionsBuilder RegisterPaymentProvider<TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider;
+    IPaymentOptionsBuilder RegisterPaymentProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider;
 
     /// <summary>
     /// Registers a payment provider using a custom factory delegate.

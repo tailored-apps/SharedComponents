@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace TailoredApps.Shared.ExceptionHandling.Model;
@@ -69,11 +70,13 @@ public class ExceptionHandlingResultModel
     /// </summary>
     /// <returns>A JSON representation of this result model.</returns>
     public override string ToString()
-    {
-        return JsonSerializer.Serialize(this, typeof(ExceptionHandlingResultModel), new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
-        });
-    }
+        => JsonSerializer.Serialize(this, ExceptionHandlingJsonContext.Default.ExceptionHandlingResultModel);
 }
+
+/// <summary>
+/// JSON metadata for the error response, generated at compile time: writing it uses no reflection, so the
+/// exception middleware works in a trimmed or NativeAOT application.
+/// </summary>
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, WriteIndented = true)]
+[JsonSerializable(typeof(ExceptionHandlingResultModel))]
+internal sealed partial class ExceptionHandlingJsonContext : JsonSerializerContext;

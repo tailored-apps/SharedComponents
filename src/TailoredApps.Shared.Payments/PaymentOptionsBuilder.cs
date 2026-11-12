@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,7 +24,7 @@ public class PaymentOptionsBuilder : IPaymentOptionsBuilder
     public IServiceCollection Services { get; private set; }
 
     /// <inheritdoc/>
-    public IPaymentOptionsBuilder RegisterPaymentProvider<TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider
+    public IPaymentOptionsBuilder RegisterPaymentProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider
         => WithPaymentProvider<TPaymentProvider>();
 
     /// <inheritdoc/>
@@ -31,7 +32,7 @@ public class PaymentOptionsBuilder : IPaymentOptionsBuilder
         => WithPaymentProvider(implementationFactory);
 
 
-    private IPaymentOptionsBuilder WithPaymentProvider<TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider
+    private IPaymentOptionsBuilder WithPaymentProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPaymentProvider>() where TPaymentProvider : class, IPaymentProvider
     {
         Services.AddTransient<IPaymentProvider, TPaymentProvider>();
 
@@ -96,7 +97,7 @@ public static class ServiceCollectionExtensions
     /// <typeparam name="TTargetPaymentService">Concrete implementation of the custom interface.</typeparam>
     /// <param name="services">The DI service collection.</param>
     /// <returns>An <see cref="IPaymentOptionsBuilder"/> for registering individual providers.</returns>
-    public static IPaymentOptionsBuilder AddPaymentsForWebApi<TTargetPaymentServiceInterface, TTargetPaymentService>(this IServiceCollection services)
+    public static IPaymentOptionsBuilder AddPaymentsForWebApi<TTargetPaymentServiceInterface, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TTargetPaymentService>(this IServiceCollection services)
         where TTargetPaymentService : class, TTargetPaymentServiceInterface
         where TTargetPaymentServiceInterface : class
     {
@@ -111,7 +112,7 @@ public static class ServiceCollectionExtensions
     /// <typeparam name="TTargetPaymentService">Concrete implementation type.</typeparam>
     /// <param name="services">The DI service collection.</param>
     /// <returns>An <see cref="IPaymentOptionsBuilder"/> for registering individual providers.</returns>
-    public static IPaymentOptionsBuilder AddPayments<TTargetPaymentServiceInterface, TTargetPaymentService>(this IServiceCollection services)
+    public static IPaymentOptionsBuilder AddPayments<TTargetPaymentServiceInterface, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TTargetPaymentService>(this IServiceCollection services)
         where TTargetPaymentService : class, TTargetPaymentServiceInterface
         where TTargetPaymentServiceInterface : class
     {

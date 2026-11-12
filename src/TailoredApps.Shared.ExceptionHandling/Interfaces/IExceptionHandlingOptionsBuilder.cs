@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace TailoredApps.Shared.ExceptionHandling.Interfaces;
@@ -7,7 +8,7 @@ namespace TailoredApps.Shared.ExceptionHandling.Interfaces;
 public interface IExceptionHandlingOptionsBuilder
 {
     /// <summary>Rejestruje dostawcę obsługi wyjątków (automatyczna aktywacja przez DI).</summary>
-    IExceptionHandlingOptionsBuilder WithExceptionHandlingProvider<Provider>() where Provider : class, IExceptionHandlingProvider;
+    IExceptionHandlingOptionsBuilder WithExceptionHandlingProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Provider>() where Provider : class, IExceptionHandlingProvider;
 
     /// <summary>Rejestruje dostawcę obsługi wyjątków z fabryczną metodą tworzenia instancji.</summary>
     IExceptionHandlingOptionsBuilder WithExceptionHandlingProvider<Provider>(Func<IServiceProvider, Provider> implementationFactory) where Provider : class, IExceptionHandlingProvider;

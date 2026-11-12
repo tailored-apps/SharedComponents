@@ -44,14 +44,14 @@ public class PayUServiceOptions
 
 // ─── Internal models ─────────────────────────────────────────────────────────
 
-file class PayUTokenResponse
+internal sealed class PayUTokenResponse
 {
     [JsonPropertyName("access_token")] public string AccessToken { get; set; } = string.Empty;
     [JsonPropertyName("token_type")] public string TokenType { get; set; } = string.Empty;
     [JsonPropertyName("expires_in")] public int ExpiresIn { get; set; }
 }
 
-file class PayUOrderRequest
+internal sealed class PayUOrderRequest
 {
     [JsonPropertyName("notifyUrl")] public string NotifyUrl { get; set; } = string.Empty;
     [JsonPropertyName("continueUrl")] public string ContinueUrl { get; set; } = string.Empty;
@@ -64,14 +64,14 @@ file class PayUOrderRequest
     [JsonPropertyName("products")] public List<PayUProduct> Products { get; set; } = [];
 }
 
-file class PayUBuyer
+internal sealed class PayUBuyer
 {
     [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
     [JsonPropertyName("firstName")] public string FirstName { get; set; } = string.Empty;
     [JsonPropertyName("lastName")] public string LastName { get; set; } = string.Empty;
 }
 
-file class PayUProduct
+internal sealed class PayUProduct
 {
     /// <inheritdoc/>
     [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
@@ -79,24 +79,24 @@ file class PayUProduct
     [JsonPropertyName("quantity")] public string Quantity { get; set; } = "1";
 }
 
-file class PayUOrderResponse
+internal sealed class PayUOrderResponse
 {
     [JsonPropertyName("status")] public PayUStatus? Status { get; set; }
     [JsonPropertyName("orderId")] public string? OrderId { get; set; }
     [JsonPropertyName("redirectUri")] public string? RedirectUri { get; set; }
 }
 
-file class PayUStatus
+internal sealed class PayUStatus
 {
     [JsonPropertyName("statusCode")] public string? StatusCode { get; set; }
 }
 
-file class PayUStatusResponse
+internal sealed class PayUStatusResponse
 {
     [JsonPropertyName("orders")] public List<PayUOrderDetail>? Orders { get; set; }
 }
 
-file class PayUOrderDetail
+internal sealed class PayUOrderDetail
 {
     [JsonPropertyName("orderId")] public string? OrderId { get; set; }
     [JsonPropertyName("status")] public string? Status { get; set; }
@@ -155,7 +155,7 @@ public class PayUServiceCaller : IPayUServiceCaller
         var response = await client.PostAsync($"{options.ServiceUrl}/pl/standard/user/oauth/authorize", content, cancellationToken);
         await PaymentGatewayException.ThrowIfNotSuccessAsync("PayU", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        return JsonSerializer.Deserialize<PayUTokenResponse>(json)?.AccessToken ?? string.Empty;
+        return JsonSerializer.Deserialize(json, PayUJsonContext.Default.PayUTokenResponse)?.AccessToken ?? string.Empty;
     }
 
     /// <inheritdoc/>
@@ -177,7 +177,7 @@ public class PayUServiceCaller : IPayUServiceCaller
             Products = [new PayUProduct { Name = request.Title ?? "Product", UnitPrice = amount }],
         };
 
-        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body, PayUJsonContext.Default.PayUOrderRequest), Encoding.UTF8, "application/json");
         var ordersUrl = new Uri($"{options.ServiceUrl}/api/v2_1/orders");
         var response = await client.PostAsync(ordersUrl, content, cancellationToken);
 
@@ -196,13 +196,13 @@ public class PayUServiceCaller : IPayUServiceCaller
         if (response.StatusCode == System.Net.HttpStatusCode.Found || response.StatusCode == System.Net.HttpStatusCode.Redirect)
         {
             var location = response.Headers.Location?.ToString();
-            var result = JsonSerializer.Deserialize<PayUOrderResponse>(json);
+            var result = JsonSerializer.Deserialize(json, PayUJsonContext.Default.PayUOrderResponse);
             return (result?.OrderId, location ?? result?.RedirectUri, null);
         }
 
         if (response.IsSuccessStatusCode)
         {
-            var result = JsonSerializer.Deserialize<PayUOrderResponse>(json);
+            var result = JsonSerializer.Deserialize(json, PayUJsonContext.Default.PayUOrderResponse);
             return (result?.OrderId, result?.RedirectUri, null);
         }
 
@@ -219,7 +219,7 @@ public class PayUServiceCaller : IPayUServiceCaller
         // A failed status query says nothing about the payment: never report it as rejected.
         await PaymentGatewayException.ThrowIfNotSuccessAsync("PayU", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JsonSerializer.Deserialize<PayUStatusResponse>(json);
+        var result = JsonSerializer.Deserialize(json, PayUJsonContext.Default.PayUStatusResponse);
         var status = result?.Orders?.FirstOrDefault()?.Status;
         return status switch
         {
@@ -458,3 +458,13 @@ public class PayUConfigureOptions : IConfigureOptions<PayUServiceOptions>
         options.ContinueUrl = s.ContinueUrl;
     }
 }
+
+/// <summary>
+/// JSON metadata for the requests and answers of the PayU API, generated at compile time: serialization
+/// uses no reflection, so it survives trimming and works under NativeAOT.
+/// </summary>
+[JsonSerializable(typeof(PayUTokenResponse))]
+[JsonSerializable(typeof(PayUOrderRequest))]
+[JsonSerializable(typeof(PayUOrderResponse))]
+[JsonSerializable(typeof(PayUStatusResponse))]
+internal sealed partial class PayUJsonContext : JsonSerializerContext;

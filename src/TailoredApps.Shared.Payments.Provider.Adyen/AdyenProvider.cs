@@ -57,13 +57,13 @@ public class AdyenServiceOptions
 
 // ─── Internal models ─────────────────────────────────────────────────────────
 
-file class AdyenAmount
+internal sealed class AdyenAmount
 {
     [JsonPropertyName("value")] public long Value { get; set; }
     [JsonPropertyName("currency")] public string Currency { get; set; } = string.Empty;
 }
 
-file class AdyenSessionRequest
+internal sealed class AdyenSessionRequest
 {
     [JsonPropertyName("merchantAccount")] public string MerchantAccount { get; set; } = string.Empty;
     [JsonPropertyName("amount")] public AdyenAmount Amount { get; set; } = new();
@@ -77,14 +77,14 @@ file class AdyenSessionRequest
     [JsonPropertyName("countryCode")] public string? CountryCode { get; set; }
 }
 
-file class AdyenSessionResponse
+internal sealed class AdyenSessionResponse
 {
     [JsonPropertyName("id")] public string? Id { get; set; }
     [JsonPropertyName("sessionData")] public string? SessionData { get; set; }
     [JsonPropertyName("url")] public string? Url { get; set; }
 }
 
-file class AdyenStatusResponse
+internal sealed class AdyenStatusResponse
 {
     [JsonPropertyName("status")] public string? Status { get; set; }
     [JsonPropertyName("resultCode")] public string? ResultCode { get; set; }
@@ -162,7 +162,7 @@ public class AdyenServiceCaller : IAdyenServiceCaller
             ShopperEmail = request.Email,
             CountryCode = request.Country ?? "PL",
         };
-        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body, AdyenJsonContext.Default.AdyenSessionRequest), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{BaseUrl}/sessions", content, cancellationToken);
         // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
         await PaymentGatewayException.ThrowIfUnavailableAsync("Adyen", response, cancellationToken);
@@ -171,7 +171,7 @@ public class AdyenServiceCaller : IAdyenServiceCaller
         if (!response.IsSuccessStatusCode)
             return (null, null, json);
 
-        var result = JsonSerializer.Deserialize<AdyenSessionResponse>(json);
+        var result = JsonSerializer.Deserialize(json, AdyenJsonContext.Default.AdyenSessionResponse);
         return (result?.Id, result?.Url, null);
     }
 
@@ -193,7 +193,7 @@ public class AdyenServiceCaller : IAdyenServiceCaller
         // A failed status query says nothing about the payment: never report it as rejected.
         await PaymentGatewayException.ThrowIfNotSuccessAsync("Adyen", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JsonSerializer.Deserialize<AdyenStatusResponse>(json);
+        var result = JsonSerializer.Deserialize(json, AdyenJsonContext.Default.AdyenStatusResponse);
         return result?.Status switch
         {
             "completed" => PaymentStatusEnum.Finished,
@@ -513,3 +513,12 @@ public class AdyenConfigureOptions : IConfigureOptions<AdyenServiceOptions>
         options.CheckoutUrl = s.CheckoutUrl;
     }
 }
+
+/// <summary>
+/// JSON metadata for the requests and answers of the Adyen API, generated at compile time: serialization
+/// uses no reflection, so it survives trimming and works under NativeAOT.
+/// </summary>
+[JsonSerializable(typeof(AdyenSessionRequest))]
+[JsonSerializable(typeof(AdyenSessionResponse))]
+[JsonSerializable(typeof(AdyenStatusResponse))]
+internal sealed partial class AdyenJsonContext : JsonSerializerContext;
