@@ -23,6 +23,9 @@
     <File Path="mkdocs.yml" />
     <File Path="README.md" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/TailoredApps.Shared.Demo/TailoredApps.Shared.Demo.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/TailoredApps.Shared.DateTime/TailoredApps.Shared.DateTime.csproj" />
     <Project Path="src/TailoredApps.Shared.Email.Models/TailoredApps.Shared.Email.Models.csproj" />
@@ -55,6 +58,7 @@
     <Project Path="tests/TailoredApps.Shared.EntityFramework.Tests/TailoredApps.Shared.EntityFramework.Tests.csproj" />
     <Project Path="tests/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Tests/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Tests.csproj" />
     <Project Path="tests/TailoredApps.Shared.ExceptionHandling.Tests/TailoredApps.Shared.ExceptionHandling.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.IntegrationTests/TailoredApps.Shared.IntegrationTests.csproj" />
     <Project Path="tests/TailoredApps.Shared.MediatR.ML.Tests/TailoredApps.Shared.MediatR.ML.Tests.csproj" />
     <Project Path="tests/TailoredApps.Shared.MediatR.Tests/TailoredApps.Shared.MediatR.Tests.csproj" />
     <Project Path="tests/TailoredApps.Shared.Payments.Tests/TailoredApps.Shared.Payments.Tests.csproj" />

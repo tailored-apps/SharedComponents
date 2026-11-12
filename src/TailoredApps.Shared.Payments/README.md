@@ -44,7 +44,7 @@ catch (HttpRequestException exception)   // covers PaymentGatewayException
 }
 ```
 
-Stripe reports such failures with `StripeException`.
+Every provider reports such failures this way. Stripe does so from 3.0, with the SDK's `StripeException` as `InnerException`; in 2.x it threw `StripeException`.
 
 **2. `PaymentRequest` requires `PaymentProvider`, `Amount` and `Currency`.**
 An object initializer that leaves one out does not compile (CS9035), and System.Text.Json refuses a document without them.

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentValidation;
-using MediatR;
+using ForkForward.Mediator;
 
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours;
 

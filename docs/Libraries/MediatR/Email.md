@@ -41,7 +41,7 @@ builder.Services.Configure<TokenReplacingMailMessageBuilderOptions>(o =>
 });
 
 // 3. MediatR: przeskanuj także assembly biblioteki — tam znajduje się SendMailCommandHandler
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly);
@@ -135,7 +135,7 @@ Używasz TailoredApps.Shared.MediatR.Email do wysyłania emaili przez MediatR pi
 ```csharp
 builder.Services.RegisterSmtpProvider(); // lub RegisterConsoleProvider()
 builder.Services.AddTransient<IMailMessageBuilder, TokenReplacingMailMessageBuilder>();
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly); // handler SendMail

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- Starts the demo application (samples/TailoredApps.Shared.Demo) in memory and drives it over HTTP. -->
+	<PropertyGroup>
+		<!-- The namespace of the demo it tests, for the same reason as there: see the demo's project file. -->
+		<RootNamespace>TailoredApps.Demo.IntegrationTests</RootNamespace>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<!-- Coverage is about the libraries the demo exercises, not about the demo itself. -->
+		<Exclude>[TailoredApps.Shared.Demo]*</Exclude>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="coverlet.msbuild">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\samples\TailoredApps.Shared.Demo\TailoredApps.Shared.Demo.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -84,6 +84,33 @@ The methods a session actually offers are the ones described under configuration
 
 ---
 
+## Gateway errors
+
+The Stripe.net SDK reports every API error as `StripeException`. From 3.0 the provider turns it into the outcomes every provider reports
+(in 2.x `StripeException` reached the application):
+
+| Situation | Outcome |
+|---|---|
+| `RegisterPayment`: Stripe could not handle the call (5xx, 408, 429, no answer) | `PaymentGatewayException` with the `StripeException` as `InnerException` - the session may or may not exist |
+| `RegisterPayment`: a 4xx answer (invalid parameters, a payment method not enabled, a wrong key) | `PaymentStatus = Rejected`, Stripe's message in `ResponseObject` |
+| `GetStatus`: any error, a 404 included | `PaymentGatewayException` - a failed query says nothing about the payment |
+
+```csharp
+try
+{
+    var payment = await payments.RegisterPayment(new PaymentRequest("Stripe", 129.00m, "PLN") { Title = "Order 42" }, cancellationToken);
+    if (payment.PaymentStatus == PaymentStatusEnum.Rejected)
+        return UnprocessableEntity(payment.ResponseObject);   // Stripe refused
+    return Redirect(payment.RedirectUrl!);
+}
+catch (HttpRequestException)   // PaymentGatewayException: the state of the payment is not known
+{
+    return StatusCode(StatusCodes.Status503ServiceUnavailable);
+}
+```
+
+---
+
 ## Webhook
 
 Stripe verifies the webhook through `Stripe-Signature` in the header. Access to the **raw body** of the HTTP request is required.
@@ -149,4 +176,5 @@ Sandbox: SecretKey = "sk_test_..." (there is no IsTest option)
 Registration: builder.Services.AddPayments().RegisterStripeProvider();
 - WebhookSecret is mandatory - the host does not start without it, and a webhook that fails verification is PaymentWebhookRejected
 - payment_intent.* events carry the payment intent id, not the session id - match stored session ids on checkout.session.* events
+- Wrap RegisterPayment and GetStatus in catch (HttpRequestException) - a Stripe outage is PaymentGatewayException; RegisterPayment returns a refusal (4xx) as PaymentStatus == Rejected. Do not catch StripeException around these calls
 ```

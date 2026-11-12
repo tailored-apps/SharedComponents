@@ -33,6 +33,7 @@ MediatR request.
 
 ## Good to know
 
+- Built on [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator), a fork of MediatR 12.5.0 under the Apache-2.0 licence, not on the MediatR package: requests and handlers use the `ForkForward.Mediator` namespace and the mediator is registered with `AddMediator(...)`. "MediatR" in the name of this library is its history, not its dependency.
 - The interface is a marker with a key; nothing in this package stores or reads a cache.
 - `CachingBehavior` in `TailoredApps.Shared.MediatR` does not look at `ICachableRequest<TResponse>`. It caches
   a request only when an `ICachePolicy<TRequest, TResponse>` is registered for it. To cache the request above

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using MediatR;
+using ForkForward.Mediator;
 using TailoredApps.Shared.MediatR.Interfaces.Caching;
 using Xunit;
 

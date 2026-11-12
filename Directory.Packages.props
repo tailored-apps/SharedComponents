@@ -18,7 +18,8 @@
 		<PackageVersion Include="coverlet.msbuild" Version="10.1.0" />
 		<PackageVersion Include="FluentValidation" Version="12.*" />
 		<PackageVersion Include="MailKit" Version="4.18.2" />
-		<PackageVersion Include="MediatR" Version="12.5.0" />
+		<!-- A community fork of MediatR 12.5.0 (Apache-2.0); MediatR itself is commercial from 13.0. -->
+		<PackageVersion Include="ForkForward.Mediator" Version="12.7.1" />
 		<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.14" />
 		<!-- Http.Resilience and ServiceDiscovery: no 11.x existed on nuget.org when .NET 11 went GA, so both
 		     frameworks use the 10.x line. Move them to the per-framework groups once 11.x is published. -->
@@ -50,6 +51,9 @@
 		<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.*" />
 		<PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.*" />
 		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.*" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.*" />
+		<PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.*" />
+		<PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.*" />
 		<PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="10.*" />
 		<PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="10.*" />
 		<PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.*" />
@@ -69,6 +73,9 @@
 		<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="11.*" />
 		<PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="11.*" />
 		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="11.*" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="11.*" />
+		<PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*" />
+		<PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="11.*" />
 		<PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="11.*" />
 		<PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="11.*" />
 		<PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="11.*" />

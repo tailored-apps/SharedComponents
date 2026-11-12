@@ -30,7 +30,7 @@ using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
 
 // MediatR: the handlers of both commands live in the library assembly, so scan it as well
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).Assembly);
@@ -178,7 +178,7 @@ You are using TailoredApps.Shared.MediatR.ML to classify images through ML.NET a
 // using Microsoft.Extensions.ML;
 // using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
 // using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).Assembly); // handlers of the library
@@ -221,7 +221,7 @@ var result = await _mediator.Send(new TrainImageClassificationModel
 
 ### Rules
 - The namespace is TailoredApps.Shared.MediatR.ImageClassification, not the package name
-- AddMediatR must scan the library assembly - AddPredictionEngine does not register the handlers
+- AddMediator must scan the library assembly - AddPredictionEngine does not register the handlers
 - The model must be a ZIP file (ML.NET format)
 - The `ImageClassification` configuration section is required — a missing section throws `InvalidOperationException` when the options are first used
 - The model version and labels are stored in the archive as separate `Version.txt` and `Labels.txt` entries

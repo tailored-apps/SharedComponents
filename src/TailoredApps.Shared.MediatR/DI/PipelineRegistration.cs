@@ -1,5 +1,5 @@
 using System.Reflection;
-using MediatR;
+using ForkForward.Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using Scrutor;
 using TailoredApps.Shared.MediatR.Interfaces.Caching;

@@ -25,7 +25,7 @@ dotnet add package TailoredApps.Shared.MediatR.Caching
 
 ```csharp
 using TailoredApps.Shared.MediatR.Caching;
-using MediatR;
+using ForkForward.Mediator;
 
 // Request with built-in cache key logic
 public class GetUserProfileQuery : ICachableRequest<UserProfileDto>

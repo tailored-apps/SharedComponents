@@ -50,6 +50,17 @@
     <PublicApiBaselineVersion Condition="'$(PublicApiBaselineVersion)' == ''">2.0.0</PublicApiBaselineVersion>
   </PropertyGroup>
 
+  <!--
+    3.0 replaces MediatR with ForkForward.Mediator. Request, handler and pipeline types in the public API of
+    the mediator libraries move to another namespace and assembly, which is a breaking change made on
+    purpose, so those libraries are left out of the comparison with 2.0.0. The other libraries are still
+    compared: 3.0 may break them too, but only deliberately (add the library here when it does).
+    Once 3.0.0 is published, remove this group and raise PublicApiBaselineVersion to 3.0.0.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('TailoredApps.Shared.MediatR'))">
+    <SkipPublicApiValidation>true</SkipPublicApiValidation>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(ValidatePublicApi)' == 'true' and '$(SkipPublicApiValidation)' != 'true' and '$(IsPackable)' != 'false'">
     <EnablePackageValidation>true</EnablePackageValidation>
     <PackageValidationBaselineVersion>$(PublicApiBaselineVersion)</PackageValidationBaselineVersion>

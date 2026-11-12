@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using MediatR;
+using ForkForward.Mediator;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
+using ForkForward.Mediator;
 using TailoredApps.Shared.MediatR.Interfaces.Caching;
 using TailoredApps.Shared.MediatR.Interfaces.Handlers;
 using TailoredApps.Shared.MediatR.Interfaces.Messages;

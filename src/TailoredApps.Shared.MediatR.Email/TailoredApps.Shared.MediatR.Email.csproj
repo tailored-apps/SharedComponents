@@ -5,7 +5,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="MediatR" />
+		<PackageReference Include="ForkForward.Mediator" />
 	</ItemGroup>
 
 	<ItemGroup>

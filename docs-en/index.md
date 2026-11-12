@@ -38,9 +38,19 @@ Welcome to the documentation of **TailoredApps Shared Components** — a set of 
 
 ---
 
+## Demo application
+
+All the libraries together, in a running application: [Demo application and integration tests](Demo/index.md) - a Web API shop
+(`samples/TailoredApps.Shared.Demo`) with faked payment gateways that runs with no account and no network, and tests that drive it over
+HTTP in CI.
+
+---
+
 ## Upgrading from 1.x
 
 Moving from 1.x to 2.0? The changes required in application code - handling a failing payment gateway, the required members of `PaymentRequest`, Tpay and Adyen webhooks - are collected on the [Upgrading to 2.0](Migration/v2.md) page.
+
+The **3.0** line is in a test phase (`3.0.0-preview.N`): the MediatR libraries move to ForkForward.Mediator. What to change in an application: [Upgrading to 3.0](Migration/v3.md).
 
 ---
 

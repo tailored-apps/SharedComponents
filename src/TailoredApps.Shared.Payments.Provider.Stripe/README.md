@@ -94,8 +94,10 @@ return result is PaymentWebhookRejected ? BadRequest() : Ok();
 
 ## Good to know
 
-- Failures of the Stripe API surface as `StripeException` from `RegisterPayment` and `GetStatus`, not as
-  `PaymentGatewayException`. `RegisterPayment` never returns `Rejected`; treat the exception as an unknown state.
+- Errors of the Stripe API follow the rules of every provider (3.0; in 2.x they surfaced as `StripeException`). When Stripe could
+  not handle the call - 5xx, 408, 429 or no answer - `RegisterPayment` throws `PaymentGatewayException`, with the `StripeException`
+  as `InnerException`: the session may or may not exist. A 4xx answer is a refusal: `RegisterPayment` returns `Rejected` with Stripe's
+  message in `ResponseObject`. `GetStatus` throws `PaymentGatewayException` for every error, a 404 included.
 - `payment_intent.*` events carry the payment intent id in `Payment.PaymentUniqueId`, not the session id `RegisterPayment`
   returned. To match webhooks with stored session ids, act on the `checkout.session.*` events.
 - `GetStatus` maps a `complete` session that is `paid` to `Finished`, a `complete` session that is not paid to `Processing`,

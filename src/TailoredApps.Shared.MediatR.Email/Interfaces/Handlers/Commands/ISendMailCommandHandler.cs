@@ -1,4 +1,4 @@
-using MediatR;
+using ForkForward.Mediator;
 using TailoredApps.Shared.MediatR.Email.Messages.Commands;
 using TailoredApps.Shared.MediatR.Email.Responses;
 

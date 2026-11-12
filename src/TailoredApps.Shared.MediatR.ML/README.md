@@ -18,7 +18,7 @@ using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
 
 // The handlers of both commands are in this package's assembly
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).Assembly);
@@ -74,6 +74,7 @@ The `ImageClassification` section:
 
 ## Good to know
 
+- Built on [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator), a fork of MediatR 12.5.0 under the Apache-2.0 licence, not on the MediatR package: requests and handlers use the `ForkForward.Mediator` namespace and the mediator is registered with `AddMediator(...)`. "MediatR" in the name of this library is its history, not its dependency.
 - The section is required: without it the options throw `InvalidOperationException` when first used.
 - `ClassifyImage` throws `ArgumentException` for empty content, for content over `MaxImageBytes` and for
   content that does not start with a JPEG or PNG signature. Only `FileName`, `PredictedLabel` and

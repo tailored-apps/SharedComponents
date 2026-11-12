@@ -103,7 +103,7 @@ public interface IQuery<T>
     T? Filter { get; set; }
 }
 
-/// <summary>Interface for a paged MediatR request with a filter and a response model.</summary>
+/// <summary>Interface for a paged mediator request with a filter and a response model.</summary>
 /// <typeparam name="TResponse">The type of the response (must implement <see cref="IPagedResult{TModel}"/>).</typeparam>
 /// <typeparam name="TQuery">The type of the query filter.</typeparam>
 /// <typeparam name="TModel">The type of the item in the result set.</typeparam>

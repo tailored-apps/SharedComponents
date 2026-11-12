@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
+using ForkForward.Mediator;
 using Microsoft.Extensions.Logging.Abstractions;
 using TailoredApps.Shared.MediatR.Interfaces.Messages;
 using TailoredApps.Shared.MediatR.PipelineBehaviours;

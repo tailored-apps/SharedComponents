@@ -30,7 +30,7 @@ dotnet add package TailoredApps.Shared.MediatR
 using TailoredApps.Shared.MediatR.DI;
 
 // Rejestracja MediatR
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 var pipeline = new PipelineRegistration(builder.Services);
@@ -52,6 +52,9 @@ Potrzebne są oba wywołania `RegisterPipelineBehaviors`. Przeciążenie bez par
 ```csharp
 builder.Services.AddStackExchangeRedisCache(options => options.Configuration = "localhost:6379");
 ```
+
+!!! info "Zmiany w 3.0 (wersja testowa)"
+    Biblioteki `TailoredApps.Shared.MediatR*` korzystają z [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator) — forka MediatR 12.5.0 na licencji Apache-2.0 — zamiast pakietu MediatR. Typy i zachowanie są te same; w aplikacji zamień `using MediatR;` na `using ForkForward.Mediator;` oraz `AddMediatR(...)` na `AddMediator(...)`. Szczegóły: [Aktualizacja do 3.0](../../Migration/v3.md).
 
 !!! info "Zmiany w 2.0"
     `CachingBehavior` korzysta z `HybridCache`. Interfejs `ICache` i klasa `Cache` zostały usunięte razem z zależnością od Newtonsoft.Json — usuń własną rejestrację `ICache`. Odpowiedzi są serializowane przez System.Text.Json, a `ICachePolicy.SlidingExpiration` nie jest już obsługiwane (wpis żyje do czasu wygaśnięcia). Po aktualizacji wyczyść współdzielony cache lub zmień prefiks kluczy: wpisy zapisane przez 1.x mają inny format.
@@ -140,7 +143,7 @@ public class GetProductQueryRetry : IRetryableRequest<GetProductQuery, ProductDt
 
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
-| `LoggingBehavior<TRequest, TResponse>` | Pipeline Behavior | Loguje czas wykonania i wyjątki; correlation ID per request |
+| `LoggingBehavior<TRequest, TResponse>` | Pipeline Behavior | Loguje czas wykonania (Debug), błędy handlera (Error), odrzucenie przez walidację i anulowanie (Information); correlation ID per request |
 | `ValidationBehavior<TRequest, TResponse>` | Pipeline Behavior | Wykonuje wszystkie `IValidator<TRequest>` (FluentValidation) |
 | `CachingBehavior<TRequest, TResponse>` | Pipeline Behavior | Cache'uje odpowiedź w `HybridCache` zgodnie z `ICachePolicy<TRequest, TResponse>`; równoległe identyczne żądania wykonują handler raz |
 | `FallbackBehavior<TRequest, TResponse>` | Pipeline Behavior | Przy wyjątku wywołuje `IFallbackHandler<TRequest, TResponse>` |
@@ -159,6 +162,9 @@ public class GetProductQueryRetry : IRetryableRequest<GetProductQuery, ProductDt
 - **Klucz cache nie zawiera danych żądania.** Domyślny `ICachePolicy.GetCacheKey` buduje klucz jako `{TypRequestu.FullName}:{SHA-256 z JSON żądania}` (`CacheKeyGenerator.Generate`). Poprzedni format `Prop:ToString()` sprawiał, że żądania różniące się tylko zawartością kolekcji (`CustomerIds = [1]` vs `[2]`) dostawały ten sam klucz i zwracały cudze dane.
 - **Klucz nie zawiera tożsamości użytkownika.** Dla danych per użytkownik/tenant nadpisz `GetCacheKey` i dodaj prefiks z identyfikatorem wywołującego — inaczej odpowiedź jednego użytkownika trafi do drugiego.
 - **`LoggingBehavior` nie serializuje żądania.** W scope logowania trafia tylko nazwa typu i correlation id; hasła, tokeny i binaria z requestu nie lądują w logach.
+- **Odrzucenie przez walidację nie jest błędem.** `ValidationException` trafia do logu na poziomie Information (`rejected by validation …; invalid: Id`)
+  z samymi nazwami pól — komunikaty walidacji mogą cytować wartości wysłane przez klienta. Żądanie anulowane przez wywołującego też jest
+  zapisywane jako Information; każdy inny wyjątek handlera — jako Error. Wyjątek jest zawsze rzucany dalej.
 
 ---
 
@@ -171,7 +177,7 @@ Używasz biblioteki TailoredApps.Shared.MediatR z pipeline behaviors w projekcie
 
 ### Rejestracja
 ```csharp
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediator(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 var pipeline = new PipelineRegistration(builder.Services);
 pipeline.RegisterPipelineBehaviors();                         // pięć behaviorów + HybridCache
 pipeline.RegisterPipelineBehaviors(typeof(Program).Assembly); // skan: ICachePolicy<,>, IFallbackHandler<,>, IRetryableRequest<,>
@@ -221,7 +227,7 @@ public class MyRetry : IRetryableRequest<MyQuery, MyResponse>
 - ValidationBehavior uruchamia instancje IValidator<TRequest> zarejestrowane w DI — biblioteka nie rejestruje walidatorów, zrób to sam
 - Aby cache działał, zaimplementuj ICachePolicy<TRequest, TResponse> w skanowanym assembly (albo zarejestruj ją samodzielnie)
 - IFallbackHandler ma jedną metodę: HandleFallback(request, cancellationToken) — wyjątek nie jest do niej przekazywany
-- LoggingBehavior loguje na poziomie DEBUG — włącz odpowiedni log level
+- LoggingBehavior: start i koniec na poziomie Debug, odrzucenie przez walidację i anulowanie na Information, błąd handlera na Error — nie licz błędów walidacji z wpisów Error
 - Każdy request ma unikalne correlation ID w logach
 - Domyślny klucz cache to hash treści żądania; dla danych per użytkownik nadpisz GetCacheKey i dodaj identyfikator użytkownika/tenanta
 - LoggingBehavior loguje tylko nazwę requestu i correlation id — dane żądania loguj jawnie w handlerze, nigdy całe obiekty z hasłami

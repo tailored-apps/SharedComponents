@@ -85,6 +85,13 @@ Po dodaniu strony biblioteki zaktualizuj sekcję `nav:` w `mkdocs.yml` oraz tabe
   nie trzeba nic dodawać.
 - Przykłady kodu muszą kompilować się z aktualnym kodem: nazwy typów, metod i kluczy konfiguracji sprawdzaj w źródłach, nie z pamięci.
 
+### Aplikacja demo i testy integracyjne
+
+[Aplikacja demo](Demo/index.md) (`samples/TailoredApps.Shared.Demo`) używa każdej biblioteki, a `tests/TailoredApps.Shared.IntegrationTests`
+sprawdza ją przez HTTP. Nowa biblioteka trafia też do demo, razem z testem swojego scenariusza; zmiana, po której biblioteka jest używana
+inaczej, aktualizuje demo. Demo działa bez sieci: zewnętrzna usługa jest podstawiana na poziomie transportu (handler HTTP), nigdy przez
+zmianę biblioteki.
+
 ### Szablon strony biblioteki
 
 ```markdown
@@ -160,6 +167,10 @@ Używasz biblioteki TailoredApps.Shared.XXXXX w projekcie .NET.
 ---
 
 ## Zgodność publicznego API
+
+Gałąź `master` to linia **3.0 w fazie testowej** (`3.0.0-preview.N`): zmiany niekompatybilne są dozwolone do wydania `3.0.0`, ale tylko
+zamierzone. Gałąź `release/2.1` to linia poprawek 2.1.x, zgodna z `2.0.0`. Biblioteki `TailoredApps.Shared.MediatR*` są na `master` wyłączone
+z porównania (przeszły z MediatR na ForkForward.Mediator); pozostałe są nadal porównywane, żeby zmiana łamiąca nie zdarzyła się przypadkiem.
 
 Linia 2.x musi pozostać zgodna z `2.0.0`: kod skompilowany z dowolną wersją 2.x ma działać z każdą nowszą 2.x. Sprawdzenie
 *Build & Test PR* porównuje publiczne API każdej biblioteki z paczką `2.0.0` z nuget.org i kończy się błędem przy zmianie

@@ -21,6 +21,7 @@ runtime has to be installed as well for the `net10.0` test runs.
 - Run specific test project: `dotnet test tests/TailoredApps.Shared.DateTime.Tests/TailoredApps.Shared.DateTime.Tests.csproj`
 - Run single test: `dotnet test --filter "FullyQualifiedName=TailoredApps.Shared.DateTime.Tests.DateTimeProviderTests.As_Library_User_When_Get_Now_I_Get_Mine_System_Date_In_Current_Timezone_And_Local_Kind"`
 - Run on one framework only: add `-f net10.0` (or `-f net11.0`); without it every test runs twice.
+- Run the demo application: `dotnet run --project samples/TailoredApps.Shared.Demo -f net10.0` (`http://localhost:5080`, no network needed).
 - With coverage, as CI does: `dotnet test TailoredApps.Shared.slnx -p:CollectCoverage=true -p:CoverletOutputFormat=opencover`.
   Write MSBuild properties as `-p:Name=value`: Git Bash on Windows rewrites `/p:` into a path and the command fails with `MSB1008`.
 
@@ -31,6 +32,9 @@ runtime has to be installed as well for the `net10.0` test runs.
 - `dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true` compares the public API of every library with the same
   package at the baseline version on nuget.org (`PublicApiBaselineVersion` in `src/Directory.Build.targets`, currently `2.0.0`) and fails
   on a breaking change (`CP0001`, `CP0002`, ...). Adding API passes. The *Build & Test PR* workflow builds with the switch on.
+- On `master` (3.0) the `TailoredApps.Shared.MediatR*` libraries are left out of the comparison (a group in `src/Directory.Build.targets`):
+  their public API changed on purpose. A deliberate break in another library adds that library to the same group. When `3.0.0` is
+  published, remove the group and raise the baseline to `3.0.0`.
 - A library that did not exist in the baseline sets `<PublicApiBaselineVersion>` in its csproj to the first version it was published in,
   and `<SkipPublicApiValidation>true</SkipPublicApiValidation>` until it has been published at all.
 - On `release/1.x` (no such switch there) run per library:
@@ -39,8 +43,13 @@ runtime has to be installed as well for the `net10.0` test runs.
 # Architecture
 
 The repository is 24 NuGet packages (`TailoredApps.Shared.*`) under `src/`, with one test project per library family under `tests/`.
-There is no application project: every library is consumed through dependency-injection extension methods. All packages are released
-together under a single version taken from the git tag.
+Every library is consumed through dependency-injection extension methods. All packages are released together under a single version
+taken from the git tag.
+
+The one application is `samples/TailoredApps.Shared.Demo` (namespace `TailoredApps.Demo`, never packed): a shop Web API that uses all 24
+libraries, with the payment gateways faked by an HTTP handler (`Payments/FakeGateway.cs`), the console e-mail provider and SQLite in memory.
+`tests/TailoredApps.Shared.IntegrationTests` starts it with `WebApplicationFactory` (frozen `TimeProvider`, recorded e-mail) and runs in CI
+with the other tests. A new library is added to the demo with a test of its scenario.
 
 ## Build configuration shared by every project
 - `Directory.Build.props` (root): artifacts output, `TargetFrameworks` (`net10.0;net11.0` for every project) and `LangVersion=latest`, so both target frameworks compile with the same C# version.
@@ -49,7 +58,7 @@ together under a single version taken from the git tag.
   Packages tied to the runtime generation (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) have one `PackageVersion` per target
   framework in conditional groups (`net10.0` -> `10.*`, `net11.0` -> `11.*`). Adding such a dependency means adding it to both groups.
 - Most versions float (`10.*`, `1.*`). The weekly *Bump dependencies* workflow (`scripts/Bump-Deps.ps1`) raises the pinned ones and writes its own docs entry.
-- Project files hold only what is their own (PackageId, Title, Description, tags, references). Target frameworks, `SourceRevisionId`, nullable, packaging and the shared package metadata come from `Directory.Build.props`, `src/Directory.Build.props` and `tests/Directory.Build.props`.
+- Project files hold only what is their own (PackageId, Title, Description, tags, references). Target frameworks, `SourceRevisionId`, nullable, packaging and the shared package metadata come from `Directory.Build.props`, `src/Directory.Build.props`, `tests/Directory.Build.props` and `samples/Directory.Build.props`.
 - `nuget.config` restricts package sources to nuget.org.
 
 ## Library families and how they fit together
@@ -59,15 +68,20 @@ together under a single version taken from the git tag.
   Each provider is its own package (`Payments.Provider.*`) with the same shape: `XServiceOptions` bound from `Payments:Providers:X`, a service
   caller (HTTP calls and signature verification), `XProvider`, and a `RegisterXProvider()` extension. HotPay is the smallest one to copy.
   Signature checks must fail closed and use `Payments/Security/WebhookSignature` (constant time); identifiers placed in gateway URLs go through `PaymentIdentifier`.
-- **MediatR** - `PipelineRegistration` adds the behaviours in a fixed order: Logging -> Validation (FluentValidation) -> Caching -> Fallback -> Retry.
+  A gateway that cannot handle a call (5xx, 408, 429, no answer) is `PaymentGatewayException` from every provider; creating a payment turns a 4xx into
+  `Rejected`, and a failed status query is always `PaymentGatewayException`. A provider on an SDK translates its exceptions (Stripe: `StripeException`).
+- **MediatR** - built on **ForkForward.Mediator** (a fork of MediatR 12.5.0; namespace `ForkForward.Mediator`, registration `AddMediator`), not on the
+  MediatR package; the library and namespace names keep `MediatR`. `PipelineRegistration` adds the behaviours in a fixed order:
+  Logging -> Validation (FluentValidation) -> Caching -> Fallback -> Retry.
   A request opts in by having an `ICachePolicy<,>`, `IFallbackHandler<,>` or `IRetryableRequest<,>` implementation, which assembly scanning (Scrutor) registers.
-  `ICache` wraps `IDistributedCache` and reports a miss as `default(T)`. Satellites: `MediatR.Caching` (marker contracts), `MediatR.Email`,
+  Caching uses `HybridCache` (registered by `RegisterPipelineBehaviors()`). Satellites: `MediatR.Caching` (marker contracts), `MediatR.Email`,
   `MediatR.PagedRequest`, and `MediatR.ML`, whose namespace is `TailoredApps.Shared.MediatR.ImageClassification`, not the project name.
 - **EntityFramework** - a unit of work over `DbContext` with hooks (before/after save, commit, rollback) that also drive audit change collection,
   plus paging/sorting/filtering extensions (dynamic LINQ with sort-field validation). `EntityFramework.UnitOfWork.WebApiCore` adds the MVC
   transaction filter (`AddUnitOfWorkForWebApi<,>`). `Querying` holds the framework-free query contracts used by both EntityFramework and `MediatR.PagedRequest`.
 - **ExceptionHandling** - `AddExceptionHandlingForWebApi<,>` plus a filter and middleware; an `IExceptionHandlingProvider` maps exceptions to the
-  response model. Unexpected exceptions are answered with 500 and a generic message.
+  response model. Unexpected exceptions are answered with 500 and a generic message. Exceptions mapped to 4xx are not logged as errors (middleware
+  diagnostics suppressed, Debug entry instead), and `LoggingBehavior` logs validation refusals and cancellations at Information.
 - **Email** - `IEmailProvider` with SMTP, console and Office365 providers (`Register*Provider()`), and message builders that HTML-encode template variables.
 - **WebApi** - `builder.AddTailoredWebApiDefaults()` and `app.MapTailoredWebApiDefaults()` wire OpenTelemetry (OTLP), health checks and HTTP
   client resilience with service discovery from the `WebApiDefaults` configuration section.
@@ -76,9 +90,10 @@ together under a single version taken from the git tag.
 
 # Branches and releases
 
-- `master` is the **2.x** line: `net10.0` and `net11.0` only. `2.0.0` is released, so the public API is frozen: every change must stay
-  source and binary compatible with `2.0.0` (the PR build checks it, see *Public API compatibility*). Breaking changes wait for `3.0`.
-  Releases are tagged `v2.0.N` (fixes) and `v2.N.0` (new API) from `master`.
+- `master` is the **3.0** line, in a test phase: pre-releases are tagged `v3.0.0-preview.N`, and breaking changes are allowed until `3.0.0`
+  but must be deliberate (the PR build still compares the libraries with `2.0.0`, see *Public API compatibility*). 3.0 replaces MediatR with
+  ForkForward.Mediator in the `MediatR*` libraries; `docs/Migration/v3.md` lists what an application has to change.
+- `release/2.1` is the **2.1.x** maintenance line (branched from `v2.1.0`): fixes only, tagged `v2.1.N` from that branch, compatible with `2.0.0`.
 - `release/1.x` is the **1.6.x** maintenance line (it still builds `net8.0`, `net9.0` and the `netstandard` assets): security fixes only,
   tagged `v1.6.N` from that branch, binary compatible with `1.6.0`.
 - Pushing any `v*` tag publishes all 24 packages to nuget.org and creates the GitHub Release. It cannot be undone, so never push a tag

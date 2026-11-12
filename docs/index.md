@@ -38,9 +38,19 @@ Witaj w dokumentacji **TailoredApps Shared Components** — zestawu wielokrotneg
 
 ---
 
+## Aplikacja demo
+
+Wszystkie biblioteki razem, w działającej aplikacji: [Aplikacja demo i testy integracyjne](Demo/index.md) — sklep w Web API
+(`samples/TailoredApps.Shared.Demo`) z podstawionymi bramkami płatności, uruchamiany bez kont i bez sieci, oraz testy, które sprawdzają
+go przez HTTP w CI.
+
+---
+
 ## Aktualizacja z 1.x
 
 Przechodzisz z 1.x na 2.0? Zmiany wymagane w kodzie aplikacji — obsługa awarii bramki płatności, wymagane pola `PaymentRequest`, webhooki Tpay i Adyen — zebrano na stronie [Aktualizacja do 2.0](Migration/v2.md).
+
+Linia **3.0** jest w fazie testowej (`3.0.0-preview.N`): biblioteki MediatR przechodzą na ForkForward.Mediator. Co zmienić w aplikacji: [Aktualizacja do 3.0](Migration/v3.md).
 
 ---
 

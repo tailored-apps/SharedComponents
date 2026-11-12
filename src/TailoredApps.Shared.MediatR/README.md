@@ -15,7 +15,7 @@ dotnet add package TailoredApps.Shared.MediatR
 ```csharp
 using TailoredApps.Shared.MediatR.DI;
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediator(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 var pipeline = new PipelineRegistration(builder.Services);
 pipeline.RegisterPipelineBehaviors();                           // the five behaviours and HybridCache
@@ -60,6 +60,7 @@ public class GetProductFallback : IFallbackHandler<GetProduct, ProductDto>
 
 ## Good to know
 
+- Built on [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator), a fork of MediatR 12.5.0 under the Apache-2.0 licence, not on the MediatR package: requests and handlers use the `ForkForward.Mediator` namespace and the mediator is registered with `AddMediator(...)`. "MediatR" in the name of this library is its history, not its dependency.
 - Order: Logging -> Validation -> Caching -> Fallback -> Retry -> handler. A cached response skips fallback,
   retry and the handler; validation still runs. A response produced by a fallback handler is cached like any other.
 - Every response is cached as returned, including `null`, `0` and `false`; a handler that throws caches nothing.
@@ -77,8 +78,9 @@ public class GetProductFallback : IFallbackHandler<GetProduct, ProductDto>
 - A request cancelled by its caller is not retried, does not count towards the circuit and is not sent to the fallback.
 - `ValidationBehavior` runs every registered `IValidator<TRequest>` synchronously and throws FluentValidation's
   `ValidationException` with all failures.
-- `LoggingBehavior` logs start and finish at Debug and failures at Error, with the request type name and a
-  correlation id. The request object itself is never logged.
+- `LoggingBehavior` logs start and finish at Debug and handler failures at Error, with the request type name and a
+  correlation id. A request refused by validation is logged at Information with the names of the invalid properties
+  (never their values), and so is a request its caller cancelled. The request object itself is never logged.
 
 ## Documentation
 

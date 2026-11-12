@@ -1,4 +1,4 @@
-using MediatR;
+using ForkForward.Mediator;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Responses.Commands;
 

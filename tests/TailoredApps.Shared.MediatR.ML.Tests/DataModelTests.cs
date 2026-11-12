@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using MediatR;
+using ForkForward.Mediator;
 using Microsoft.ML.Data;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Models;
