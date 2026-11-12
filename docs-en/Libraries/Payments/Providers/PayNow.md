@@ -3,11 +3,11 @@
 [![NuGet](https://img.shields.io/nuget/v/TailoredApps.Shared.Payments.Provider.PayNow)](https://www.nuget.org/packages/TailoredApps.Shared.Payments.Provider.PayNow/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tailored-apps/SharedComponents/blob/master/LICENSE)
 
-Integracja z **PayNow** — bramką płatności mBanku obsługującą BLIK, szybkie przelewy i karty płatnicze.
+Integration with **PayNow** — mBank's payment gateway that handles BLIK, fast transfers and payment cards.
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Payments.Provider.PayNow
@@ -15,7 +15,7 @@ dotnet add package TailoredApps.Shared.Payments.Provider.PayNow
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 using TailoredApps.Shared.Payments.Provider.PayNow;
@@ -27,7 +27,7 @@ builder.Services
 
 ---
 
-## Konfiguracja `appsettings.json`
+## Configuration `appsettings.json`
 
 ```json
 {
@@ -45,25 +45,27 @@ builder.Services
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `ApiKey` | Klucz API do autoryzacji żądań (header `Api-Key`) |
-| `SignatureKey` | Klucz do podpisywania żądań i weryfikacji webhooków |
-| `ServiceUrl` | URL API PayNow (sandbox: `https://api.sandbox.paynow.pl`) |
-| `ReturnUrl` | URL powrotu po płatności |
-| `ContinueUrl` | URL kontynuacji po powrocie ze strony PayNow |
+| Option | Required | Description |
+|-------|------|------|
+| `ApiKey` | yes | API key for authorizing requests (`Api-Key` header) |
+| `SignatureKey` | yes | Key for verifying webhook signatures |
+| `ServiceUrl` | no | PayNow API URL, default `https://api.paynow.pl` (sandbox: `https://api.sandbox.paynow.pl`) |
+| `ReturnUrl` | no | Return URL after payment |
+| `ContinueUrl` | no | Continuation URL after returning from the PayNow page |
+
+Required options are checked when the host starts (`OptionsValidationException`); the others are not validated.
 
 ---
 
-## Obsługiwane kanały
+## Supported channels
 
-PayNow obsługuje: BLIK, szybkie przelewy bankowe, karty płatnicze (PLN). Lista kanałów pobierana dynamicznie z API.
+The provider returns a fixed list for every currency: `BLIK`, `CARD` (payment card), `PBL` (pay-by-link bank transfer), `TRANSFER` (traditional bank transfer).
 
 ---
 
 ## Webhook
 
-PayNow wysyła powiadomienia POST. Podpis weryfikowany przez SHA-256 HMAC z `SignatureKey`, przekazywany w nagłówku `Signature`.
+PayNow sends POST notifications. The signature is verified with SHA-256 HMAC using `SignatureKey` and is passed in the `Signature` header.
 
 ---
 
@@ -78,18 +80,18 @@ PayNow wysyła powiadomienia POST. Podpis weryfikowany przez SHA-256 HMAC z `Sig
 ## 🤖 AI Agent Prompt
 
 ```markdown
-## PayNow Provider — Instrukcja dla agenta AI
+## PayNow Provider - instructions for an AI agent
 
 Provider key: "PayNow"
 
-Sekcja konfiguracji: "Payments:Providers:PayNow"
+Configuration section: "Payments:Providers:PayNow"
 
-Wymagane pola: ApiKey, SignatureKey, ReturnUrl
+Required fields: ApiKey, SignatureKey
 
-Kwota w API: grosze (int), np. 1999 = 19.99 PLN — biblioteka konwertuje automatycznie
+Amount in the API: grosze (int), e.g. 1999 = 19.99 PLN — the library converts automatically
 
 Sandbox URL: https://api.sandbox.paynow.pl
 
-Rejestracja: builder.Services.AddPayments().RegisterPayNowProvider();
+Registration: builder.Services.AddPayments().RegisterPayNowProvider();
 - Pass a stable order identifier in AdditionalData - it doubles as the Idempotency-Key and externalId
 ```

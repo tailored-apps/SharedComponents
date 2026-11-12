@@ -28,9 +28,13 @@ runtime has to be installed as well for the `net10.0` test runs.
 - `python -m mkdocs build --strict -f mkdocs.yml` and `python -m mkdocs build --strict -f mkdocs-en.yml` - both must pass (CI pins `mkdocs-material==9.7.7`).
 
 ## Public API compatibility
-- `dotnet build src/<Library>/<Library>.csproj -c Release -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=<published version>`
-  compares the library's public API with that version on nuget.org and fails on breaking changes. Run it per library, not on the solution
-  (two test projects are not marked `IsPackable=false`). Required for anything going to `release/1.x`, which must stay compatible with `1.6.0`.
+- `dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true` compares the public API of every library with the same
+  package at the baseline version on nuget.org (`PublicApiBaselineVersion` in `src/Directory.Build.targets`, currently `2.0.0`) and fails
+  on a breaking change (`CP0001`, `CP0002`, ...). Adding API passes. The *Build & Test PR* workflow builds with the switch on.
+- A library that did not exist in the baseline sets `<PublicApiBaselineVersion>` in its csproj to the first version it was published in,
+  and `<SkipPublicApiValidation>true</SkipPublicApiValidation>` until it has been published at all.
+- On `release/1.x` (no such switch there) run per library:
+  `dotnet build src/<Library>/<Library>.csproj -c Release -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=1.6.0`.
 
 # Architecture
 
@@ -72,13 +76,15 @@ together under a single version taken from the git tag.
 
 # Branches and releases
 
-- `master` is the **2.x** line: `net10.0` and `net11.0` only, breaking changes allowed until `2.0.0`. Pre-releases are tagged `v2.0.0-preview.N`.
+- `master` is the **2.x** line: `net10.0` and `net11.0` only. `2.0.0` is released, so the public API is frozen: every change must stay
+  source and binary compatible with `2.0.0` (the PR build checks it, see *Public API compatibility*). Breaking changes wait for `3.0`.
+  Releases are tagged `v2.0.N` (fixes) and `v2.N.0` (new API) from `master`.
 - `release/1.x` is the **1.6.x** maintenance line (it still builds `net8.0`, `net9.0` and the `netstandard` assets): security fixes only,
   tagged `v1.6.N` from that branch, binary compatible with `1.6.0`.
 - Pushing any `v*` tag publishes all 24 packages to nuget.org and creates the GitHub Release. It cannot be undone, so never push a tag
   unless explicitly asked. `release.yml` uses nuget.org Trusted Publishing (GitHub OIDC, environment `nuget`, secret `NUGET_USER`) - there is
   no stored API key. The job fails if any package push fails; when checking a release, read the push step, not just the run colour.
-- Pull requests target `master` (or `release/**`) and are squash-merged. PR checks: *Build & Test PR* (Windows) and *Docs guard*.
+- Pull requests target `master` (or `release/**`) and are squash-merged. PR checks: *Build & Test PR* (Windows, includes the public API comparison) and *Docs guard*.
 - Consumers mostly build with the .NET 10 SDK (C# 14). Keep C# 15 `union` types out of the public API - an older compiler can only reach
   them through `.Value`. `closed` hierarchies and other C# 14/15 syntax inside the libraries are fine.
 
@@ -138,7 +144,8 @@ tells an AI coding agent how to wire the library into a project. It must state:
 - **Rules** — the dos and don'ts the agent must follow.
 
 ## Package- and IDE-facing docs
-- A `README.md` in the library project, packed into the NuGet package via `<PackageReadmeFile>`.
+- A `README.md` next to the library csproj. It is packed into the NuGet package automatically (`src/Directory.Build.props`) and is
+  the page nuget.org shows; nothing goes into the csproj.
 - XML doc comments on every public type and member (`<GenerateDocumentationFile>True</GenerateDocumentationFile>`).
 
 When in doubt, mirror an existing page such as `docs/Libraries/EntityFramework/UnitOfWork.WebApiCore.md`.

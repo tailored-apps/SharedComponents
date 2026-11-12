@@ -28,11 +28,14 @@ jobs:
       - name: Restore Workloads
         run: dotnet workload restore
 
+      # ValidatePublicApi compares every library, while it is packed, with the baseline version of the same
+      # package on nuget.org (PublicApiBaselineVersion in src/Directory.Build.targets) and fails the build on
+      # a breaking change. The baseline packages are downloaded by restore, so both steps get the switch.
       - name: Restoring Packages
-        run: dotnet restore TailoredApps.Shared.slnx
+        run: dotnet restore TailoredApps.Shared.slnx -p:ValidatePublicApi=true
 
-      - name: Building Solution
-        run: dotnet build TailoredApps.Shared.slnx --configuration Release --no-restore
+      - name: Building Solution (public API compared with the published baseline)
+        run: dotnet build TailoredApps.Shared.slnx --configuration Release --no-restore -p:ValidatePublicApi=true
 
       - name: Testing
         run: dotnet test TailoredApps.Shared.slnx --no-build --configuration Release --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat="opencover"

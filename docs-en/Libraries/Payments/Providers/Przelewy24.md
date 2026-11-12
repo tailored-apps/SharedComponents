@@ -3,11 +3,11 @@
 [![NuGet](https://img.shields.io/nuget/v/TailoredApps.Shared.Payments.Provider.Przelewy24)](https://www.nuget.org/packages/TailoredApps.Shared.Payments.Provider.Przelewy24/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tailored-apps/SharedComponents/blob/master/LICENSE)
 
-Integracja z **Przelewy24** — jednym z najpopularniejszych polskich operatorów płatności online obsługującym ponad 170 banków i BLIK.
+Integration with **Przelewy24** — one of the most popular Polish online payment operators, handling more than 170 banks and BLIK.
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Payments.Provider.Przelewy24
@@ -15,7 +15,7 @@ dotnet add package TailoredApps.Shared.Payments.Provider.Przelewy24
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 using TailoredApps.Shared.Payments.Provider.Przelewy24;
@@ -27,7 +27,7 @@ builder.Services
 
 ---
 
-## Konfiguracja `appsettings.json`
+## Configuration `appsettings.json`
 
 ```json
 {
@@ -47,27 +47,41 @@ builder.Services
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `MerchantId` | Identyfikator sprzedawcy w Przelewy24 |
-| `PosId` | Identyfikator punktu sprzedaży (zazwyczaj = MerchantId) |
-| `ApiKey` | Klucz API do autoryzacji żądań |
-| `CrcKey` | Klucz CRC do generowania podpisów transakcji |
-| `ServiceUrl` | URL API (sandbox: `https://sandbox.przelewy24.pl`) |
-| `ReturnUrl` | URL powrotu po płatności |
-| `NotifyUrl` | URL do powiadomień o transakcjach (webhook) |
+| Option | Required | Description |
+|-------|------|------|
+| `MerchantId` | yes | Merchant identifier in Przelewy24 (a number greater than 0) |
+| `PosId` | yes | Point of sale identifier (usually = MerchantId; a number greater than 0) |
+| `ApiKey` | yes | API key for authorizing requests |
+| `CrcKey` | yes | CRC key for transaction signatures and notification verification |
+| `ServiceUrl` | no | API URL, default `https://secure.przelewy24.pl` (sandbox: `https://sandbox.przelewy24.pl`) |
+| `ReturnUrl` | no | Return URL after payment |
+| `NotifyUrl` | no | URL for transaction notifications (webhook) |
+
+Required options are checked when the host starts (`OptionsValidationException`); the others are not validated.
 
 ---
 
-## Obsługiwane kanały
+## Supported channels
 
-Przelewy24 obsługuje PLN i EUR przez ponad 170 kanałów płatności (banki, BLIK, karty). Lista kanałów pobierana z API Przelewy24.
+The provider returns a fixed list for every currency: `online_transfer` (online transfer), `blik` (BLIK), `card` (payment card).
 
 ---
 
 ## Webhook
 
-Przelewy24 weryfikuje płatność przez endpoint `/transaction/verify`. Podpis transakcji oparty na SHA-384 z kluczem CRC.
+Przelewy24 posts a JSON notification to `NotifyUrl`. Its signature is the `sign` field of the body (SHA-384 with the CRC key); there is
+no signature header, so pass the raw body in `PaymentWebhookRequest.Body`. After checking the signature the provider confirms the
+transaction through the `/transaction/verify` endpoint and only then returns the result:
+
+| Outcome | Result |
+|---------|--------|
+| Przelewy24 accepts the verification | `PaymentWebhookProcessed`, status `Finished` |
+| Przelewy24 refuses the verification (4xx) | `PaymentWebhookProcessed`, status `Rejected` |
+| the verification call fails (5xx, 408, 429) or the notification cannot be processed | `PaymentWebhookRejected` (`ProcessingFailed`) |
+| `sessionId`, `amount`, `currency` or `orderId` missing | `PaymentWebhookRejected` (`MalformedPayload`) |
+| `sign` missing or wrong | `PaymentWebhookRejected` (`InvalidSignature`) |
+
+Answer a `PaymentWebhookRejected` result with a status outside 2xx - Przelewy24 then sends the notification again.
 
 ---
 
@@ -76,24 +90,26 @@ Przelewy24 weryfikuje płatność przez endpoint `/transaction/verify`. Podpis t
 - The notification sign is SHA-384 over the JSON `{"merchantId","posId","sessionId","amount","originAmount","currency","orderId","methodId","statement","crc"}` in that order (P24 documentation), with unicode and slashes left unescaped. The `verify` call is signed over `{"sessionId","orderId","amount","currency","crc"}`.
 - Empty `CrcKey` or a missing `sign` field → rejected (fail-closed); constant-time comparison.
 - The webhook result's `PaymentUniqueId` is the `sessionId`.
+- `GetStatus` does not call Przelewy24 and always returns `Processing` - the outcome of a payment comes only from the webhook.
 
 ---
 
 ## 🤖 AI Agent Prompt
 
 ```markdown
-## Przelewy24 Provider — Instrukcja dla agenta AI
+## Przelewy24 Provider - instructions for an AI agent
 
 Provider key: "Przelewy24"
 
-Sekcja konfiguracji: "Payments:Providers:Przelewy24"
+Configuration section: "Payments:Providers:Przelewy24"
 
-Wymagane pola: MerchantId, PosId, ApiKey, CrcKey, ReturnUrl, NotifyUrl
+Required fields: MerchantId, PosId, ApiKey, CrcKey
 
-Kwota: grosze (int) — biblioteka konwertuje automatycznie
+Amount: grosze (int) — the library converts automatically
 
 Sandbox: ServiceUrl = "https://sandbox.przelewy24.pl"
 
-Rejestracja: builder.Services.AddPayments().RegisterPrzelewy24Provider();
+Registration: builder.Services.AddPayments().RegisterPrzelewy24Provider();
 - Do not reorder the sign fields - P24 hashes the JSON in exactly the documented order
+- GetStatus always returns Processing without calling Przelewy24 - rely on the webhook
 ```

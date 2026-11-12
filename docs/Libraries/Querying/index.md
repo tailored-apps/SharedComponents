@@ -120,19 +120,20 @@ public async Task<CustomerListResult> GetCustomersAsync(
 | `PagedAndSortedQuery<TQuery>` | Klasa abstrakcyjna | Bazowe zapytanie: paginacja + sortowanie + filtr |
 | `IPagedAndSortedQuery<TQuery>` | Interfejs | Kontrakt `PagedAndSortedQuery` |
 | `IPagedResult<T>` | Interfejs | Wynik stronicowany: `Results` + `Count` |
-| `SortDirection` | Enum | `Undefined = 0`, `Asc = 1`, `Desc = 2` |
+| `SortDirection` | Enum | `Undefined = 0`, `Asc = 1`, `Desc = 2`. „Brak sortowania” to `SortDir` równe `null`; `IsSortingSpecified` jest `true` dla każdej wartości, także `Undefined` |
 | `IPagingParameters` | Interfejs | `Page`, `Count`, `IsPagingSpecified` |
 | `ISortingParameters` | Interfejs | `SortField`, `SortDir`, `IsSortingSpecified` |
 | `IQueryParameters` | Interfejs | Łączy `IPagingParameters` + `ISortingParameters` |
 | `IQuery<T>` | Interfejs | Zapytanie z obiektem filtru: `Filter` |
 | `IPagedAndSortedRequest<TResponse, TQuery, TModel>` | Interfejs | Kontrakt MediatR request z paginacją (używany przez MediatR.PagedRequest) |
 | `IsSortBy(string)` | Metoda | Case-insensitive porównanie z `SortField` |
+| `QueryMap<TDestination, TSource>` | Klasa | Para wyrażeń: `Destination` (pole modelu/DTO) i `Source` (odpowiadające mu pole encji). Tylko je przechowuje — nic w tym pakiecie nie interpretuje mapowania |
 
 ---
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.Querying — Instrukcja dla agenta AI
 
 Używasz TailoredApps.Shared.Querying do standaryzacji stronicowanych zapytań.
@@ -170,7 +171,7 @@ if (query.IsSortingSpecified)
 
 ### Zasady
 - Count w IPagedResult = łączna liczba bez stronicowania (do kalkulacji stron w UI)
-- SortDirection.Undefined = brak sortowania (domyślne)
+- Brak sortowania = SortDir równe null (domyślnie). SortDirection.Undefined to tylko zerowa wartość enuma: IsSortingSpecified nadal jest true, gdy SortField jest ustawione, więc obsłuż ją jawnie
 - IsSortBy() sprawdza case-insensitive — używaj zawsze zamiast string.Equals ręcznie
 - IsPagingSpecified = OBIE wartości Page i Count muszą być != null
-```
+````

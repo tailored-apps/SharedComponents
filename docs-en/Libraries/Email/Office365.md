@@ -16,7 +16,7 @@ This allows you to receive messages from an Office 365 mailbox without storing a
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Email.Office365
@@ -24,7 +24,7 @@ dotnet add package TailoredApps.Shared.Email.Office365
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 // Program.cs
@@ -33,7 +33,7 @@ using TailoredApps.Shared.Email.Office365;
 builder.Services.RegisterOffice365Provider();
 ```
 
-### Konfiguracja `appsettings.json`
+### `appsettings.json` configuration
 
 ```json
 {
@@ -41,7 +41,6 @@ builder.Services.RegisterOffice365Provider();
     "Providers": {
       "Office365": {
         "Instance": "https://login.microsoftonline.com/{0}",
-        "ApiUrl": "https://graph.microsoft.com/",
         "Tenant": "your-tenant-id-or-domain.onmicrosoft.com",
         "ClientId": "your-application-client-id",
         "MailBox": "shared-mailbox@yourdomain.com",
@@ -52,16 +51,18 @@ builder.Services.RegisterOffice365Provider();
 }
 ```
 
-### Konfiguracja Azure AD
+`Instance` is optional - the value above is its default. `AuthenticationConfig` also binds `ApiUrl` (default `https://graph.microsoft.com/`), but the provider does not use it: it always connects over IMAP to `outlook.office365.com:993` and requests a token for `https://outlook.office365.com/.default`.
 
-Aplikacja w Azure AD potrzebuje uprawnień **aplikacyjnych** (nie delegowanych):
+### Azure AD configuration
 
-- `IMAP.AccessAsApp` — dostęp IMAP jako aplikacja
-- Administracja: `New-ServicePrincipalAllowedToUseApp` dla konkretnej skrzynki
+The application in Azure AD needs **application** permissions (not delegated ones):
+
+- `IMAP.AccessAsApp` — IMAP access as an application
+- Administration: `New-ServicePrincipalAllowedToUseApp` for the specific mailbox
 
 ---
 
-## Przykład użycia
+## Usage example
 
 ```csharp
 public class MailboxMonitorService
@@ -75,9 +76,9 @@ public class MailboxMonitorService
 
     public async Task<ICollection<MailMessage>> GetNewOrdersAsync()
     {
-        // Pobierz wiadomości z ostatnich 24 godzin od konkretnego nadawcy
+        // Get the messages from the last 24 hours from a specific sender
         var messages = await _emailProvider.GetMail(
-            folder: "Orders",
+            folder: "Orders",                     // a sub-folder of the Inbox (Inbox/Orders)
             sender: "orders@partner.com",
             fromLast: TimeSpan.FromHours(24)
         );
@@ -85,29 +86,32 @@ public class MailboxMonitorService
         return messages;
     }
 
-    public async Task<ICollection<MailMessage>> GetUnreadFromInboxAsync()
+    public async Task<ICollection<MailMessage>> GetAllFromInboxAsync()
     {
-        // Pobierz wszystkie wiadomości ze skrzynki odbiorczej
+        // Get all messages from the inbox (read and unread)
         return await _emailProvider.GetMail();
     }
 }
 ```
 
+`folder` names a **sub-folder of the Inbox**; an empty value (the default) means the Inbox itself, so `folder: "Inbox"` would look for `Inbox/Inbox`. The folder is opened read-only. `sender` and `recipent` are "contains" filters and `fromLast` limits the result to messages delivered after now minus that time span; without filters every message in the folder is downloaded.
+
 ---
 
 ## API Reference
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
-| `Office365EmailProvider` | Klasa | Implementacja `IEmailProvider` przez IMAP + OAuth2 |
-| `AuthenticationConfig` | Klasa | Konfiguracja Azure AD (tenant, clientId, secret/cert) |
-| `AuthenticationConfig.Instance` | Właściwość | URL instancji AAD (domyślnie Azure Public) |
-| `AuthenticationConfig.Tenant` | Właściwość | Tenant ID lub domena |
-| `AuthenticationConfig.ClientId` | Właściwość | Application ID w Azure AD |
-| `AuthenticationConfig.MailBox` | Właściwość | Adres skrzynki do obsługi |
-| `AuthenticationConfig.ClientSecret` | Właściwość | Sekret klienta (alternatywa dla certyfikatu) |
-| `AuthenticationConfig.Certificate` | Właściwość | Certyfikat (`CertificateDescription`) |
-| `Office365EmailProviderExtensions.RegisterOffice365Provider` | Metoda ext. | Rejestruje provider w DI |
+| `Office365EmailProvider` | Class | `IEmailProvider` implementation over IMAP + OAuth2 |
+| `AuthenticationConfig` | Class | Azure AD configuration (tenant, clientId, secret/cert) |
+| `AuthenticationConfig.Instance` | Property | AAD instance URL (Azure Public by default) |
+| `AuthenticationConfig.ApiUrl` | Property | Bound from configuration (default `https://graph.microsoft.com/`) but not used by the provider |
+| `AuthenticationConfig.Tenant` | Property | Tenant ID or domain |
+| `AuthenticationConfig.ClientId` | Property | Application ID in Azure AD |
+| `AuthenticationConfig.MailBox` | Property | Address of the mailbox to work with |
+| `AuthenticationConfig.ClientSecret` | Property | Client secret (alternative to the certificate) |
+| `AuthenticationConfig.Certificate` | Property | Certificate (`CertificateDescription`) |
+| `Office365EmailProviderExtensions.RegisterOffice365Provider` | Ext. method | Registers the provider in DI |
 
 ---
 
@@ -120,12 +124,12 @@ public class MailboxMonitorService
 
 ## 🤖 AI Agent Prompt
 
-```markdown
-## TailoredApps.Shared.Email.Office365 — Instrukcja dla agenta AI
+````markdown
+## TailoredApps.Shared.Email.Office365 - instructions for an AI agent
 
-Używasz biblioteki TailoredApps.Shared.Email.Office365 w projekcie .NET.
+You are using the TailoredApps.Shared.Email.Office365 library in a .NET project.
 
-### Rejestracja
+### Registration
 ```csharp
 builder.Services.RegisterOffice365Provider();
 ```
@@ -140,20 +144,22 @@ builder.Services.RegisterOffice365Provider();
 }}}
 ```
 
-### Użycie
+### Usage
 ```csharp
-// Tylko odczyt — SendMail rzuca NotImplementedException!
+// Read only — SendMail throws NotImplementedException!
 var messages = await _emailProvider.GetMail(
-    folder: "Inbox",
+    folder: "Orders",                 // sub-folder of the Inbox; "" (default) = the Inbox itself
     sender: "filter@domain.com",
     fromLast: TimeSpan.FromHours(24)
 );
 ```
 
-### Zasady
-- SendMail() nie jest zaimplementowane — użyj SmtpEmailProvider do wysyłki
-- Wymaga uprawnień aplikacyjnych IMAP.AccessAsApp w Azure AD
-- Tokeny OAuth2 są automatycznie cache'owane przez MSAL
-- Sekcja konfiguracji: "Mail:Providers:Office365"
+### Rules
+- SendMail() is not implemented — use SmtpEmailProvider for sending
+- folder is a sub-folder of the Inbox - never pass "Inbox"; leave it empty to read the Inbox
+- ApiUrl is bound but unused; the IMAP host (outlook.office365.com:993) is not configurable
+- Requires the IMAP.AccessAsApp application permission in Azure AD
+- OAuth2 tokens are cached automatically by MSAL
+- Configuration section: "Mail:Providers:Office365"
 - Restrict the Azure AD application to specific mailboxes with an Application Access Policy
-```
+````

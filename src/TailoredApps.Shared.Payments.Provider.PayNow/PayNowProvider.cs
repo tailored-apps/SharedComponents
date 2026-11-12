@@ -285,6 +285,28 @@ public static class PayNowProviderExtensions
         services.AddTransient<PayNowProvider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<PayNowProvider>());
     }
+
+    /// <summary>
+    /// Registers the PayNow provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterPayNowProvider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterPayNowProvider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterPayNowProvider();
+
+        // A host that also calls RegisterPaymentProvider<PayNowProvider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(PayNowProvider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<PayNowProvider>();
+    }
 }
 
 /// <summary>Wczytuje opcje PayNow z konfiguracji.</summary>

@@ -9,15 +9,17 @@
 
 ASP.NET Core Web API integration for Unit of Work — eliminates the boilerplate of manually committing and rolling back transactions in every controller. The library provides `TransactionFilterAttribute` — a global ASP.NET Core action filter that automatically:
 
-- **Opens a transaction** before the controller action executes
-- **Commits** on successful completion
-- **Rolls back** on exception
+- **Sets the isolation level** before the controller action executes, when the action carries `[TransactionIsolationLevel]`
+- **Commits** on successful completion (pending changes are saved first)
+- **Rolls back** on exception or when the action returned a 4xx/5xx result
 
-Optionally decorate an action with `[TransactionIsolationLevel(IsolationLevel.Serializable)]` to set a specific isolation level for that endpoint.
+The filter does not open the transaction itself. The unit of work opens it lazily: on the first `SaveChanges` / `SaveChangesAsync` (the commit at the end of the action counts) or when you call `BeginTransactionManually()`. Queries executed before that moment run outside the transaction.
+
+Optionally decorate an action with `[TransactionIsolationLevel(IsolationLevel.Serializable)]` to set a specific isolation level for that endpoint. The attribute is read from the action method only - placed on a controller class it has no effect.
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore
@@ -25,17 +27,17 @@ dotnet add package TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 // Program.cs
 using TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore;
 
-// 1. Rejestracja UoW + TransactionFilterAttribute
+// 1. Register UoW + TransactionFilterAttribute
 builder.Services
     .AddUnitOfWorkForWebApi<IApplicationDbContext, ApplicationDbContext>();
 
-// 2. Rejestracja jako globalny filter
+// 2. Register it as a global filter
 builder.Services.AddControllers(options =>
 {
     options.Filters.AddUnitOfWorkTransactionAttribute();
@@ -44,9 +46,9 @@ builder.Services.AddControllers(options =>
 
 ---
 
-## Przykład użycia
+## Usage example
 
-### Kontroler — transakcja zarządzana automatycznie
+### Controller — transaction managed automatically
 
 ```csharp
 [ApiController]
@@ -63,7 +65,7 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
     {
-        // Nie musisz ręcznie commitować — TransactionFilter zrobi to po zakończeniu akcji
+        // You do not have to commit manually — TransactionFilter does it when the action completes
         var order = new Order { CustomerId = dto.CustomerId, Amount = dto.Amount };
         _uow.DataProvider.Orders.Add(order);
         await _uow.SaveChangesAsync();
@@ -71,11 +73,15 @@ public class OrdersController : ControllerBase
         return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
     }
 
-    // Endpoint z wyższym poziomem izolacji — zapobiega phantom reads
+    // Endpoint with a higher isolation level — prevents phantom reads
     [HttpPost("transfer")]
     [TransactionIsolationLevel(System.Data.IsolationLevel.Serializable)]
     public async Task<IActionResult> TransferFunds([FromBody] TransferDto dto)
     {
+        // Open the transaction now, so that the reads below run inside it
+        // (otherwise it would open only on the first SaveChanges)
+        _uow.BeginTransactionManually();
+
         var from = await _uow.DataProvider.Accounts.FindAsync(dto.FromId);
         var to = await _uow.DataProvider.Accounts.FindAsync(dto.ToId);
 
@@ -88,18 +94,18 @@ public class OrdersController : ControllerBase
 }
 ```
 
-Jeśli akcja rzuci wyjątek, `TransactionFilterAttribute` automatycznie wywoła `RollbackTransaction()`.
+If the action throws an exception, `TransactionFilterAttribute` automatically calls `RollbackTransaction()`. Otherwise it calls `CommitTransaction()`, which saves pending changes before committing - an action that only adds or changes entities does not have to call `SaveChanges` itself.
 
 ---
 
 ## API Reference
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
-| `TransactionFilterAttribute` | Action Filter | Automatyczne commit/rollback transakcji dla każdej akcji |
-| `TransactionIsolationLevelAttribute` | Atrybut | Ustawia poziom izolacji dla konkretnej akcji lub kontrolera |
-| `UnitOfWorkConfiguration.AddUnitOfWorkForWebApi<TI, T>` | Metoda ext. | Rejestruje UoW + filter w DI |
-| `UnitOfWorkConfiguration.AddUnitOfWorkTransactionAttribute` | Metoda ext. | Dodaje `TransactionFilterAttribute` jako globalny filter |
+| `TransactionFilterAttribute` | Action Filter | Automatic transaction commit/rollback for every action |
+| `TransactionIsolationLevelAttribute` | Attribute | Sets the isolation level for a specific action; the filter reads it from the action method only |
+| `UnitOfWorkConfiguration.AddUnitOfWorkForWebApi<TI, T>` | Ext. method | Registers UoW + filter in DI |
+| `UnitOfWorkConfiguration.AddUnitOfWorkTransactionAttribute` | Ext. method | Adds `TransactionFilterAttribute` as a global filter |
 
 ---
 
@@ -108,37 +114,41 @@ Jeśli akcja rzuci wyjątek, `TransactionFilterAttribute` automatycznie wywoła 
 - **Rollback on error responses.** The filter rolls back not only after an exception but also when the action returned a 4xx/5xx result (`BadRequest`, `Conflict`, `StatusCode(500)`). Partial writes made before `return Conflict(...)` are no longer persisted.
 - **Commit failures stay visible.** When both commit and rollback fail, `ActionExecutedContext.Exception` receives an `AggregateException` with both (previously the rollback exception replaced the root cause and escaped the filter).
 - `UnitOfWork` disposes the transaction in `finally`, so a failed commit never leaves an open transaction on the connection.
+- **The transaction opens lazily.** It starts on the first `SaveChanges` / `SaveChangesAsync` or on `BeginTransactionManually()`, not when the action starts. A read that must be protected by the transaction (check-then-write, for example) needs `BeginTransactionManually()` before it.
+- **Supported isolation levels.** The default is `ReadCommitted`. The unit of work supports `ReadCommitted`, `ReadUncommitted` and `Serializable`; any other level throws `ArgumentOutOfRangeException` when the database connection is opened.
 
 ---
 
 ## 🤖 AI Agent Prompt
 
-```markdown
-## TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore — Instrukcja dla agenta AI
+````markdown
+## TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore - instructions for an AI agent
 
-Używasz automatycznego zarządzania transakcjami przez TransactionFilterAttribute w ASP.NET Core.
+You are using automatic transaction management through TransactionFilterAttribute in ASP.NET Core.
 
-### Rejestracja
+### Registration
 ```csharp
 // Program.cs
 builder.Services.AddUnitOfWorkForWebApi<IMyDbContext, MyDbContext>();
 builder.Services.AddControllers(o => o.Filters.AddUnitOfWorkTransactionAttribute());
 ```
 
-### Zachowanie
-- Każda akcja kontrolera jest automatycznie opakowana w transakcję
-- Sukces → CommitTransaction()
-- Wyjątek → RollbackTransaction()
+### Behaviour
+- The filter ends every controller action with a commit or a rollback of the unit of work
+- Success → CommitTransaction() (saves pending changes first)
+- Exception or a 4xx/5xx result → RollbackTransaction()
+- The transaction is opened on the first SaveChanges/SaveChangesAsync or by BeginTransactionManually(), not at the start of the action
 
-### Poziom izolacji per akcja
+### Isolation level per action
 ```csharp
 [TransactionIsolationLevel(IsolationLevel.Serializable)]
 public async Task<IActionResult> CriticalOperation() { ... }
 ```
 
-### Zasady
-- Nie wywołuj ręcznie CommitTransaction/RollbackTransaction w kontrolerach — filter to robi
-- TransactionIsolationLevelAttribute można stosować na klasie kontrolera lub na metodzie
-- Domyślny poziom izolacji pochodzi z konfiguracji UoW
+### Rules
+- Do not call CommitTransaction/RollbackTransaction manually in controllers — the filter does it
+- Put TransactionIsolationLevelAttribute on the action method - the filter does not read it from the controller class
+- The default isolation level is ReadCommitted; only ReadCommitted, ReadUncommitted and Serializable are supported
+- Call BeginTransactionManually() before reads that have to run inside the transaction
 - Return 4xx/5xx codes for business failures - the filter treats them like an exception and rolls back
-```
+````

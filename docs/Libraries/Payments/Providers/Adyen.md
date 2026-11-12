@@ -46,25 +46,68 @@ builder.Services
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `ApiKey` | Klucz API Adyen (header `X-API-Key`) |
-| `MerchantAccount` | Identyfikator konta merchant |
-| `ClientKey` | Klucz klienta Drop-in/Components (opcjonalny) |
-| `ReturnUrl` | URL powrotu po płatności |
-| `NotificationHmacKey` | Klucz HMAC (hex) do weryfikacji webhooków |
-| `Environment` | `"test"` lub `"live"` |
-| `CheckoutUrl` | Nadpisuje domyślny URL API (opcjonalne) |
+| Opcja | Wymagana | Opis |
+|-------|------|------|
+| `ApiKey` | tak | Klucz API Adyen (header `X-API-Key`) |
+| `MerchantAccount` | tak | Identyfikator konta merchant |
+| `NotificationHmacKey` | tak | Klucz HMAC (hex) do weryfikacji webhooków |
+| `ReturnUrl` | nie | URL powrotu po płatności |
+| `Environment` | nie | `"test"` (domyślnie) wywołuje `https://checkout-test.adyen.com/v71`; każda inna wartość, np. `"live"`, wywołuje `https://checkout-live.adyen.com/v71` |
+| `CheckoutUrl` | nie | Pełny bazowy URL Checkout API; gdy ustawiony, zastępuje adres wynikający z `Environment` |
+| `ClientKey` | nie | Klucz klienta Drop-in/Components — wczytywany z konfiguracji, ale nieużywany przez providera |
+
+Opcje wymagane są sprawdzane przy starcie hosta (`OptionsValidationException`); pozostałe nie są walidowane.
 
 ---
 
 ## Obsługiwane kanały płatności
 
+Lista jest stała w providerze:
+
 | Waluta | Kanały |
 |--------|--------|
-| PLN | `card` (Visa, Mastercard), `blik` |
-| EUR | `card`, `sepa` |
-| Inne | `card` |
+| PLN | `scheme` (karta płatnicza: Visa, Mastercard), `blik`, `onlineBanking_PL` (przelew online) |
+| EUR | `scheme`, `ideal`, `sepadirectdebit` |
+| Inne | `scheme` |
+
+---
+
+## Płatność i odczyt wyniku
+
+Provider tworzy sesję **Hosted Checkout** (`POST /sessions` z `mode: hosted`): `RegisterPayment` zwraca identyfikator sesji
+w `PaymentUniqueId` i adres strony płatności Adyen w `RedirectUrl`.
+
+```csharp
+// 1. utwórz płatność i przekieruj kupującego na stronę Adyen
+var response = await _payments.RegisterPayment(new PaymentRequest("Adyen", 49.99m, "PLN")
+{
+    AdditionalData = orderNumber,   // wróci jako merchantReference w webhooku
+}, cancellationToken);
+await _orders.SavePaymentSessionAsync(orderNumber, response.PaymentUniqueId, cancellationToken);
+return Redirect(response.RedirectUrl);
+
+// 2. kupujący wraca na ReturnUrl; Adyen dopisuje do adresu sessionId i sessionResult
+[HttpGet("payment/return")]
+public async Task<IActionResult> Return(string sessionId, string sessionResult, CancellationToken cancellationToken)
+{
+    var payment = await _payments.GetStatus("Adyen", AdyenProvider.SessionResultId(sessionId, sessionResult), cancellationToken);
+    return payment.PaymentStatus == PaymentStatusEnum.Finished ? View("Paid") : View("Pending");
+}
+```
+
+| Status sesji Adyen | `PaymentStatus` |
+|--------------------|-----------------|
+| `completed` | `Finished` |
+| `paymentPending` | `Processing` |
+| `refused`, `canceled`, `expired` | `Rejected` |
+| `active` (kupujący jeszcze nie zapłacił) | `Created` |
+
+- Adyen podaje wynik sesji **tylko** razem z wartością `sessionResult`, którą dopisuje do adresu powrotu. `GetStatus` z samym
+  identyfikatorem sesji kończy się `ArgumentException` — poza powrotem kupującego jedynym źródłem wyniku jest [webhook](#webhook).
+- Wynik odczytany przy powrocie służy do pokazania strony z podziękowaniem; zamówienie rozliczaj na podstawie webhooka.
+- Zakres weryfikacji: żądanie i odpowiedź są zgodne ze specyfikacją OpenAPI Checkout v71 (pola `mode`, `url`,
+  `GET /sessions/{sessionId}?sessionResult=`); nazwy parametrów dopisywanych do adresu powrotu pochodzą z dokumentacji Hosted Checkout
+  i — jak cały provider — nie były sprawdzone w środowisku testowym Adyen.
 
 ---
 
@@ -118,8 +161,6 @@ public async Task<IActionResult> AdyenWebhook(CancellationToken cancellationToke
 - Obsługiwany jest pierwszy element `notificationItems` (Adyen wysyła jeden element na żądanie).
 - Zakres weryfikacji: implementacja odtwarza przykład z dokumentacji Adyen (klucz, podpisywany tekst i oczekiwany podpis są w testach);
   przed wdrożeniem wyślij testowe powiadomienie z panelu Adyen.
-- ⚠️ **Znane ograniczenie (poza webhookiem).** `/sessions` zwraca `sessionData` dla Drop-in/Components, a nie adres przekierowania —
-  `RequestPayment` nie zwraca więc `RedirectUrl` dla zwykłej sesji.
 
 ---
 
@@ -132,7 +173,7 @@ Provider key: "Adyen"
 
 Sekcja konfiguracji: "Payments:Providers:Adyen"
 
-Wymagane pola: ApiKey, MerchantAccount, NotificationHmacKey, ReturnUrl
+Wymagane pola: ApiKey, MerchantAccount, NotificationHmacKey
 
 Webhook: HMAC-SHA256 z ośmiu pól elementu (pspReference:originalReference:merchantAccountCode:merchantReference:amount.value:amount.currency:eventCode:success), klucz NotificationHmacKey (hex), podpis w additionalData.hmacSignature
 
@@ -141,6 +182,8 @@ Rejestracja: builder.Services.AddPayments().RegisterAdyenProvider();
 Środowisko testowe: Environment = "test" (checkout-test.adyen.com)
 
 Zasady:
+- RegisterPayment zwraca RedirectUrl (strona Hosted Checkout) i PaymentUniqueId (id sesji)
+- Status po powrocie kupującego: GetStatus("Adyen", AdyenProvider.SessionResultId(sessionId, sessionResult)) — oba parametry są w adresie powrotu; sam id sesji nie wystarcza
 - Przekaż do PaymentWebhookRequest.Body surowe body JSON; podpis jest w additionalData.hmacSignature, nie w nagłówku
 - Odpowiedz HTTP 200 z treścią "[accepted]" (AdyenProvider.Acknowledgement) także dla zdarzeń zignorowanych
 - Decyzje opieraj na polach objętych podpisem (referencje, kwota, eventCode, success)

@@ -17,7 +17,7 @@ Key types:
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Querying
@@ -25,14 +25,14 @@ dotnet add package TailoredApps.Shared.Querying
 
 ---
 
-## Przykład użycia
+## Usage example
 
-### Definicja filtru i zapytania
+### Defining the filter and the query
 
 ```csharp
 using TailoredApps.Shared.Querying;
 
-// 1. Filter — konkretne kryteria wyszukiwania
+// 1. Filter — the specific search criteria
 public class CustomerFilter : QueryBase
 {
     public string NameContains { get; set; }
@@ -41,22 +41,22 @@ public class CustomerFilter : QueryBase
     public DateTime? RegisteredAfter { get; set; }
 }
 
-// 2. Zapytanie stronicowane + sortowane
+// 2. Paged + sorted query
 public class GetCustomersQuery : PagedAndSortedQuery<CustomerFilter>
 {
-    // Wszystkie parametry są odziedziczone:
+    // All parameters are inherited:
     // Page, Count, SortField, SortDir, Filter, IsPagingSpecified, IsSortingSpecified
 }
 
-// 3. Wynik stronicowany
+// 3. Paged result
 public class CustomerListResult : IPagedResult<CustomerDto>
 {
     public ICollection<CustomerDto> Results { get; set; }
-    public int Count { get; set; }  // łączna liczba (bez stronicowania)
+    public int Count { get; set; }  // total count (without paging)
 }
 ```
 
-### Implementacja w repozytorium / serwisie
+### Implementation in a repository / service
 
 ```csharp
 public async Task<CustomerListResult> GetCustomersAsync(
@@ -65,7 +65,7 @@ public async Task<CustomerListResult> GetCustomersAsync(
 {
     var dbQuery = _context.Customers.AsQueryable();
 
-    // Filtry
+    // Filters
     if (!string.IsNullOrWhiteSpace(query.Filter?.NameContains))
         dbQuery = dbQuery.Where(c => c.Name.Contains(query.Filter.NameContains));
 
@@ -75,10 +75,10 @@ public async Task<CustomerListResult> GetCustomersAsync(
     if (query.Filter?.IsActive.HasValue == true)
         dbQuery = dbQuery.Where(c => c.IsActive == query.Filter.IsActive.Value);
 
-    // Sortowanie
+    // Sorting
     if (query.IsSortingSpecified)
     {
-        // Przykład z IsSortBy()
+        // Example with IsSortBy()
         if (query.IsSortBy("Name"))
             dbQuery = query.SortDir == SortDirection.Asc
                 ? dbQuery.OrderBy(c => c.Name)
@@ -91,7 +91,7 @@ public async Task<CustomerListResult> GetCustomersAsync(
 
     var totalCount = await dbQuery.CountAsync(ct);
 
-    // Paginacja
+    // Paging
     if (query.IsPagingSpecified)
     {
         var skip = (query.Page!.Value - 1) * query.Count!.Value;
@@ -114,38 +114,39 @@ public async Task<CustomerListResult> GetCustomersAsync(
 
 ## API Reference
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
-| `QueryBase` | Klasa abstrakcyjna | Klasa bazowa dla wszystkich obiektów filtrów zapytań |
-| `PagedAndSortedQuery<TQuery>` | Klasa abstrakcyjna | Bazowe zapytanie: paginacja + sortowanie + filtr |
-| `IPagedAndSortedQuery<TQuery>` | Interfejs | Kontrakt `PagedAndSortedQuery` |
-| `IPagedResult<T>` | Interfejs | Wynik stronicowany: `Results` + `Count` |
-| `SortDirection` | Enum | `Undefined = 0`, `Asc = 1`, `Desc = 2` |
-| `IPagingParameters` | Interfejs | `Page`, `Count`, `IsPagingSpecified` |
-| `ISortingParameters` | Interfejs | `SortField`, `SortDir`, `IsSortingSpecified` |
-| `IQueryParameters` | Interfejs | Łączy `IPagingParameters` + `ISortingParameters` |
-| `IQuery<T>` | Interfejs | Zapytanie z obiektem filtru: `Filter` |
-| `IPagedAndSortedRequest<TResponse, TQuery, TModel>` | Interfejs | Kontrakt MediatR request z paginacją (używany przez MediatR.PagedRequest) |
-| `IsSortBy(string)` | Metoda | Case-insensitive porównanie z `SortField` |
+| `QueryBase` | Abstract class | Base class for all query filter objects |
+| `PagedAndSortedQuery<TQuery>` | Abstract class | Base query: paging + sorting + filter |
+| `IPagedAndSortedQuery<TQuery>` | Interface | `PagedAndSortedQuery` contract |
+| `IPagedResult<T>` | Interface | Paged result: `Results` + `Count` |
+| `SortDirection` | Enum | `Undefined = 0`, `Asc = 1`, `Desc = 2`. "No sorting" is a `null` `SortDir`; `IsSortingSpecified` is `true` for any value, including `Undefined` |
+| `IPagingParameters` | Interface | `Page`, `Count`, `IsPagingSpecified` |
+| `ISortingParameters` | Interface | `SortField`, `SortDir`, `IsSortingSpecified` |
+| `IQueryParameters` | Interface | Combines `IPagingParameters` + `ISortingParameters` |
+| `IQuery<T>` | Interface | Query with a filter object: `Filter` |
+| `IPagedAndSortedRequest<TResponse, TQuery, TModel>` | Interface | MediatR request contract with paging (used by MediatR.PagedRequest) |
+| `IsSortBy(string)` | Method | Case-insensitive comparison with `SortField` |
+| `QueryMap<TDestination, TSource>` | Class | A pair of expressions, `Destination` (a field of the model/DTO) and `Source` (the matching field of the entity). It only holds them - nothing in this package interprets the mapping |
 
 ---
 
 ## 🤖 AI Agent Prompt
 
-```markdown
-## TailoredApps.Shared.Querying — Instrukcja dla agenta AI
+````markdown
+## TailoredApps.Shared.Querying - instructions for an AI agent
 
-Używasz TailoredApps.Shared.Querying do standaryzacji stronicowanych zapytań.
+You are using TailoredApps.Shared.Querying to standardize paged queries.
 
-### Definicja typów
+### Type definitions
 ```csharp
-// Filter dziedziczy QueryBase
+// The filter inherits from QueryBase
 public class MyFilter : QueryBase { public string Name { get; set; } }
 
-// Zapytanie dziedziczy PagedAndSortedQuery<TFilter>
+// The query inherits from PagedAndSortedQuery<TFilter>
 public class GetItemsQuery : PagedAndSortedQuery<MyFilter> { }
 
-// Wynik implementuje IPagedResult<TItem>
+// The result implements IPagedResult<TItem>
 public class ItemsResult : IPagedResult<ItemDto>
 {
     public ICollection<ItemDto> Results { get; set; }
@@ -153,10 +154,10 @@ public class ItemsResult : IPagedResult<ItemDto>
 }
 ```
 
-### Parametry URL → automatyczny binding w ASP.NET Core
+### URL parameters → automatic binding in ASP.NET Core
 ?page=1&count=20&sortField=Name&sortDir=Asc&filter.name=test
 
-### W serwisie/repozytorium
+### In the service/repository
 ```csharp
 if (query.IsPagingSpecified)
     dbQuery = dbQuery.Skip((query.Page!.Value - 1) * query.Count!.Value).Take(query.Count.Value);
@@ -168,9 +169,9 @@ if (query.IsSortingSpecified)
 }
 ```
 
-### Zasady
-- Count w IPagedResult = łączna liczba bez stronicowania (do kalkulacji stron w UI)
-- SortDirection.Undefined = brak sortowania (domyślne)
-- IsSortBy() sprawdza case-insensitive — używaj zawsze zamiast string.Equals ręcznie
-- IsPagingSpecified = OBIE wartości Page i Count muszą być != null
-```
+### Rules
+- Count in IPagedResult = the total count without paging (for calculating pages in the UI)
+- No sorting = SortDir is null (the default). SortDirection.Undefined is only the enum's zero value: IsSortingSpecified is still true for it when SortField is set, so handle it explicitly
+- IsSortBy() compares case-insensitively — always use it instead of a manual string.Equals
+- IsPagingSpecified = BOTH values, Page and Count, must be != null
+````

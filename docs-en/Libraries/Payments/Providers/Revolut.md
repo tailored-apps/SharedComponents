@@ -3,11 +3,11 @@
 [![NuGet](https://img.shields.io/nuget/v/TailoredApps.Shared.Payments.Provider.Revolut)](https://www.nuget.org/packages/TailoredApps.Shared.Payments.Provider.Revolut/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tailored-apps/SharedComponents/blob/master/LICENSE)
 
-Integracja z **Revolut Merchant API** — obsługa płatności kartą i Revolut Pay z weryfikacją webhooków przez podpis.
+Integration with the **Revolut Merchant API** — card and Revolut Pay payments with signature-based webhook verification.
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Payments.Provider.Revolut
@@ -15,7 +15,7 @@ dotnet add package TailoredApps.Shared.Payments.Provider.Revolut
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 using TailoredApps.Shared.Payments.Provider.Revolut;
@@ -27,41 +27,53 @@ builder.Services
 
 ---
 
-## Konfiguracja `appsettings.json`
+## Configuration `appsettings.json`
 
 ```json
 {
   "Payments": {
     "Providers": {
       "Revolut": {
-        "ApiKey": "sk_test_...",
+        "ApiKey": "your-merchant-api-key",
         "ApiUrl": "https://merchant.revolut.com/api",
-        "ReturnUrl": "https://myapp.com/payment/return",
-        "WebhookSecret": "whsec_..."
+        "WebhookSecret": "your-webhook-signing-secret",
+        "WebhookToleranceSeconds": 300
       }
     }
   }
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `ApiKey` | Klucz API Revolut Merchant (`sk_live_...` lub `sk_test_...`) |
-| `ApiUrl` | URL API Revolut Merchant |
-| `ReturnUrl` | URL powrotu po płatności |
-| `WebhookSecret` | Sekret do weryfikacji podpisu webhooków (`whsec_...`) |
+| Option | Required | Description |
+|-------|------|------|
+| `ApiKey` | yes | Revolut Merchant API key (sent as a `Bearer` token) |
+| `WebhookSecret` | yes | Secret for verifying the webhook signature |
+| `ApiUrl` | no | Revolut Merchant API URL (default `https://merchant.revolut.com/api`) |
+| `WebhookToleranceSeconds` | no | Largest accepted age of the webhook timestamp in seconds, default `300`; `0` disables the check |
+| `ReturnUrl` | no | Bound from configuration, but not sent to Revolut by the provider |
+
+Required options are checked when the host starts (`OptionsValidationException`); the others are not validated.
 
 ---
 
-## Obsługiwane kanały
+## Supported channels
 
-Revolut obsługuje płatności kartą (Visa, Mastercard) i Revolut Pay dla wielu walut (PLN, EUR, GBP, USD i inne).
+The provider returns a fixed list for every currency: `card` (payment card), `revolut_pay` (Revolut Pay).
 
 ---
 
 ## Webhook
 
-Revolut podpisuje powiadomienia podpisem `Revolut-Signature` w nagłówku HTTP. Weryfikacja przez HMAC-SHA256 z `WebhookSecret`.
+Revolut signs notifications in the `Revolut-Signature` HTTP header and sends the signing time in `Revolut-Request-Timestamp`.
+Verification uses HMAC-SHA256 with `WebhookSecret` over the raw body, so pass the raw body and every header in `PaymentWebhookRequest`.
+
+| `event` | Result |
+|---------|--------|
+| `ORDER_COMPLETED` | `PaymentWebhookProcessed`, status `Finished` |
+| `ORDER_CANCELLED`, `ORDER_PAYMENT_DECLINED`, `PAYMENT_DECLINED` | `PaymentWebhookProcessed`, status `Rejected` |
+| `ORDER_AUTHORISED` or another event | `PaymentWebhookIgnored` (status `Processing`) |
+
+`PaymentUniqueId` in the result is the `order_id` of the notification.
 
 ---
 
@@ -70,7 +82,7 @@ Revolut podpisuje powiadomienia podpisem `Revolut-Signature` w nagłówku HTTP. 
 - The signed payload is `v1.{Revolut-Request-Timestamp}.{raw body}` (dots, as documented by Revolut; the previous `v1:` format rejected every genuine notification).
 - **Replay protection.** The millisecond timestamp must be within `WebhookToleranceSeconds` (default 300 s) of the server clock; `0` disables the check.
 - The `Revolut-Signature` header may carry several signatures (`v1=a,v1=b`) during secret rotation - any match is accepted.
-- Empty `WebhookSecret` → rejected (fail-closed).
+- Empty `WebhookSecret`, a missing signature or timestamp → `PaymentWebhookRejected` (`InvalidSignature`), fail-closed.
 
 ```json
 { "Payments": { "Providers": { "Revolut": { "WebhookSecret": "...", "WebhookToleranceSeconds": 300 } } } }
@@ -81,18 +93,16 @@ Revolut podpisuje powiadomienia podpisem `Revolut-Signature` w nagłówku HTTP. 
 ## 🤖 AI Agent Prompt
 
 ```markdown
-## Revolut Provider — Instrukcja dla agenta AI
+## Revolut Provider - instructions for an AI agent
 
 Provider key: "Revolut"
 
-Sekcja konfiguracji: "Payments:Providers:Revolut"
+Configuration section: "Payments:Providers:Revolut"
 
-Wymagane pola: ApiKey, ReturnUrl, WebhookSecret
+Required fields: ApiKey, WebhookSecret
 
-Kwota: grosze/centy (int) — biblioteka konwertuje automatycznie
+Amount: grosze/cents (int) — the library converts automatically
 
-Test API key: sk_test_...
-
-Rejestracja: builder.Services.AddPayments().RegisterRevolutProvider();
+Registration: builder.Services.AddPayments().RegisterRevolutProvider();
 - Do not set WebhookToleranceSeconds = 0 in production - it disables replay protection
 ```

@@ -7,13 +7,13 @@
 
 ## Description
 
-A lightweight package defining `ICachableRequest<TResponse>` — a marker interface for MediatR requests whose results should be cached. A request implementing this interface provides a `GetCacheKey()` method that generates a unique cache key for that particular query instance.
+A lightweight package defining `ICachableRequest<TResponse>` — a contract for MediatR requests that name their own cache key. A request implementing this interface provides a `GetCacheKey()` method that generates a unique cache key for that particular query instance.
 
-This is an alternative caching approach compared to `ICachePolicy<TRequest, TResponse>` from `TailoredApps.Shared.MediatR` — simpler when cache key logic is straightforward and can live in the request itself.
+The package contains the contract only: it has no services and nothing to register. `CachingBehavior` from `TailoredApps.Shared.MediatR` does **not** read `ICachableRequest<TResponse>` — it caches a request only when an `ICachePolicy<TRequest, TResponse>` is registered for it. Use the interface to keep the key logic in the request itself, and add a cache policy that returns that key (shown below) when the response is to be cached by that behavior.
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.MediatR.Caching
@@ -21,23 +21,23 @@ dotnet add package TailoredApps.Shared.MediatR.Caching
 
 ---
 
-## Przykład użycia
+## Usage example
 
 ```csharp
 using TailoredApps.Shared.MediatR.Caching;
 using MediatR;
 
-// Request z wbudowaną logiką cache key
+// Request with built-in cache key logic
 public class GetUserProfileQuery : ICachableRequest<UserProfileDto>
 {
     public int UserId { get; set; }
     public string Language { get; set; } = "pl";
 
-    // Unikalny klucz uwzględniający parametry zapytania
+    // Unique key that takes the query parameters into account
     public string GetCacheKey() => $"user-profile:{UserId}:{Language}";
 }
 
-// Handler — standardowy MediatR
+// Handler — standard MediatR
 public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, UserProfileDto>
 {
     private readonly IUserRepository _repo;
@@ -52,39 +52,60 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
 }
 ```
 
-!!! note "Integracja z CachingBehavior"
-    Aby cache'owanie działało, potrzebujesz `CachingBehavior` z pakietu `TailoredApps.Shared.MediatR` w pipeline. `ICachableRequest` to marker interface — sam w sobie nie uruchamia cache'owania.
+### Caching the request with `CachingBehavior`
+
+```csharp
+using TailoredApps.Shared.MediatR.Interfaces.Caching;
+
+// The policy is what CachingBehavior looks for; it hands back the key the request defines
+public class GetUserProfileQueryCachePolicy : ICachePolicy<GetUserProfileQuery, UserProfileDto>
+{
+    public string GetCacheKey(GetUserProfileQuery request) => request.GetCacheKey();
+}
+```
+
+!!! note "Integration with CachingBehavior"
+    `ICachableRequest` is a marker interface — on its own it does not trigger caching, and `CachingBehavior` from the `TailoredApps.Shared.MediatR` package does not look at it. A request is cached only when an `ICachePolicy<TRequest, TResponse>` is registered for it (`PipelineRegistration.RegisterPipelineBehaviors(assembly)` scans for policies). Without a policy the request above runs its handler every time.
 
 ---
 
 ## API Reference
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
-| `ICachableRequest<TResponse>` | Interfejs | Rozszerza `IRequest<TResponse>`; wymaga `GetCacheKey()` |
-| `ICachableRequest.GetCacheKey()` | Metoda | Zwraca unikalny klucz cache dla tej instancji requestu |
+| `ICachableRequest<TResponse>` | Interface | Extends `IRequest<TResponse>`; requires `GetCacheKey()` |
+| `ICachableRequest.GetCacheKey()` | Method | Returns a unique cache key for this request instance |
 
 ---
 
 ## 🤖 AI Agent Prompt
 
-```markdown
-## TailoredApps.Shared.MediatR.Caching — Instrukcja dla agenta AI
+````markdown
+## TailoredApps.Shared.MediatR.Caching - instructions for an AI agent
 
-Używasz ICachableRequest do oznaczania requestów MediatR, których wyniki mają być cache'owane.
+You are using ICachableRequest to give MediatR requests their own cache key.
 
-### Użycie
+### Registration
+Nothing to register: the package contains one interface, no services and no configuration.
+
+### Usage
 ```csharp
 public class GetProductQuery : ICachableRequest<ProductDto>
 {
     public int Id { get; set; }
     public string GetCacheKey() => $"product:{Id}";
 }
+
+// Needed for CachingBehavior (TailoredApps.Shared.MediatR) to cache the request:
+public class GetProductQueryCachePolicy : ICachePolicy<GetProductQuery, ProductDto>
+{
+    public string GetCacheKey(GetProductQuery request) => request.GetCacheKey();
+}
 ```
 
-### Zasady
-- ICachableRequest<TResponse> rozszerza IRequest<TResponse>
-- GetCacheKey() musi zwracać unikalny klucz dla tej kombinacji parametrów
-- Sam interfejs nie cache'uje — potrzebny CachingBehavior z TailoredApps.Shared.MediatR
-- Alternatywa: ICachePolicy<TRequest, TResponse> — klucz w osobnej klasie policy
-```
+### Rules
+- ICachableRequest<TResponse> extends IRequest<TResponse>
+- GetCacheKey() must return a unique key for this combination of parameters
+- The interface alone does not cache, and CachingBehavior from TailoredApps.Shared.MediatR does not read it
+- CachingBehavior caches only requests that have a registered ICachePolicy<TRequest, TResponse> — add a policy that returns request.GetCacheKey()
+````

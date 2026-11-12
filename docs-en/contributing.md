@@ -76,6 +76,15 @@ Each `docs/Libraries/<LibraryName>/index.md` page must contain:
 
 After adding a library page, update the `nav:` section in `mkdocs.yml` and the library table on `docs/index.md`.
 
+### Both languages and the package README
+
+- The site has two trees: `docs/` (Polish) and `docs-en/` (English). Every page exists in both, with the same relative path, and is registered
+  in both `mkdocs.yml` and `mkdocs-en.yml`; the library table is on both `docs/index.md` and `docs-en/index.md`. A change to a library updates both.
+- Every library has a `README.md` next to its csproj: what the package is, installation, registration, a usage example, configuration, and a link
+  to its page on this site. It is packed into the NuGet package automatically (`src/Directory.Build.props`) and is what nuget.org shows - nothing
+  has to be added to the csproj.
+- Code samples must compile against the current source: check type, method and configuration key names in the code, not from memory.
+
 ### Library page template
 
 ```markdown
@@ -92,20 +101,20 @@ After adding a library page, update the `nav:` section in `mkdocs.yml` and the l
 
 [Full description in English...]
 
-## Instalacja
+## Installation
 
 \`\`\`bash
 dotnet add package TailoredApps.Shared.XXXXX
 \`\`\`
 
-## Rejestracja w DI
+## DI registration
 
 \`\`\`csharp
 // Program.cs
 builder.Services.AddXxx();
 \`\`\`
 
-## Przykład użycia
+## Usage example
 
 \`\`\`csharp
 // ...
@@ -146,6 +155,25 @@ You are using the TailoredApps.Shared.XXXXX library in a .NET project.
 - [ ] `mkdocs.yml` nav updated
 - [ ] Table on `docs/index.md` updated
 - [ ] `mkdocs build --strict` passes without errors
+- [ ] `dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true` passes (no change incompatible with 2.0.0)
+
+---
+
+## Public API compatibility
+
+The 2.x line must stay compatible with `2.0.0`: code compiled against any 2.x version has to work with every later 2.x. The
+*Build & Test PR* check compares the public API of every library with its `2.0.0` package on nuget.org and fails on a breaking change
+(removing a public type or member, or changing its signature - `CP0001`, `CP0002`, …). Adding API is allowed.
+
+```bash
+# the same locally
+dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true
+```
+
+- The baseline version is set by `PublicApiBaselineVersion` in `src/Directory.Build.targets`.
+- A new library: until its first release add `<SkipPublicApiValidation>true</SkipPublicApiValidation>` to its csproj,
+  and after the release replace it with `<PublicApiBaselineVersion>` holding the first version it was published in.
+- A breaking change is possible only in the next major version (3.0). Instead of removing a member, mark it `[Obsolete]` and add a new one.
 
 ---
 

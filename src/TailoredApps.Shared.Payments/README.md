@@ -44,7 +44,7 @@ catch (HttpRequestException exception)   // covers PaymentGatewayException
 }
 ```
 
-CashBill and Stripe report such failures with `WebException` and `StripeException`.
+Stripe reports such failures with `StripeException`.
 
 **2. `PaymentRequest` requires `PaymentProvider`, `Amount` and `Currency`.**
 An object initializer that leaves one out does not compile (CS9035), and System.Text.Json refuses a document without them.

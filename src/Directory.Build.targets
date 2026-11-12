@@ -24,4 +24,40 @@
     <Features>$(Features);runtime-async=on</Features>
   </PropertyGroup>
 
+  <!--
+    Public API guard
+
+    The 2.x line must stay compatible with 2.0.0. With -p:ValidatePublicApi=true every library is compared,
+    while it is packed, with the baseline version of the same package on nuget.org; a breaking change in
+    the public API fails the build (CP0001, CP0002, ...). Adding API is allowed. The "Build & Test PR"
+    workflow builds with the switch on; locally:
+
+        dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true
+
+    The baseline package is downloaded during restore, so the switch has to be passed to restore as well
+    when the two are run separately.
+
+    Why a .targets file: a library can override the baseline in its own csproj, which is evaluated before
+    this file. A library that did not exist in the baseline sets the first version it was published in:
+
+        <PublicApiBaselineVersion>2.1.0</PublicApiBaselineVersion>
+
+    and, until it has been published at all, <SkipPublicApiValidation>true</SkipPublicApiValidation>.
+
+    Raise the default below only when a new major version becomes the compatibility baseline.
+  -->
+  <PropertyGroup>
+    <PublicApiBaselineVersion Condition="'$(PublicApiBaselineVersion)' == ''">2.0.0</PublicApiBaselineVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ValidatePublicApi)' == 'true' and '$(SkipPublicApiValidation)' != 'true' and '$(IsPackable)' != 'false'">
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>$(PublicApiBaselineVersion)</PackageValidationBaselineVersion>
+    <!--
+      CP0003 compares assembly versions. Only a release build has one (the tag); everywhere else the
+      libraries are built as 1.0.0, which would fail against any baseline without saying anything about the API.
+    -->
+    <NoWarn>$(NoWarn);CP0003</NoWarn>
+  </PropertyGroup>
+
 </Project>

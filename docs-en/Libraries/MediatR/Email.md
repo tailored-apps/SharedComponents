@@ -13,7 +13,7 @@ This approach makes it easy to enrich the sending process with logging, retry, a
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.MediatR.Email
@@ -21,7 +21,7 @@ dotnet add package TailoredApps.Shared.MediatR.Email
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 // Program.cs
@@ -29,10 +29,10 @@ using TailoredApps.Shared.Email;
 using TailoredApps.Shared.MediatR.Email.Handlers;
 using TailoredApps.Shared.Email.MailMessageBuilder;
 
-// 1. Zarejestruj email provider (SMTP lub konsola)
+// 1. Register the email provider (SMTP or console)
 builder.Services.RegisterSmtpProvider();
 
-// 2. Zarejestruj mail message builder
+// 2. Register the mail message builder
 builder.Services.AddTransient<IMailMessageBuilder, TokenReplacingMailMessageBuilder>();
 builder.Services.Configure<TokenReplacingMailMessageBuilderOptions>(o =>
 {
@@ -40,19 +40,27 @@ builder.Services.Configure<TokenReplacingMailMessageBuilderOptions>(o =>
     o.FileExtension = "html";
 });
 
-// 3. Zarejestruj handler
-builder.Services.AddTransient<ISendMailCommandHandler, SendMailCommandHandler>();
-
-// 4. MediatR (jeśli jeszcze nie zarejestrowany)
+// 3. MediatR: scan the library assembly as well - that is where SendMailCommandHandler lives
 builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly);
+});
+```
+
+The package has no registration extension of its own. MediatR resolves the handler as `IRequestHandler<SendMail, SendMailResponse>`, so registering `SendMailCommandHandler` only under `ISendMailCommandHandler` does not let `_mediator.Send(new SendMail { ... })` find it. Either scan the library assembly as above or register the handler under the MediatR interface yourself:
+
+```csharp
+builder.Services.AddTransient<IRequestHandler<SendMail, SendMailResponse>, SendMailCommandHandler>();
 ```
 
 ---
 
-## Przykład użycia
+## Usage example
 
 ```csharp
+using TailoredApps.Shared.MediatR.Email.Messages.Commands;
+
 public class UserRegistrationService
 {
     private readonly IMediator _mediator;
@@ -61,13 +69,13 @@ public class UserRegistrationService
 
     public async Task RegisterUserAsync(string email, string userName)
     {
-        // Logika rejestracji...
+        // Registration logic...
 
-        // Wyślij email powitalny przez MediatR pipeline
+        // Send the welcome email through the MediatR pipeline
         var result = await _mediator.Send(new SendMail
         {
             Recipent = email,
-            Subject = "Witaj w naszym serwisie!",
+            Subject = "Welcome to our service!",
             Template = "welcome.html",
             TemplateVariables = new Dictionary<string, string>
             {
@@ -77,7 +85,7 @@ public class UserRegistrationService
             Attachments = null
         });
 
-        Console.WriteLine($"Email wysłany, MessageId: {result.MessageId}");
+        Console.WriteLine($"Email sent, MessageId: {result.MessageId}");
     }
 
     public async Task SendInvoiceAsync(
@@ -88,7 +96,7 @@ public class UserRegistrationService
         await _mediator.Send(new SendMail
         {
             Recipent = email,
-            Subject = $"Faktura #{invoiceNumber}",
+            Subject = $"Invoice #{invoiceNumber}",
             Template = "invoice.html",
             TemplateVariables = new Dictionary<string, string>
             {
@@ -96,7 +104,7 @@ public class UserRegistrationService
             },
             Attachments = new Dictionary<string, byte[]>
             {
-                { $"faktura_{invoiceNumber}.pdf", pdfContent }
+                { $"invoice_{invoiceNumber}.pdf", pdfContent }
             }
         });
     }
@@ -107,45 +115,51 @@ public class UserRegistrationService
 
 ## API Reference
 
-| Typ | Rodzaj | Opis |
+| Type | Kind | Description |
 |-----|--------|------|
-| `SendMail` | Command (`IRequest<SendMailResponse>`) | Dane emaila: `Recipent`, `Subject`, `Template`, `TemplateVariables`, `Templates`, `Attachments` |
-| `SendMailResponse` | Klasa | Wynik wysyłki: `MessageId` (provider-specific identifier) |
-| `SendMailCommandHandler` | Handler | Buduje treść z szablonu i wysyła przez `IEmailProvider` |
-| `ISendMailCommandHandler` | Interfejs | Kontrakt handlera |
+| `SendMail` | Command (`IRequest<SendMailResponse>`) | Email data: `Recipent`, `Subject`, `Template`, `TemplateVariables`, `Templates`, `Attachments` |
+| `SendMailResponse` | Class | Send result: `MessageId` (provider-specific identifier) |
+| `SendMailCommandHandler` | Handler | Builds the body from a template and sends it through `IEmailProvider` |
+| `ISendMailCommandHandler` | Interface | Handler contract |
 
 ---
 
 ## 🤖 AI Agent Prompt
 
-```markdown
-## TailoredApps.Shared.MediatR.Email — Instrukcja dla agenta AI
+````markdown
+## TailoredApps.Shared.MediatR.Email - instructions for an AI agent
 
-Używasz TailoredApps.Shared.MediatR.Email do wysyłania emaili przez MediatR pipeline.
+You are using TailoredApps.Shared.MediatR.Email to send emails through the MediatR pipeline.
 
-### Rejestracja
+### Registration
 ```csharp
-builder.Services.RegisterSmtpProvider(); // lub RegisterConsoleProvider()
+builder.Services.RegisterSmtpProvider(); // or RegisterConsoleProvider()
 builder.Services.AddTransient<IMailMessageBuilder, TokenReplacingMailMessageBuilder>();
-builder.Services.AddTransient<ISendMailCommandHandler, SendMailCommandHandler>();
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly); // the SendMail handler
+});
 ```
 
-### Wysyłanie emaila
+### Sending an email
 ```csharp
 var result = await _mediator.Send(new SendMail
 {
     Recipent = "user@example.com",
-    Subject = "Temat",
-    Template = "template.html",           // nazwa pliku szablonu
+    Subject = "Subject",
+    Template = "template.html",           // template file name
     TemplateVariables = new() { { "Name", "Jan" } },
-    Attachments = null                     // lub Dictionary<string, byte[]>
+    Attachments = null                     // or Dictionary<string, byte[]>
 });
-// result.MessageId — ID przypisany przez provider
+// result.MessageId — the ID assigned by the provider
 ```
 
-### Zasady
-- Template to klucz szablonu przekazywany do IMailMessageBuilder.Build()
-- TemplateVariables zastępują {{token}} w szablonie
-- Podaj Templates (Dictionary<string,string>) gdy szablony są inline, nie z pliku
-- SendMail rzuci jeśli template nie zostanie znaleziony w IMailMessageBuilder
-```
+### Rules
+- MediatR must find the handler as IRequestHandler<SendMail, SendMailResponse>: scan the library assembly; registering it only as ISendMailCommandHandler is not enough
+- Template and Recipent are required - the handler throws ArgumentException when either is null
+- Template is the template key passed to IMailMessageBuilder.Build()
+- TemplateVariables replace {{token}} in the template
+- Provide Templates (Dictionary<string,string>) when the templates are inline, not from a file
+- SendMail throws if the template is not found in IMailMessageBuilder
+````

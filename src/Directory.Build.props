@@ -17,7 +17,7 @@
 	<!--
 		Packaging. Every library is a NuGet package built together with the project, with XML docs.
 		The metadata below is the same for all of them; a project file only adds what is its own
-		(PackageId, Title, Description, PackageTags, PackageReadmeFile).
+		(PackageId, Title, Description, PackageTags).
 	-->
 	<PropertyGroup>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -35,5 +35,17 @@
 		<PackageIconUrl>https://www.nuget.org/profiles/TailoredApps/avatar?imageSize=512</PackageIconUrl>
 		<NoWarn>$(NoWarn);NU5048</NoWarn>
 	</PropertyGroup>
+
+	<!--
+		Package README. A README.md next to a project file is packed and becomes the page nuget.org shows
+		for the package; nothing has to be added to the csproj. Every library has one - see
+		DOCUMENTATION_RULE.md.
+	-->
+	<PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)/README.md')">
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+	<ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/README.md')">
+		<None Include="$(MSBuildProjectDirectory)/README.md" Pack="true" PackagePath="/" Visible="false" />
+	</ItemGroup>
 
 </Project>

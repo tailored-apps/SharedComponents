@@ -125,16 +125,13 @@ public interface IPayUServiceCaller
 /// <summary>Implementacja <see cref="IPayUServiceCaller"/>.</summary>
 public class PayUServiceCaller : IPayUServiceCaller
 {
-    // Order creation has to see PayU's 302 response instead of following it, so it cannot go through the
-    // redirect-following "PayU" client. A single shared handler keeps the connections pooled: creating a
-    // handler per order opens a new connection every time and exhausts sockets under load. Cookies are
-    // switched off so that nothing received for one order is ever sent along with another.
-    private static readonly SocketsHttpHandler NoRedirectHandler = new()
-    {
-        AllowAutoRedirect = false,
-        UseCookies = false,
-        PooledConnectionLifetime = TimeSpan.FromMinutes(2),
-    };
+    /// <summary>
+    /// The name of the HTTP client that creates orders. PayU answers an order with a 302 whose body holds the
+    /// order id, so this client must not follow redirects; <see cref="PayUProviderExtensions.RegisterPayUProvider(IServiceCollection)"/>
+    /// registers it that way, with cookies switched off so that nothing received for one order is ever sent
+    /// along with another. The other calls use the client named <c>PayU</c>.
+    /// </summary>
+    public const string OrdersClientName = "PayU.Orders";
 
     private readonly PayUServiceOptions options;
     private readonly IHttpClientFactory httpClientFactory;
@@ -164,7 +161,7 @@ public class PayUServiceCaller : IPayUServiceCaller
     /// <inheritdoc/>
     public async Task<(string? orderId, string? redirectUri, string? error)> CreateOrderAsync(string token, PaymentRequest request, CancellationToken cancellationToken = default)
     {
-        using var client = new HttpClient(NoRedirectHandler, disposeHandler: false);
+        using var client = httpClientFactory.CreateClient(OrdersClientName);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var amount = ((long)(request.Amount * 100)).ToString();
@@ -181,7 +178,17 @@ public class PayUServiceCaller : IPayUServiceCaller
         };
 
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync($"{options.ServiceUrl}/api/v2_1/orders", content, cancellationToken);
+        var ordersUrl = new Uri($"{options.ServiceUrl}/api/v2_1/orders");
+        var response = await client.PostAsync(ordersUrl, content, cancellationToken);
+
+        // A client that followed PayU's redirect has thrown the order id away and fetched the payment page instead.
+        if (response.RequestMessage?.RequestUri is { } answeredBy && answeredBy != ordersUrl)
+        {
+            throw new InvalidOperationException(
+                $"The '{OrdersClientName}' HTTP client followed a redirect to '{answeredBy.GetLeftPart(UriPartial.Path)}'. "
+                + "Register the provider with RegisterPayUProvider(), or configure that client with AllowAutoRedirect = false.");
+        }
+
         // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
         await PaymentGatewayException.ThrowIfUnavailableAsync("PayU", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -399,9 +406,33 @@ public static class PayUProviderExtensions
             .ValidateOnStart();
         services.ConfigureOptions<PayUConfigureOptions>();
         services.AddHttpClient("PayU");
+        services.AddHttpClient(PayUServiceCaller.OrdersClientName)
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false });
         services.AddTransient<IPayUServiceCaller, PayUServiceCaller>();
         services.AddTransient<PayUProvider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<PayUProvider>());
+    }
+
+    /// <summary>
+    /// Registers the PayU provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterPayUProvider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterPayUProvider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterPayUProvider();
+
+        // A host that also calls RegisterPaymentProvider<PayUProvider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(PayUProvider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<PayUProvider>();
     }
 }
 

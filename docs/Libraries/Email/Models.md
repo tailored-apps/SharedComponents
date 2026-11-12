@@ -66,7 +66,7 @@ foreach (var msg in messages)
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.Email.Models — Instrukcja dla agenta AI
 
 Używasz modelu `MailMessage` z biblioteki TailoredApps.Shared.Email.Models.
@@ -88,4 +88,4 @@ msg.Date        // DateTimeOffset — data wysłania
 - Model jest używany jako zwracana wartość przez IEmailProvider.GetMail()
 - Załączniki przechowywane jako Base64 — dekoduj przez Convert.FromBase64String() gdy potrzebujesz byte[]
 - Właściwość Recipent (nie Recipient) — literówka w API, nie zmieniaj
-```
+````

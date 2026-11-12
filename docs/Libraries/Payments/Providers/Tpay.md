@@ -48,29 +48,32 @@ builder.Services
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `ClientId` | Identyfikator klienta OAuth2 |
-| `ClientSecret` | Sekret klienta OAuth2 |
-| `MerchantId` | Identyfikator sprzedawcy |
-| `ServiceUrl` | URL API Tpay (sandbox: `https://openapi.sandbox.tpay.com`) |
-| `ReturnUrl` | URL powrotu po płatności |
-| `NotifyUrl` | URL do powiadomień (webhook) |
-| `SecurityCode` | Kod bezpieczeństwa (kod weryfikujący powiadomienia z panelu Tpay) — sekret pola `md5sum` |
-| `JwsCertificateBaseUrl` | Adres, z którego Tpay udostępnia certyfikaty podpisu powiadomień. Domyślnie `https://secure.tpay.com`; sandbox: `https://secure.sandbox.tpay.com` |
-| `JwsRootCertificatePem` | Opcjonalnie: treść `tpay-jws-root.pem` (PEM). Gdy ustawiona, zaufanie jest przypięte do niej i plik nie jest pobierany |
+| Opcja | Wymagana | Opis |
+|-------|------|------|
+| `ClientId` | tak | Identyfikator klienta OAuth2 |
+| `ClientSecret` | tak | Sekret klienta OAuth2 |
+| `MerchantId` | nie | Identyfikator sprzedawcy — wczytywany z konfiguracji, ale nieużywany przez providera |
+| `ServiceUrl` | nie | URL API Tpay, domyślnie `https://api.tpay.com` (sandbox: `https://openapi.sandbox.tpay.com`) |
+| `ReturnUrl` | nie | URL powrotu po płatności (używany zarówno przy sukcesie, jak i przy błędzie) |
+| `NotifyUrl` | nie | URL do powiadomień (webhook) |
+| `SecurityCode` | tak | Kod bezpieczeństwa (kod weryfikujący powiadomienia z panelu Tpay) — sekret pola `md5sum` |
+| `JwsCertificateBaseUrl` | nie | Adres, z którego Tpay udostępnia certyfikaty podpisu powiadomień. Domyślnie `https://secure.tpay.com`; sandbox: `https://secure.sandbox.tpay.com`. Musi być bezwzględnym adresem https |
+| `JwsRootCertificatePem` | nie | Opcjonalnie: treść `tpay-jws-root.pem` (PEM). Gdy ustawiona, zaufanie jest przypięte do niej i plik nie jest pobierany |
+
+Opcje wymagane są sprawdzane przy starcie hosta (`OptionsValidationException`), razem z formatem
+`JwsCertificateBaseUrl` i `JwsRootCertificatePem`; pozostałe nie są walidowane.
 
 ---
 
 ## Obsługiwane kanały
 
-Tpay obsługuje PLN przez: szybkie przelewy bankowe, BLIK, karty, Google Pay, Apple Pay. Lista kanałów pobierana z API.
+Provider zwraca stałą listę dla każdej waluty: `blik` (BLIK), `card` (karta płatnicza), `bank` (przelew online).
 
 ---
 
 ## Autoryzacja
 
-Provider automatycznie pobiera token OAuth2 przez endpoint `/oauth/auth` i odświeża go po wygaśnięciu.
+Provider pobiera token OAuth2 przez endpoint `/oauth/auth` przy każdym wywołaniu `RegisterPayment` i `GetStatus`. Token nie jest cache'owany.
 
 ---
 
@@ -147,9 +150,9 @@ Provider key: "Tpay"
 
 Sekcja konfiguracji: "Payments:Providers:Tpay"
 
-Wymagane pola: ClientId, ClientSecret, MerchantId, ReturnUrl, NotifyUrl, SecurityCode
+Wymagane pola: ClientId, ClientSecret, SecurityCode
 
-Autoryzacja: OAuth2 — automatyczna, token cache'owany
+Autoryzacja: OAuth2 — automatyczna, token pobierany przy każdym wywołaniu (bez cache)
 
 Sandbox: ServiceUrl = "https://openapi.sandbox.tpay.com"
 

@@ -18,7 +18,7 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
 
 | # | Waga | Obszar | Znalezisko | Status |
 |---|------|--------|------------|--------|
-| 1 | Krytyczne | Payments (testy) | Produkcyjny sekret sklepu CashBill wraz z pasującymi podpisami był zakomitowany w pliku testowym (nieużywane dane). | **Usunięty** ze źródeł. Rotacja i wyczyszczenie historii wymagają właściciela — zobacz [Zadania dla właściciela](#zadania-dla-wlasciciela-repozytorium). |
+| 1 | Krytyczne | Payments (testy) | Produkcyjny sekret sklepu CashBill wraz z pasującymi podpisami był zakomitowany w pliku testowym (nieużywane dane). | **Usunięty** ze źródeł. Rotacja i wyczyszczenie historii wymagają właściciela — zobacz [Zadania dla właściciela](#zadania-dla-wasciciela-repozytorium). |
 | 2 | Wysokie | ExceptionHandling | Domyślny provider zwracał komunikat najgłębszego wyjątku (błędy SQL, hosty, ścieżki) anonimowym klientom jako HTTP 400 w każdym środowisku. | **Naprawione**: 500 + ogólny komunikat; szczegóły tylko w Development lub po jawnym włączeniu. |
 | 3 | Wysokie | Payments (wszyscy providerzy) | Weryfikacja podpisu przy braku sekretu degradowała się do hasha bez klucza — każdy mógł sfałszować „poprawne” powiadomienie. | **Naprawione**: fail-closed w 9 providerach (w tym Stripe). |
 | 4 | Wysokie | Payments (CashBill) | Komunikat błędu webhooka zwracał oczekiwany podpis (wyrocznia do fałszowania); starsza ścieżka `TransactionStatusChange` nie weryfikowała podpisu. | **Naprawione**. |
@@ -127,10 +127,10 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
 
 - Tpay i Adyen: weryfikacja powiadomień odpowiada już protokołom dostawców, ale nie była sprawdzona
   prawdziwym powiadomieniem z sandboxa — wykonaj płatność testową przed wdrożeniem.
-  Adyen: `/sessions` zwraca `sessionData`, nie URL przekierowania.
+  Adyen: sesja Hosted Checkout i odczyt jej wyniku są zgodne ze specyfikacją API, ale też bez testu w środowisku Adyen.
 - Awaria bramki nie jest już raportowana jako `PaymentStatusEnum.Rejected`: providerzy HTTP rzucają
-  `PaymentGatewayException` (2.0). CashBill (`WebException`) i Stripe (`StripeException`) nadal
-  zgłaszają awarie własnymi typami wyjątków.
+  `PaymentGatewayException` (2.0). Stripe nadal zgłasza awarie własnym typem wyjątku
+  (`StripeException`).
 - `CachingBehavior` nie zwraca już `default` przy braku wpisu dla odpowiedzi typu wartościowego
   (poprawione w 1.5.1: wartość domyślna jest traktowana jak brak wpisu i handler się wykonuje).
   W 2.0 problem znika: `CachingBehavior` korzysta z `HybridCache`, który odróżnia brak wpisu od

@@ -46,9 +46,16 @@ using TailoredApps.Shared.Payments.Provider.PayU;
 
 builder.Services
     .AddPayments()
-    .RegisterPaymentProvider<StripeProvider>()
-    .RegisterPaymentProvider<PayUProvider>();
+    .RegisterStripeProvider()
+    .RegisterPayUProvider();
 ```
+
+Każdy pakiet providera ma metodę `Register<Nazwa>Provider()` na builderze zwracanym przez `AddPayments()`: rejestruje ona zależności providera
+(opcje z konfiguracji, klienta HTTP, obsługę webhooka) i dodaje go do `IPaymentService`. Wywołania można łączyć w łańcuch.
+
+`RegisterPaymentProvider<T>()` służy do podpięcia **własnej** implementacji `IPaymentProvider`. Dla providerów z pakietów samo to wywołanie
+nie wystarcza — nie rejestruje ich zależności. Dotychczasowa forma dwuetapowa
+(`builder.Services.RegisterStripeProvider();` oraz `AddPayments().RegisterPaymentProvider<StripeProvider>()`) nadal działa.
 
 ---
 
@@ -164,7 +171,7 @@ foreach (var provider in providers)
 |-----|--------|------|
 | `IPaymentService` | Interfejs | Fasada: `GetProviders`, `GetChannels`, `RegisterPayment`, `GetStatus`, `HandleWebhookAsync`. Każda metoda przyjmuje opcjonalny `CancellationToken` |
 | `IPaymentProvider` | Interfejs | Kontrakt providera: `Key`, `Name`, `GetPaymentChannels`, `RequestPayment`, `GetStatus`, `TransactionStatusChange`. Każda metoda asynchroniczna przyjmuje opcjonalny `CancellationToken` |
-| `IWebhookPaymentProvider` | Interfejs | Rozszerzenie: `HandleWebhookAsync(PaymentWebhookRequest)` |
+| `IWebhookPaymentProvider` | Interfejs | Rozszerzenie: `HandleWebhookAsync(PaymentWebhookRequest, CancellationToken)` |
 | `IPaymentOptionsBuilder` | Interfejs | Fluent builder: `RegisterPaymentProvider<T>()` |
 
 ### Models
@@ -205,7 +212,8 @@ Rejestruj tylko tych providerów, których faktycznie używasz i masz skonfiguro
 | Metoda | Opis |
 |--------|------|
 | `services.AddPayments()` | Rejestruje `IPaymentService`/`PaymentService` |
-| `builder.RegisterPaymentProvider<T>()` | Dodaje implementację `IPaymentProvider` |
+| `builder.Register<Nazwa>Provider()` | Rejestruje providera z pakietu (zależności + dodanie do `IPaymentService`), np. `RegisterTpayProvider()`; zwraca builder |
+| `builder.RegisterPaymentProvider<T>()` | Dodaje własną implementację `IPaymentProvider` |
 
 ---
 
@@ -238,8 +246,8 @@ catch (HttpRequestException exception)   // obejmuje PaymentGatewayException
 ```
 
 `PaymentGatewayException` niesie `Provider`, `StatusCode`, `IsTransient` oraz początek odpowiedzi bramki w `ResponseBody`
-(treść nie trafia do `Message`, bo może zawierać dane żądania). Dotyczy providerów Adyen, HotPay, PayNow, PayU, Przelewy24, Revolut i Tpay.
-CashBill zgłasza awarie jako `WebException`, a Stripe jako `StripeException` — bez zmian.
+(treść nie trafia do `Message`, bo może zawierać dane żądania). Dotyczy providerów Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut i Tpay.
+Stripe zgłasza awarie jako `StripeException`. CashBill do wersji 2.0.1 zgłaszał `WebException`; od kolejnej wersji także `PaymentGatewayException`.
 
 Przelewy24: gdy w trakcie webhooka nie da się zweryfikować transakcji, wynikiem jest `PaymentWebhookRejected` (`ProcessingFailed`),
 a nie przetworzona płatność odrzucona — odpowiedz kodem spoza 2xx, a Przelewy24 ponowi powiadomienie.
@@ -262,7 +270,7 @@ płatności — `Rejected` albo `JsonException`.
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.Payments — Instrukcja dla agenta AI
 
 Używasz TailoredApps.Shared.Payments do integracji z bramkami płatności.
@@ -270,8 +278,8 @@ Używasz TailoredApps.Shared.Payments do integracji z bramkami płatności.
 ### Rejestracja
 ```csharp
 builder.Services.AddPayments()
-    .RegisterPaymentProvider<StripeProvider>()
-    .RegisterPaymentProvider<PayUProvider>();
+    .RegisterStripeProvider()
+    .RegisterPayUProvider();
 ```
 
 ### Inicjowanie płatności
@@ -321,6 +329,7 @@ var response = result switch
 
 ### Zasady
 - Każdy provider ma unikalny Key (np. "Stripe", "PayU", "CashBill")
+- Providera z pakietu rejestruj jednym wywołaniem na builderze: AddPayments().Register<Nazwa>Provider(); RegisterPaymentProvider<T>() jest dla własnych implementacji
 - PaymentRequest: zawsze ustaw PaymentProvider, Amount (większe od zera) i Currency — są required; brak którejś to błąd kompilacji CS9035
 - Łap HttpRequestException (obejmuje PaymentGatewayException) wokół RegisterPayment i GetStatus: awaria bramki oznacza stan nieznany — nie anuluj zamówienia, sprawdź ponownie później
 - Status Rejected traktuj jako odmowę tylko wtedy, gdy wywołanie zakończyło się bez wyjątku
@@ -336,4 +345,4 @@ var response = result switch
 - Rejestruj tylko skonfigurowanych providerów: brak danych dostępowych lub sekretu webhooka zatrzymuje start aplikacji (OptionsValidationException)
 - Przekazuj CancellationToken (w kontrolerze HttpContext.RequestAborted) do każdego wywołania IPaymentService — token dociera do wywołań HTTP bramki
 - Własny provider: każda metoda asynchroniczna przyjmuje CancellationToken cancellationToken = default i przekazuje go dalej do HttpClient
-```
+````

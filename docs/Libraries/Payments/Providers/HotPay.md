@@ -44,31 +44,58 @@ builder.Services
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `SecretHash` | Sekret do podpisywania żądań (SEKRET) |
-| `ServiceUrl` | URL API HotPay |
-| `ReturnUrl` | URL powrotu po płatności |
-| `NotifyUrl` | URL do powiadomień o zmianie statusu |
+| Opcja | Wymagana | Opis |
+|-------|------|------|
+| `SecretHash` | tak | Sekret HotPay (`SEKRET`): podpisuje żądanie płatności i weryfikuje powiadomienia |
+| `ServiceUrl` | nie | URL API HotPay (domyślnie `https://platnosci.hotpay.pl`) |
+| `ReturnUrl` | nie | URL powrotu po płatności (`ADRES_WWW`) |
+| `NotifyUrl` | nie | Wczytywany z konfiguracji, ale provider nie wysyła go do HotPay |
+
+Opcje wymagane są sprawdzane przy starcie hosta (`OptionsValidationException`); pozostałe nie są walidowane.
 
 ---
 
 ## Obsługiwane kanały
 
-HotPay obsługuje płatności online (PLN). Kanał domyślny: `hotpay`.
+Provider zwraca stałą listę dla każdej waluty: `blik` (BLIK), `card` (karta płatnicza), `transfer` (przelew online).
 
 ---
 
 ## Webhook
 
-HotPay wysyła powiadomienie POST na `NotifyUrl`. Podpis weryfikowany przez SHA-256 z `SecretHash`.
+Provider czyta cztery parametry powiadomienia z query stringa (`PaymentWebhookRequest.Query`): `HASH`, `KWOTA`,
+`ID_PLATNOSCI` i `STATUS`. Nie czyta body ani nagłówków. `HASH` musi być równy SHA-256 (hex) z
+`SecretHash;KWOTA;ID_PLATNOSCI;STATUS`.
+
+```csharp
+[HttpPost("webhooks/hotpay")]
+public async Task<IActionResult> HotPayWebhook(CancellationToken cancellationToken)
+{
+    var result = await _payments.HandleWebhookAsync("HotPay", new PaymentWebhookRequest
+    {
+        Query = Request.Query.ToDictionary(q => q.Key, q => q.Value),
+    }, cancellationToken);
+
+    return result is PaymentWebhookRejected ? BadRequest() : Ok();
+}
+```
+
+Jeśli wartości docierają do endpointu jako pola formularza, a nie parametry query stringa, przepisz je do `Query`.
+
+| `STATUS` | Wynik |
+|----------|-------|
+| `SUCCESS` | `PaymentWebhookProcessed`, status `Finished` |
+| inna wartość | `PaymentWebhookProcessed`, status `Rejected` |
+
+`PaymentUniqueId` w wyniku to `ID_PLATNOSCI`.
 
 ---
 
 ## 🔒 Bezpieczeństwo
 
-- Pusty `SecretHash` lub pusty `HASH` → odrzucenie (fail-closed); porównanie w stałym czasie.
+- Pusty `SecretHash` albo pusty lub niezgodny `HASH` → `PaymentWebhookRejected` (`InvalidSignature`), fail-closed; porównanie w stałym czasie.
 - Podpisywana nazwa usługi (`NAZWA_USLUGI`) jest dokładnie tą, która trafia do żądania inicjującego płatność.
+- `GetStatus` nie odpytuje HotPay i zawsze zwraca `Processing` — wynik płatności pochodzi wyłącznie z webhooka.
 
 ---
 
@@ -81,8 +108,10 @@ Provider key: "HotPay"
 
 Sekcja konfiguracji: "Payments:Providers:HotPay"
 
-Wymagane pola: SecretHash, ReturnUrl, NotifyUrl
+Wymagane pola: SecretHash
 
 Rejestracja: builder.Services.AddPayments().RegisterHotPayProvider();
+- Powiadomienie jest czytane z query stringa (HASH, KWOTA, ID_PLATNOSCI, STATUS): wypełnij PaymentWebhookRequest.Query
+- GetStatus zawsze zwraca Processing bez odpytywania HotPay — polegaj na webhooku
 - SecretHash trzymaj poza repozytorium; bez niego każde powiadomienie jest odrzucane
 ```

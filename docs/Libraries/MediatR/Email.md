@@ -40,12 +40,18 @@ builder.Services.Configure<TokenReplacingMailMessageBuilderOptions>(o =>
     o.FileExtension = "html";
 });
 
-// 3. Zarejestruj handler
-builder.Services.AddTransient<ISendMailCommandHandler, SendMailCommandHandler>();
-
-// 4. MediatR (jeśli jeszcze nie zarejestrowany)
+// 3. MediatR: przeskanuj także assembly biblioteki — tam znajduje się SendMailCommandHandler
 builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly);
+});
+```
+
+Pakiet nie ma własnej metody rejestrującej. MediatR rozwiązuje handler jako `IRequestHandler<SendMail, SendMailResponse>`, więc rejestracja `SendMailCommandHandler` wyłącznie pod `ISendMailCommandHandler` nie wystarczy, żeby `_mediator.Send(new SendMail { ... })` go znalazł. Przeskanuj assembly biblioteki jak wyżej albo samodzielnie zarejestruj handler pod interfejsem MediatR:
+
+```csharp
+builder.Services.AddTransient<IRequestHandler<SendMail, SendMailResponse>, SendMailCommandHandler>();
 ```
 
 ---
@@ -53,6 +59,8 @@ builder.Services.AddMediatR(cfg =>
 ## Przykład użycia
 
 ```csharp
+using TailoredApps.Shared.MediatR.Email.Messages.Commands;
+
 public class UserRegistrationService
 {
     private readonly IMediator _mediator;
@@ -118,7 +126,7 @@ public class UserRegistrationService
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.MediatR.Email — Instrukcja dla agenta AI
 
 Używasz TailoredApps.Shared.MediatR.Email do wysyłania emaili przez MediatR pipeline.
@@ -127,7 +135,11 @@ Używasz TailoredApps.Shared.MediatR.Email do wysyłania emaili przez MediatR pi
 ```csharp
 builder.Services.RegisterSmtpProvider(); // lub RegisterConsoleProvider()
 builder.Services.AddTransient<IMailMessageBuilder, TokenReplacingMailMessageBuilder>();
-builder.Services.AddTransient<ISendMailCommandHandler, SendMailCommandHandler>();
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly); // handler SendMail
+});
 ```
 
 ### Wysyłanie emaila
@@ -144,8 +156,10 @@ var result = await _mediator.Send(new SendMail
 ```
 
 ### Zasady
+- MediatR musi znaleźć handler jako IRequestHandler<SendMail, SendMailResponse>: przeskanuj assembly biblioteki; sama rejestracja jako ISendMailCommandHandler nie wystarczy
+- Template i Recipent są wymagane — handler rzuca ArgumentException, gdy któreś jest null
 - Template to klucz szablonu przekazywany do IMailMessageBuilder.Build()
 - TemplateVariables zastępują {{token}} w szablonie
 - Podaj Templates (Dictionary<string,string>) gdy szablony są inline, nie z pliku
 - SendMail rzuci jeśli template nie zostanie znaleziony w IMailMessageBuilder
-```
+````

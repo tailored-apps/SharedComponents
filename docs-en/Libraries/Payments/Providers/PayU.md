@@ -3,11 +3,11 @@
 [![NuGet](https://img.shields.io/nuget/v/TailoredApps.Shared.Payments.Provider.PayU)](https://www.nuget.org/packages/TailoredApps.Shared.Payments.Provider.PayU/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tailored-apps/SharedComponents/blob/master/LICENSE)
 
-Integracja z **PayU REST API v2.1** — wiodącym polskim operatorem płatności obsługującym BLIK, szybkie przelewy, karty i inne metody.
+Integration with the **PayU REST API v2.1** — a leading Polish payment operator that handles BLIK, fast transfers, cards and other methods.
 
 ---
 
-## Instalacja
+## Installation
 
 ```bash
 dotnet add package TailoredApps.Shared.Payments.Provider.PayU
@@ -15,7 +15,7 @@ dotnet add package TailoredApps.Shared.Payments.Provider.PayU
 
 ---
 
-## Rejestracja w DI
+## DI registration
 
 ```csharp
 using TailoredApps.Shared.Payments.Provider.PayU;
@@ -27,7 +27,7 @@ builder.Services
 
 ---
 
-## Konfiguracja `appsettings.json`
+## Configuration `appsettings.json`
 
 ```json
 {
@@ -47,52 +47,76 @@ builder.Services
 }
 ```
 
-| Opcja | Opis |
-|-------|------|
-| `ClientId` | Identyfikator klienta OAuth |
-| `ClientSecret` | Sekret klienta OAuth |
-| `PosId` | Identyfikator punktu sprzedaży (merchantPosId) |
-| `SignatureKey` | Klucz do podpisu powiadomień (second key) |
-| `ServiceUrl` | URL API PayU (sandbox: `https://secure.snd.payu.com`) |
-| `NotifyUrl` | URL do powiadomień o transakcjach (webhook) |
-| `ContinueUrl` | URL powrotu po płatności |
+| Option | Required | Description |
+|-------|------|------|
+| `ClientId` | yes | OAuth client identifier |
+| `ClientSecret` | yes | OAuth client secret |
+| `PosId` | yes | Point of sale identifier (merchantPosId) |
+| `SignatureKey` | yes | Key for verifying notification signatures (second key) |
+| `ServiceUrl` | no | PayU API URL. The default is the sandbox, `https://secure.snd.payu.com` - set the production address for real payments |
+| `NotifyUrl` | no | URL for transaction notifications (webhook) |
+| `ContinueUrl` | no | Return URL after payment |
+
+Required options are checked when the host starts (`OptionsValidationException`); the others are not validated.
 
 ---
 
-## Obsługiwane kanały
+## Supported channels
 
-PayU oferuje szeroką gamę kanałów dla PLN i EUR: BLIK, przelewy bankowe, karty, PayPal, Google Pay, Apple Pay. Lista pobierana dynamicznie z API PayU.
+The list is fixed in the provider:
+
+| Currency | Channels |
+|--------|--------|
+| PLN | `blik` (BLIK), `c` (payment card), `o` (online transfer), `ai` (instalments), `ap` (Apple Pay), `jp` (Google Pay) |
+| Other | `c` |
 
 ---
 
-## Autoryzacja
+## Authorization
 
-Provider automatycznie pobiera token OAuth2 (`client_credentials`) przed każdym żądaniem i cache'uje go do wygaśnięcia.
+The provider obtains an OAuth2 token (`client_credentials`) for every `RegisterPayment` and `GetStatus` call. The token is not cached.
 
 ---
 
 ## Webhook
 
-PayU wysyła powiadomienia POST z nagłówkiem `OpenPayU-Signature`. Podpis weryfikowany przez MD5 z `SignatureKey`.
+PayU sends POST notifications with the `OpenPayU-Signature` header (`signature=...;algorithm=...`). The provider hashes the raw body
+followed by `SignatureKey` with the algorithm the header names - `MD5`, `SHA-1` or `SHA-256` (`MD5` when it names none) - and
+compares the result with `signature`.
 
 ```csharp
 [HttpPost("webhooks/payu")]
-public async Task<IActionResult> PayUWebhook([FromBody] JsonElement body)
+public async Task<IActionResult> PayUWebhook(CancellationToken cancellationToken)
 {
+    // The signature covers the exact bytes of the body - read it raw, not through [FromBody].
+    using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+    var body = await reader.ReadToEndAsync(cancellationToken);
+
     var result = await _payments.HandleWebhookAsync("PayU", new PaymentWebhookRequest
     {
-        Body = body.GetRawText(),
-        Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString())
-    });
-    return Ok(); // PayU oczekuje 200 OK nawet przy błędzie weryfikacji
+        Body = body,
+        ContentType = Request.ContentType,
+        Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value),
+    }, cancellationToken);
+
+    return result is PaymentWebhookRejected ? BadRequest() : Ok();
 }
 ```
+
+| `order.status` | Result |
+|----------------|--------|
+| `COMPLETED` | `PaymentWebhookProcessed`, status `Finished` |
+| `CANCELED`, `REJECTED` | `PaymentWebhookProcessed`, status `Rejected` |
+| anything else / absent | `PaymentWebhookIgnored` (status `Processing`) |
 
 ---
 
 ## 🔒 Security
 
-- Empty `SignatureKey` or no `signature=` in the `OpenPayU-Signature` header → rejected (fail-closed); constant-time comparison.
+- Orders are created through the named HTTP client `PayU.Orders` (`PayUServiceCaller.OrdersClientName`), the other calls through `PayU`. `RegisterPayUProvider()` configures `PayU.Orders` not to follow redirects and without cookies: PayU answers an order with a 302 and the order id is in the body of that answer. If you configure the client yourself, keep `AllowAutoRedirect = false` - otherwise the provider throws `InvalidOperationException` rather than lose the id.
+- The default `ServiceUrl` is the PayU sandbox (`https://secure.snd.payu.com`) - set the production address explicitly.
+- Every order is sent with `customerIp` = `127.0.0.1`; the payer's address is not forwarded to PayU.
+- Empty `SignatureKey` or no `signature=` in the `OpenPayU-Signature` header → `PaymentWebhookRejected` (`InvalidSignature`), fail-closed; constant-time comparison.
 - Supported algorithms: `MD5`, `SHA-1`, `SHA-256` (matching the POS setting in the PayU panel); other `algorithm=` values are rejected. SHA-256 is recommended.
 - The webhook result carries `PaymentUniqueId` (`order.orderId`).
 
@@ -101,20 +125,21 @@ public async Task<IActionResult> PayUWebhook([FromBody] JsonElement body)
 ## 🤖 AI Agent Prompt
 
 ```markdown
-## PayU Provider — Instrukcja dla agenta AI
+## PayU Provider - instructions for an AI agent
 
 Provider key: "PayU"
 
-Sekcja konfiguracji: "Payments:Providers:PayU"
+Configuration section: "Payments:Providers:PayU"
 
-Wymagane pola: ClientId, ClientSecret, PosId, SignatureKey, NotifyUrl, ContinueUrl
+Required fields: ClientId, ClientSecret, PosId, SignatureKey
 
-Autoryzacja: OAuth2 client_credentials — automatyczna, nie wymaga interwencji
+Authorization: OAuth2 client_credentials — automatic, a token is requested for every call (not cached)
 
-Kwota w API: grosze (int) — biblioteka konwertuje automatycznie z decimal
+Amount in the API: grosze (int) — the library converts automatically from decimal
 
-Sandbox: ServiceUrl = "https://secure.snd.payu.com"
+Sandbox: ServiceUrl = "https://secure.snd.payu.com" (this is the default - set the production address explicitly)
 
-Rejestracja: builder.Services.AddPayments().RegisterPayUProvider();
+Registration: builder.Services.AddPayments().RegisterPayUProvider();
 - Configure SHA-256 for notification signatures in the PayU panel
+- Webhook: pass the raw body (not [FromBody]) and every request header; answer a PaymentWebhookRejected result with a non-2xx status
 ```

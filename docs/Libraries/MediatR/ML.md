@@ -25,33 +25,52 @@ dotnet add package TailoredApps.Shared.MediatR.ML
 
 ```csharp
 // Program.cs
+using Microsoft.Extensions.ML;
 using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
+using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
 
-builder.Services.AddPredictionEngine(config =>
+// MediatR: handlery obu komend są w assembly biblioteki, więc trzeba je także przeskanować
+builder.Services.AddMediatR(cfg =>
 {
-    config.AddImageClassificationModel(modelBuilder =>
-    {
-        modelBuilder.AddFromFile("Models/image-classifier.zip");
-    });
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).Assembly);
 });
 
-// MediatR
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+// Serwisy biblioteki + PredictionEnginePool z ML.NET z modelem
+builder.Services.AddPredictionEngine(config =>
+{
+    config.RegisterMachineLearningModel<InMemoryImageData, ImagePredictionScore>(pool =>
+    {
+        pool.FromFile(builder.Configuration[ImageClassificationOptions.ModelFilePathConfig]!);
+    });
+});
 ```
+
+`AddPredictionEngine` rejestruje `IImageClassificationService`, `IModelInfoService` i `IModelHelper` (scoped) oraz wiąże `ImageClassificationOptions`. Nie rejestruje handlerów MediatR — do tego służy skanowanie assembly biblioteki. `RegisterMachineLearningModel` dodaje `PredictionEnginePool` z ML.NET; o tym, skąd ładowany jest model, decyduje builder poola (powyżej `FromFile`). Model rejestruj bez nazwy: predykcje korzystają z domyślnego modelu poola.
+
+Typy znajdują się w przestrzeni nazw `TailoredApps.Shared.MediatR.ImageClassification`, a nie pod nazwą pakietu.
 
 ### Konfiguracja `appsettings.json`
 
 ```json
 {
-  "ML": {
-    "ImageClassification": {
-      "ModelPath": "Models/image-classifier.zip",
-      "LabelsPath": "Models/labels.txt"
-    }
+  "ImageClassification": {
+    "ModelFilePath": "/var/app/models/current.zip",
+    "TrainingRoot": "/var/app/training-sets",
+    "ModelsRoot": "/var/app/models",
+    "MaxImageBytes": 10485760
   }
 }
 ```
+
+| Klucz | Znaczenie | Domyślnie |
+|-------|-----------|-----------|
+| `ModelFilePath` | Plik modelu opisywany przez `IImageClassificationService.GetModelInfo()` (nazwa, checksum, wersja, etykiety); powyższa rejestracja ładuje z niego także model | brak |
+| `TrainingRoot` | Katalog, wewnątrz którego muszą leżeć zestawy treningowe; wymagany do treningu | brak |
+| `ModelsRoot` | Katalog, wewnątrz którego zapisywane są wytrenowane modele; wymagany do treningu | brak |
+| `MaxImageBytes` | Największy obraz przyjmowany przez `ClassifyImage`, w bajtach; `0` wyłącza limit | `10485760` (10 MB) |
+
+Sekcja jest wymagana: bez niej opcje zgłaszają `InvalidOperationException` przy pierwszym użyciu.
 
 ---
 
@@ -78,12 +97,14 @@ public class ImageAnalysisController : ControllerBase
             FileName = imageFile.FileName
         });
 
+        var prediction = result.ImagePrediction!;   // handler zawsze ją ustawia
+
         return Ok(new
         {
-            result.FileName,
-            result.PredictedLabel,
-            result.PredictedScore,
-            Confidence = $"{result.PredictedScore:P2}"
+            prediction.FileName,
+            prediction.PredictedLabel,
+            prediction.PredictedScore,
+            Confidence = $"{prediction.PredictedScore:P2}"
         });
     }
 }
@@ -94,13 +115,16 @@ public class ImageAnalysisController : ControllerBase
 ```csharp
 var trainingResult = await _mediator.Send(new TrainImageClassificationModel
 {
-    TrainingSetFolder = "/data/training-images",   // katalog z podfolderami per klasa
-    ModelDestinationPath = "Models/new-model.zip"
+    Source = "pets",                    // katalog wewnątrz ImageClassification:TrainingRoot, jeden podfolder per klasa
+    ModelDestFolderPath = "pets.zip"    // plik modelu wewnątrz ImageClassification:ModelsRoot
 });
 
-Console.WriteLine($"Trained! Labels: {string.Join(", ", trainingResult.Labels)}");
-Console.WriteLine(trainingResult.EvaluationInfo);
+Console.WriteLine($"Model {trainingResult.ModelPath}, wersja {trainingResult.ModelVersion}");
+Console.WriteLine($"Etykiety: {string.Join(", ", trainingResult.Labels)}");
+Console.WriteLine(trainingResult.ModelInfo);   // metryki ewaluacji jako tekst
 ```
+
+Trening czyta pliki z rozszerzeniem `.jpg` lub `.png` z katalogu źródłowego i jego podfolderów; nazwa folderu, w którym leży plik, staje się jego etykietą.
 
 ---
 
@@ -109,15 +133,18 @@ Console.WriteLine(trainingResult.EvaluationInfo);
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
 | `ClassifyImage` | Command | Dane obrazu do klasyfikacji: `FileByteArray`, `FileName` |
-| `ClassifyImageResponse` | Klasa | Wynik: `FileName`, `PredictedLabel`, `PredictedScore` |
-| `TrainImageClassificationModel` | Command | Parametry treningu: `TrainingSetFolder`, `ModelDestinationPath` |
-| `TrainImageClassificationModelResponse` | Klasa | Wynik treningu: `Labels[]`, `EvaluationInfo` |
+| `ClassifyImageResponse` | Klasa | Wynik: `ImagePrediction` |
+| `TrainImageClassificationModel` | Command | Parametry treningu: `Source`, `ModelDestFolderPath` |
+| `TrainImageClassificationModelResponse` | Klasa | Wynik treningu: `ModelPath`, `ModelVersion`, `ModelInfo` (metryki ewaluacji jako tekst), `Labels` |
 | `IImageClassificationService` | Interfejs | `Predict(byte[], fileName)`, `Train(images, folder, dest)`, `GetModelInfo()` |
 | `IPredictionEnginePoolAdapter<TData, TPred>` | Interfejs | Abstrakcja nad ML.NET `PredictionEnginePool` |
 | `ModelInfo` | Klasa | Metadane modelu: nazwa, checksum, wersja, etykiety |
-| `ImagePrediction` | Klasa | Wynik predykcji: etykieta, score, nazwa pliku |
+| `ImagePrediction` | Klasa | Wynik predykcji: `PredictedLabel`, `PredictedScore`, `FileName`; `Scores` i `ModelInfo` nie są wypełniane przez `ClassifyImage` |
 | `InMemoryImageData` | Klasa | Dane wejściowe do modelu: obraz jako `byte[]` |
-| `AddPredictionEngineExtension.AddPredictionEngine` | Metoda ext. | Rejestruje cały stack ML w DI |
+| `ImagePredictionScore` | Klasa | Surowy wynik modelu: `Score` (per klasa), `PredictedLabel` |
+| `ImageClassificationOptions` | Klasa | Opcje wiązane z sekcji `ImageClassification`: `ModelFilePath`, `TrainingRoot`, `ModelsRoot`, `MaxImageBytes` |
+| `AddPredictionEngineExtension.AddPredictionEngine` | Metoda ext. | Rejestruje w DI `IImageClassificationService`, `IModelInfoService`, `IModelHelper` i opcje (bez handlerów MediatR) |
+| `PredictionEngineServiceConfiguration.RegisterMachineLearningModel<D, R>` | Metoda | Dodaje `PredictionEnginePool<D, R>` z ML.NET i jego adapter; wywoływana wewnątrz `AddPredictionEngine` |
 
 ---
 
@@ -141,16 +168,35 @@ Console.WriteLine(trainingResult.EvaluationInfo);
 
 ## 🤖 AI Agent Prompt
 
-```markdown
+````markdown
 ## TailoredApps.Shared.MediatR.ML — Instrukcja dla agenta AI
 
 Używasz TailoredApps.Shared.MediatR.ML do klasyfikacji obrazów przez ML.NET i MediatR.
 
 ### Rejestracja
 ```csharp
+// using Microsoft.Extensions.ML;
+// using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
+// using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).Assembly); // handlery biblioteki
+});
 builder.Services.AddPredictionEngine(config =>
-    config.AddImageClassificationModel(b => b.AddFromFile("Models/model.zip")));
+    config.RegisterMachineLearningModel<InMemoryImageData, ImagePredictionScore>(pool =>
+        pool.FromFile(builder.Configuration[ImageClassificationOptions.ModelFilePathConfig]!)));
 ```
+
+### Co jest konfigurowane
+- IImageClassificationService, IModelInfoService, IModelHelper (scoped) oraz ImageClassificationOptions
+- PredictionEnginePool<InMemoryImageData, ImagePredictionScore> z ML.NET z modelem (domyślnym, bez nazwy)
+- Handlery ClassifyImage i TrainImageClassificationModel — wyłącznie przez skan assembly biblioteki w MediatR
+
+### Konfiguracja (sekcja "ImageClassification")
+- ModelFilePath — plik modelu (używany do metadanych modelu i przez powyższą rejestrację)
+- TrainingRoot, ModelsRoot — katalogi, z których czytane są zestawy treningowe / do których zapisywane są modele; wymagane do treningu
+- MaxImageBytes — limit rozmiaru obrazu dla ClassifyImage, domyślnie 10485760 (10 MB), 0 = bez limitu
 
 ### Klasyfikacja obrazu
 ```csharp
@@ -159,20 +205,23 @@ var result = await _mediator.Send(new ClassifyImage
     FileByteArray = imageBytes,
     FileName = "photo.jpg"
 });
-// result.PredictedLabel  — przewidywana klasa
-// result.PredictedScore  — pewność (0-1)
+// result.ImagePrediction.PredictedLabel  — przewidywana klasa
+// result.ImagePrediction.PredictedScore  — pewność (0-1)
 ```
 
 ### Trening modelu
 ```csharp
 var result = await _mediator.Send(new TrainImageClassificationModel
 {
-    TrainingSetFolder = "/data/images",       // podfoldery = nazwy klas
-    ModelDestinationPath = "Models/new.zip"
+    Source = "pets",                   // wewnątrz TrainingRoot; podfoldery = nazwy klas
+    ModelDestFolderPath = "pets.zip"   // plik modelu wewnątrz ModelsRoot
 });
+// result.ModelPath, result.ModelVersion, result.Labels, result.ModelInfo (metryki jako tekst)
 ```
 
 ### Zasady
+- Przestrzeń nazw to TailoredApps.Shared.MediatR.ImageClassification, a nie nazwa pakietu
+- AddMediatR musi przeskanować assembly biblioteki — AddPredictionEngine nie rejestruje handlerów
 - Model musi być plikiem ZIP (ML.NET format)
 - Sekcja konfiguracji `ImageClassification` jest wymagana — jej brak powoduje `InvalidOperationException` przy pierwszym użyciu opcji
 - Wersja i etykiety modelu są zapisywane w archiwum jako osobne wpisy `Version.txt` i `Labels.txt`
@@ -182,4 +231,4 @@ var result = await _mediator.Send(new TrainImageClassificationModel
 - Skonfiguruj ImageClassification:TrainingRoot i ImageClassification:ModelsRoot — trening odrzuca ścieżki poza tymi katalogami
 - ClassifyImage przyjmuje wyłącznie JPEG/PNG do MaxImageBytes (domyślnie 10 MB); większe lub obce pliki dają ArgumentException
 - Komendę treningu wystawiaj tylko dla administratorów — uruchamia długi proces TensorFlow na wskazanych danych
-```
+````

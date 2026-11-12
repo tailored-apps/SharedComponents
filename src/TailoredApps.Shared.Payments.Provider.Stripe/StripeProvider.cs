@@ -273,6 +273,28 @@ public static class StripeProviderExtensions
         services.AddTransient<StripeProvider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<StripeProvider>());
     }
+
+    /// <summary>
+    /// Registers the Stripe provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterStripeProvider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterStripeProvider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterStripeProvider();
+
+        // A host that also calls RegisterPaymentProvider<StripeProvider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(StripeProvider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<StripeProvider>();
+    }
 }
 
 /// <summary>

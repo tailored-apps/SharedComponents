@@ -13,6 +13,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -235,9 +237,10 @@ internal sealed class LoopbackHttpServer : IDisposable
     {
         listener.Start();
 
-        // Not Task.Run: the first accept has to be pending before the constructor returns, so a test
-        // that never connects cannot stop the listener ahead of it.
-        loop = AcceptAsync();
+        // On the thread pool, not on the test's synchronization context: xUnit limits how many
+        // continuations run there, and a server waiting for a slot stops answering its client. A test that
+        // never connects may stop the listener before the first accept; the loop treats that as the end.
+        loop = Task.Run(AcceptAsync);
     }
 
     public sealed record Request(string Method, string Path, string ContentType, string Body);
@@ -405,9 +408,13 @@ public class CashbillHttpClientTests
     {
         using var server = new LoopbackHttpServer { StatusCode = 500, ResponseBody = """{"error":"boom"}""" };
 
-        await Assert.ThrowsAsync<WebException>(
+        var exception = await Assert.ThrowsAsync<PaymentGatewayException>(
             () => CreateSut().MakeFormRequest<Payment>(server.Url("payment/shop1"), method, method == "GET" ? null : Form(("a", "b"))));
 
+        Assert.Equal("CashBill", exception.Provider);
+        Assert.Equal(HttpStatusCode.InternalServerError, exception.StatusCode);
+        Assert.Equal("""{"error":"boom"}""", exception.ResponseBody);
+        Assert.True(exception.IsTransient);
         VerifyErrorLogged(Times.Once());
     }
 
@@ -444,8 +451,11 @@ public class CashbillHttpClientTests
     {
         using var server = new LoopbackHttpServer { StatusCode = 403, ResponseBody = "denied" };
 
-        await Assert.ThrowsAsync<WebException>(() => CreateSut().MakeFormRequest(server.Url("payment/shop1/PAY1"), "PUT", Form(("sign", "bad"))));
+        var exception = await Assert.ThrowsAsync<PaymentGatewayException>(
+            () => CreateSut().MakeFormRequest(server.Url("payment/shop1/PAY1"), "PUT", Form(("sign", "bad"))));
 
+        Assert.Equal(HttpStatusCode.Forbidden, exception.StatusCode);
+        Assert.False(exception.IsTransient);
         VerifyErrorLogged(Times.Once());
     }
 
@@ -461,5 +471,85 @@ public class CashbillHttpClientTests
 
         Assert.Empty(server.Requests);
         VerifyErrorLogged(Times.Never());
+    }
+
+    [Fact]
+    public async Task When_Sent_Should_Keep_The_Content_Type_CashBill_Has_Always_Received()
+    {
+        using var server = new LoopbackHttpServer();
+
+        await CreateSut().MakeFormRequest(server.Url("payment/shop1/PAY1"), "PUT", Form(("a", "b")));
+
+        Assert.Equal("application/x-www-form-urlencoded; charset=UTF8", Assert.Single(server.Requests).ContentType);
+    }
+
+    [Fact]
+    public async Task When_A_Request_Fails_Should_Log_The_Address_Without_The_Signature_In_The_Query()
+    {
+        // arrange
+        using var server = new LoopbackHttpServer { StatusCode = 503 };
+        var logged = new List<string>();
+        logger.Setup(l => l.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()))
+              .Callback(new InvocationAction(invocation => logged.Add(invocation.Arguments[2].ToString())));
+
+        // act
+        await Assert.ThrowsAsync<PaymentGatewayException>(
+            () => CreateSut().MakeFormRequest<PaymentStatus>(server.Url("payment/shop1/PAY1?sign=0123456789abcdef"), "GET", null));
+
+        // assert
+        var message = Assert.Single(logged);
+        Assert.Contains("/payment/shop1/PAY1", message, StringComparison.Ordinal);
+        Assert.Contains("GET", message, StringComparison.Ordinal);
+        Assert.DoesNotContain("0123456789abcdef", message, StringComparison.Ordinal);
+        Assert.DoesNotContain("sign=", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task When_Built_With_A_Factory_Should_Send_Through_The_Named_Client()
+    {
+        // arrange
+        using var server = new LoopbackHttpServer { ResponseBody = """{"id":"PAY1"}""" };
+        var names = new List<string>();
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns((string name) =>
+        {
+            names.Add(name);
+            return new HttpClient();
+        });
+        var sut = new CashbillHttpClient(logger.Object, factory.Object);
+
+        // act
+        var first = await sut.MakeFormRequest<PaymentStatus>(server.Url("payment/shop1/PAY1"), "GET", null);
+        var second = await sut.MakeFormRequest<PaymentStatus>(server.Url("payment/shop1/PAY1"), "GET", null);
+
+        // assert
+        Assert.Equal("PAY1", first.Id);
+        Assert.Equal("PAY1", second.Id);
+        Assert.Equal(new[] { "CashBill", "CashBill" }, names);
+        Assert.Equal(CashbillHttpClient.HttpClientName, names[0]);
+    }
+
+    [Fact]
+    public void When_Factory_Is_Null_Should_Throw_ArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => new CashbillHttpClient(logger.Object, null));
+    }
+
+    [Fact]
+    public void When_Provider_Is_Registered_Should_Resolve_The_Client_With_The_Http_Client_Factory()
+    {
+        // arrange
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        services.RegisterCashbillProvider();
+        using var provider = services.BuildServiceProvider();
+
+        // act
+        var client = provider.GetRequiredService<ICashbillHttpClient>();
+
+        // assert
+        Assert.IsType<CashbillHttpClient>(client);
+        Assert.NotNull(provider.GetRequiredService<IHttpClientFactory>().CreateClient(CashbillHttpClient.HttpClientName));
     }
 }
