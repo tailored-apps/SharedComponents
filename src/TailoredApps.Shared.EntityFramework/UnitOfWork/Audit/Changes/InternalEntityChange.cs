@@ -17,7 +17,7 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes
     internal class InternalEntityChange<TEntity> : EntityChange<TEntity>, IInternalEntityChange
         where TEntity : class
     {
-        public InternalEntityChange(TEntity currentEntity, TEntity originalEntity, Dictionary<string, object> keys, AuditEntityState state) : base(currentEntity, originalEntity, keys, state)
+        public InternalEntityChange(TEntity currentEntity, TEntity originalEntity, Dictionary<string, object?> keys, AuditEntityState state) : base(currentEntity, originalEntity, keys, state)
         {
         }
 

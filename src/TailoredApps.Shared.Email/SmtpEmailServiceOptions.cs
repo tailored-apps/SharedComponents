@@ -15,7 +15,7 @@ namespace TailoredApps.Shared.Email
         /// <summary>
         /// Gets or sets the hostname or IP address of the SMTP server.
         /// </summary>
-        public string Host { get; set; }
+        public string? Host { get; set; }
 
         /// <summary>
         /// Gets or sets the port number used to connect to the SMTP server.
@@ -25,7 +25,7 @@ namespace TailoredApps.Shared.Email
         /// <summary>
         /// Gets or sets the password used to authenticate with the SMTP server.
         /// </summary>
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether SSL/TLS encryption is enabled for the SMTP connection.
@@ -36,12 +36,12 @@ namespace TailoredApps.Shared.Email
         /// <summary>
         /// Gets or sets the username used to authenticate with the SMTP server.
         /// </summary>
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
 
         /// <summary>
         /// Gets or sets the email address used as the sender (From/Sender header) of outgoing messages.
         /// </summary>
-        public string From { get; set; }
+        public string? From { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the application is running in a production environment.
@@ -53,6 +53,6 @@ namespace TailoredApps.Shared.Email
         /// Gets or sets the catch-all email address used as the recipient in non-production environments.
         /// All outgoing messages are redirected to this address when <see cref="IsProd"/> is <c>false</c>.
         /// </summary>
-        public string CatchAll { get; set; }
+        public string? CatchAll { get; set; }
     }
 }

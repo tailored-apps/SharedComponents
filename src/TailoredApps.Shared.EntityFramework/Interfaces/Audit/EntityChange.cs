@@ -21,7 +21,7 @@ namespace TailoredApps.Shared.EntityFramework.Interfaces.Audit
         /// <summary>
         /// Gets the CLR type of the changed entity.
         /// </summary>
-        public Type EntityType { get; protected set; }
+        public Type? EntityType { get; protected set; }
 
         /// <summary>
         /// Gets the audit state of the entity (Added, Modified, or Deleted).
@@ -41,7 +41,7 @@ namespace TailoredApps.Shared.EntityFramework.Interfaces.Audit
         /// <summary>
         /// Gets or sets the dictionary of primary key names and their values for the changed entity.
         /// </summary>
-        public Dictionary<string, object> PrimaryKeys { get; set; }
+        public Dictionary<string, object?>? PrimaryKeys { get; set; }
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ namespace TailoredApps.Shared.EntityFramework.Interfaces.Audit
         /// <param name="originalEntity">The original (pre-change) state of the entity.</param>
         /// <param name="keys">The primary key values of the entity.</param>
         /// <param name="state">The audit state describing the type of change.</param>
-        public EntityChange(TEntity currentEntity, TEntity originalEntity, Dictionary<string, object> keys, AuditEntityState state) : base(state)
+        public EntityChange(TEntity currentEntity, TEntity originalEntity, Dictionary<string, object?> keys, AuditEntityState state) : base(state)
         {
             CurrentEntity = currentEntity ?? throw new ArgumentNullException(nameof(currentEntity));
             OriginalEntity = originalEntity ?? throw new ArgumentNullException(nameof(originalEntity));

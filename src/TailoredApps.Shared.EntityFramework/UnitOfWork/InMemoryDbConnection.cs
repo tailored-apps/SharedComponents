@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TailoredApps.Shared.EntityFramework.UnitOfWork
 {
@@ -51,6 +52,7 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork
         /// Not supported by the InMemory provider.
         /// </summary>
         /// <exception cref="NotSupportedException">Always thrown on get or set.</exception>
+        [AllowNull]
         public override string ConnectionString
         {
             get => throw new NotSupportedException("Not supported by InMemory DbContext");

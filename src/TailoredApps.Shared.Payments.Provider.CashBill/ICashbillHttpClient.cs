@@ -17,7 +17,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         /// <param name="method">HTTP method (e.g. "GET", "POST", "PUT").</param>
         /// <param name="requestFormData">Form-encoded content to send with the request; may be <c>null</c> for GET requests.</param>
         /// <returns>Deserialized response of type <typeparamref name="T"/>.</returns>
-        Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent requestFormData);
+        Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData);
 
         /// <summary>
         /// Sends an HTTP request with form-encoded body without deserializing the response.

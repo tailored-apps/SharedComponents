@@ -55,7 +55,7 @@ namespace TailoredApps.Shared.Email
         /// <returns>
         /// A task that resolves to the RFC 2822 Message-ID header value assigned to the sent message.
         /// </returns>
-        public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]> attachments)
+        public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]>? attachments)
         {
 
             using (var client = new SmtpClient(options.Value.Host, options.Value.Port))
@@ -65,10 +65,12 @@ namespace TailoredApps.Shared.Email
                 client.EnableSsl = options.Value.EnableSsl;
                 client.Port = options.Value.Port;
 
+                var from = options.Value.From
+                    ?? throw new ArgumentNullException(nameof(SmtpEmailServiceOptions.From), $"'{SmtpEmailServiceOptions.ConfigurationKey}:From' is not configured.");
                 var mailMessage = new MailMessage
                 {
-                    Sender = new MailAddress(options.Value.From),
-                    From = new MailAddress(options.Value.From),
+                    Sender = new MailAddress(from),
+                    From = new MailAddress(from),
                     Subject = topic
                 };
                 // MailAddressCollection.Add(string) accepts a comma-separated list, which would let a

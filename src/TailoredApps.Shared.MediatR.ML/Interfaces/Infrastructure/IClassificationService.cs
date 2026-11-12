@@ -15,7 +15,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastruct
         /// <param name="image">Raw image bytes (JPEG, PNG, etc.).</param>
         /// <param name="fileName">Original file name — used for logging and metadata.</param>
         /// <returns>The predicted class label and confidence score.</returns>
-        ImagePrediction Predict(byte[] image, string fileName);
+        ImagePrediction Predict(byte[] image, string? fileName);
 
         /// <summary>Returns metadata about the currently loaded model (version, checksum, labels).</summary>
         ModelInfo GetModelInfo();

@@ -127,7 +127,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
     {
         using var client = CreateClient();
         var amount = (long)(request.Amount * 100);
-        var currency = request.Currency.ToUpperInvariant();
+        var currency = (request.Currency ?? throw new ArgumentException("Currency is required.", nameof(request))).ToUpperInvariant();
         var sign = ComputeSign(sessionId, options.MerchantId, amount, currency);
 
         var body = new P24RegisterRequest

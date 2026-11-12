@@ -27,26 +27,28 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         /// <summary>
         /// Gets the MD5 checksum of the model file.
         /// </summary>
-        public string ModelChecksum => modelHelper.GetChecksum(options.Value.ModelFilePath);
+        // An unconfigured path is passed through on purpose: the helper keeps reporting it the way it
+        // always has (an exception for the checksum, "UNKNOWN" for the version, no labels).
+        public string ModelChecksum => modelHelper.GetChecksum(options.Value.ModelFilePath!);
 
         /// <summary>
         /// Gets the version string embedded in the model file.
         /// </summary>
-        public string ModelVersion => modelHelper.GetVersion(options.Value.ModelFilePath);
+        public string ModelVersion => modelHelper.GetVersion(options.Value.ModelFilePath!);
 
         /// <summary>
         /// Gets the full file system path to the model file.
         /// </summary>
-        public string ModelFilePath => options.Value.ModelFilePath;
+        public string? ModelFilePath => options.Value.ModelFilePath;
 
         /// <summary>
         /// Gets the file name (without directory) of the model file.
         /// </summary>
-        public string ModelFileName => Path.GetFileName(options.Value.ModelFilePath);
+        public string? ModelFileName => Path.GetFileName(options.Value.ModelFilePath);
 
         /// <summary>
         /// Gets the array of class label names stored in the model file.
         /// </summary>
-        public string[] Labels => modelHelper.GetLabels(options.Value.ModelFilePath);
+        public string[] Labels => modelHelper.GetLabels(options.Value.ModelFilePath!);
     }
 }

@@ -31,7 +31,7 @@ namespace TailoredApps.Shared.MediatR.ML.Infrastructure
                 .GetFiles(folder, "*", searchOption: SearchOption.AllDirectories)
                 .Where(x => Path.GetExtension(x) == ".jpg" || Path.GetExtension(x) == ".png");
             return useFolderNameAsLabel
-                ? imagePath.Select(imagePath => (imagePath, Directory.GetParent(imagePath).Name))
+                ? imagePath.Select(imagePath => (imagePath, Directory.GetParent(imagePath)!.Name))
                 : imagePath.Select(imagePath =>
                 {
                     var label = Path.GetFileName(imagePath);
@@ -56,7 +56,7 @@ namespace TailoredApps.Shared.MediatR.ML.Infrastructure
         /// <returns>The absolute path combining the assembly directory and the relative path.</returns>
         public static string GetAbsolutePath(Assembly assembly, string relative)
         {
-            var assemblyFolderPath = new FileInfo(assembly.Location).Directory.FullName;
+            var assemblyFolderPath = new FileInfo(assembly.Location).Directory!.FullName;
             return Path.Combine(assemblyFolderPath, relative);
         }
     }

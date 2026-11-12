@@ -12,7 +12,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Mode
         /// <param name="image">The raw byte content of the image.</param>
         /// <param name="label">The classification label associated with the image, or <c>null</c> if unknown.</param>
         /// <param name="fileName">The original file name of the image.</param>
-        public InMemoryImageData(byte[] image, string label, string fileName)
+        public InMemoryImageData(byte[] image, string? label, string? fileName)
         {
             Image = image;
             Label = label;
@@ -28,11 +28,11 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Mode
         /// <summary>
         /// Gets the classification label associated with the image.
         /// </summary>
-        public string Label { get; }
+        public string? Label { get; }
 
         /// <summary>
         /// Gets the original file name of the image.
         /// </summary>
-        public string FileName { get; }
+        public string? FileName { get; }
     }
 }

@@ -27,18 +27,18 @@ namespace TailoredApps.Shared.WebApi.Options
         /// environment variable is used. The OTLP exporter is only enabled when an endpoint is resolved,
         /// so telemetry is collected but silently dropped until a collector is configured.
         /// </summary>
-        public string OtlpExporterEndpoint { get; set; }
+        public string? OtlpExporterEndpoint { get; set; }
 
         /// <summary>
         /// Optional hook to further configure the metrics pipeline &#8212; for example to add a Prometheus
         /// exporter and <c>/metrics</c> scrape endpoint, register custom meters, or add views.
         /// </summary>
-        public Action<MeterProviderBuilder> ConfigureMetrics { get; set; }
+        public Action<MeterProviderBuilder>? ConfigureMetrics { get; set; }
 
         /// <summary>
         /// Optional hook to further configure the tracing pipeline &#8212; for example to register custom
         /// activity sources, samplers or additional exporters.
         /// </summary>
-        public Action<TracerProviderBuilder> ConfigureTracing { get; set; }
+        public Action<TracerProviderBuilder>? ConfigureTracing { get; set; }
     }
 }

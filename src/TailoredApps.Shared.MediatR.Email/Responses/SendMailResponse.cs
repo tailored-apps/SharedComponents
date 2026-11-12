@@ -9,6 +9,6 @@ namespace TailoredApps.Shared.MediatR.Email.Responses
         /// <summary>
         /// Gets the unique identifier assigned to the sent message by the email provider.
         /// </summary>
-        public string MessageId { get; internal set; }
+        public string? MessageId { get; internal set; }
     }
 }

@@ -53,7 +53,7 @@ namespace TailoredApps.Shared.EntityFramework.Logging
             /// <summary>
             /// Formats the log entry using <paramref name="formatter"/> and writes it to the console.
             /// </summary>
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
             {
                 Console.WriteLine(formatter(state, exception));
             }
@@ -61,7 +61,7 @@ namespace TailoredApps.Shared.EntityFramework.Logging
             /// <summary>
             /// Begins a logical operation scope. Returns <c>null</c> (no-op).
             /// </summary>
-            public IDisposable BeginScope<TState>(TState state)
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull
             {
                 return null;
             }
@@ -85,7 +85,7 @@ namespace TailoredApps.Shared.EntityFramework.Logging
             /// No-op log method. Writes the formatted message to the console even though
             /// <see cref="IsEnabled"/> returns <c>false</c> — kept for legacy compatibility.
             /// </summary>
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
             {
                 Console.WriteLine(formatter(state, exception));
 
@@ -94,7 +94,7 @@ namespace TailoredApps.Shared.EntityFramework.Logging
             /// <summary>
             /// Begins a logical operation scope. Returns <c>null</c> (no-op).
             /// </summary>
-            public IDisposable BeginScope<TState>(TState state)
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull
             {
                 return null;
             }

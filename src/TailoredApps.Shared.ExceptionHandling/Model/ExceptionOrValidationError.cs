@@ -11,7 +11,7 @@ namespace TailoredApps.Shared.ExceptionHandling.Model
         /// Gets the name of the field that caused the error, or <c>null</c> when the error is not field-specific.
         /// </summary>
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string Field { get; }
+        public string? Field { get; }
 
         /// <summary>
         /// Gets the human-readable error message describing what went wrong.

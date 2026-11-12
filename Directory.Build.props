@@ -14,6 +14,11 @@
 	-->
 	<PropertyGroup>
 		<UseArtifactsOutput>true</UseArtifactsOutput>
+		<!--
+			Set explicitly: by default the SDK puts artifacts/ next to the nearest Directory.Build.props,
+			which for the libraries is src/Directory.Build.props. Everything must land in one root folder.
+		-->
+		<ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
 	</PropertyGroup>
 
 	<!--

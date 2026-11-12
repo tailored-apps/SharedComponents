@@ -15,7 +15,7 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork
     {
         private readonly IUnitOfWorkContext _context;
         private readonly IHooksManager _hooksManager;
-        private ITransaction _transaction;
+        private ITransaction? _transaction;
         private IsolationLevel _isolationLevel;
 
         /// <summary>

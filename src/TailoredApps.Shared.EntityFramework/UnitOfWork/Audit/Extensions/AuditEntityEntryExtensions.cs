@@ -17,7 +17,8 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Extensions
                 keys,
                 auditEntityEntry.EntityState);
 
-            return entityChange as IInternalEntityChange;
+            return entityChange as IInternalEntityChange
+                   ?? throw new InvalidOperationException($"Could not create an audit change for '{auditEntityEntry.EntityType.Name}'.");
 
         }
     }

@@ -63,7 +63,7 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             var mainUrl = options.Value.ServiceUrl;
 
             List<PaymentChannels> paymentChannels = await cashbillCaller.MakeFormRequest<List<PaymentChannels>>(Path.Combine(mainUrl, "paymentchannels", shopId), "GET", null);
-            return paymentChannels.Where(x => x.AvailableCurrencies.Any(c => string.Equals(c, currency, StringComparison.InvariantCultureIgnoreCase))).ToList();
+            return paymentChannels.Where(x => x.AvailableCurrencies?.Any(c => string.Equals(c, currency, StringComparison.InvariantCultureIgnoreCase)) == true).ToList();
         }
 
         /// <inheritdoc/>
@@ -103,26 +103,26 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
 
             var requestContent = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string,string> ( "title", request.Title ),
-                new KeyValuePair<string,string> ( "amount.value", amountString ),
-                new KeyValuePair<string,string> ( "amount.currencyCode", request.Currency ),
-                new KeyValuePair<string,string> ( "returnUrl", returnUrl.ToString() ),
-                new KeyValuePair<string,string> ( "description", request.Description ),
-                new KeyValuePair<string,string> ( "negativeReturnUrl", negativeReturnUrl ),
-                new KeyValuePair<string,string> ( "additionalData", request.AdditionalData ),
-                new KeyValuePair<string,string> ( "paymentChannel", request.PaymentChannel ),
-                new KeyValuePair<string,string> ( "languageCode", languageCode ),
-                new KeyValuePair<string,string> ( "referer", request.Referer ),
-                new KeyValuePair<string,string> ( "personalData.firstName", request.FirstName ),
-                new KeyValuePair<string,string> ( "personalData.surname", request.Surname ),
-                new KeyValuePair<string,string> ( "personalData.email", request.Email ),
-                new KeyValuePair<string,string> ( "personalData.country", request.Country ),
-                new KeyValuePair<string,string> ( "personalData.city", request.City ),
-                new KeyValuePair<string,string> ( "personalData.postcode", request.PostCode ),
-                new KeyValuePair<string,string> ( "personalData.street", request.Street ),
-                new KeyValuePair<string,string> ( "personalData.house", request.House ),
-                new KeyValuePair<string,string> ( "personalData.flat", request.Flat ),
-                new KeyValuePair<string,string> ( "sign", sign )
+                new KeyValuePair<string, string?>( "title", request.Title ),
+                new KeyValuePair<string, string?>( "amount.value", amountString ),
+                new KeyValuePair<string, string?>( "amount.currencyCode", request.Currency ),
+                new KeyValuePair<string, string?>( "returnUrl", returnUrl.ToString() ),
+                new KeyValuePair<string, string?>( "description", request.Description ),
+                new KeyValuePair<string, string?>( "negativeReturnUrl", negativeReturnUrl ),
+                new KeyValuePair<string, string?>( "additionalData", request.AdditionalData ),
+                new KeyValuePair<string, string?>( "paymentChannel", request.PaymentChannel ),
+                new KeyValuePair<string, string?>( "languageCode", languageCode ),
+                new KeyValuePair<string, string?>( "referer", request.Referer ),
+                new KeyValuePair<string, string?>( "personalData.firstName", request.FirstName ),
+                new KeyValuePair<string, string?>( "personalData.surname", request.Surname ),
+                new KeyValuePair<string, string?>( "personalData.email", request.Email ),
+                new KeyValuePair<string, string?>( "personalData.country", request.Country ),
+                new KeyValuePair<string, string?>( "personalData.city", request.City ),
+                new KeyValuePair<string, string?>( "personalData.postcode", request.PostCode ),
+                new KeyValuePair<string, string?>( "personalData.street", request.Street ),
+                new KeyValuePair<string, string?>( "personalData.house", request.House ),
+                new KeyValuePair<string, string?>( "personalData.flat", request.Flat ),
+                new KeyValuePair<string, string?>( "sign", sign )
             });
 
 
@@ -133,9 +133,9 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             var signReturn = Hash(payment.Id + returnUrl + negativeReturnUrl + secretPhrase);
             var requestReturnBrowserContent = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string,string> ( "returnUrl", returnUrl.ToString() ),
-                new KeyValuePair<string,string> ( "negativeReturnUrl", negativeReturnUrl ),
-                new KeyValuePair<string,string> ( "sign", signReturn )
+                new KeyValuePair<string, string?>( "returnUrl", returnUrl.ToString() ),
+                new KeyValuePair<string, string?>( "negativeReturnUrl", negativeReturnUrl ),
+                new KeyValuePair<string, string?>( "sign", signReturn )
             });
             await cashbillCaller.MakeFormRequest(new Uri(mainUrl, $"payment/{shopId}/{payment.Id}").ToString(), "PUT", requestReturnBrowserContent);
 

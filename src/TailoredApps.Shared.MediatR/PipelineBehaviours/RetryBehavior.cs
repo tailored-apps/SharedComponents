@@ -22,7 +22,7 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
         // The circuit breaker must outlive the (transient) behavior instance to ever trip,
         // so it is shared per closed request/response type and created from the first handler's configuration.
         private static readonly object _circuitBreakerLock = new object();
-        private static AsyncCircuitBreakerPolicy<TResponse> _circuitBreaker;
+        private static AsyncCircuitBreakerPolicy<TResponse>? _circuitBreaker;
 
         private readonly IEnumerable<IRetryableRequest<TRequest, TResponse>> _retryHandlers;
         private readonly ILogger<RetryBehavior<TRequest, TResponse>> _logger;

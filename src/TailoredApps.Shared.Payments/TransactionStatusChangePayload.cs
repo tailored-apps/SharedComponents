@@ -12,12 +12,12 @@ namespace TailoredApps.Shared.Payments
         /// <summary>
         /// Gets or sets the key of the payment provider that sent this notification.
         /// </summary>
-        public string ProviderId { get; set; }
+        public string? ProviderId { get; set; }
 
         /// <summary>
         /// Gets or sets the raw notification body (typically the deserialized HTTP request body).
         /// </summary>
-        public object Payload { get; set; }
+        public object? Payload { get; set; }
 
         /// <summary>
         /// Gets or sets the query-string parameters received with the notification request.

@@ -1,0 +1,17 @@
+<Project>
+
+	<!-- MSBuild only imports the nearest Directory.Build.props, so pull in the repository-wide one first. -->
+	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+	<!--
+		Settings for the published libraries only (the test projects under tests/ are not affected).
+
+		Nullable reference types are on for every library, and nullable warnings fail the build so that
+		the annotations in the public API cannot silently drift from what the code does.
+	-->
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
+		<WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
+	</PropertyGroup>
+
+</Project>

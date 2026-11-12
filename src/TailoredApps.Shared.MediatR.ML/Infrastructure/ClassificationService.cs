@@ -52,7 +52,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
         /// <param name="image">The raw byte content of the image to classify.</param>
         /// <param name="fileName">The original file name of the image, used for identification in the result.</param>
         /// <returns>An <see cref="ImagePrediction"/> containing the predicted label and score.</returns>
-        public ImagePrediction Predict(byte[] image, string fileName)
+        public ImagePrediction Predict(byte[] image, string? fileName)
         {
             var imageData = new InMemoryImageData(image, null, fileName);
             ImagePredictionScore prediction = predictionEnginePool.Predict(imageData);
@@ -60,7 +60,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Infrastructure
 
             ImagePrediction imagePrediction = new ImagePrediction()
             {
-                PredictedScore = prediction.Score.Max(),
+                PredictedScore = (prediction.Score ?? throw new InvalidOperationException("The model returned no scores.")).Max(),
                 FileName = fileName,
                 PredictedLabel = prediction.PredictedLabel,
                 //ModelInfo = modelInfo,

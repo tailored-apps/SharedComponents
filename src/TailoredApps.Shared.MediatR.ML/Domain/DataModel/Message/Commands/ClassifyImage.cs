@@ -12,11 +12,11 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Messa
         /// <summary>
         /// Gets or sets the raw byte content of the image to classify.
         /// </summary>
-        public byte[] FileByteArray { get; set; }
+        public byte[]? FileByteArray { get; set; }
 
         /// <summary>
         /// Gets or sets the original file name of the image, used for identification in the response.
         /// </summary>
-        public string FileName { get; set; }
+        public string? FileName { get; set; }
     }
 }

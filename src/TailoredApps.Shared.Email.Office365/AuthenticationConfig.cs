@@ -30,17 +30,17 @@ namespace TailoredApps.Shared.Email.Office365
         /// or a domain name associated with the tenant
         /// - or 'organizations' (for a multi-tenant application)
         /// </summary>
-        public string Tenant { get; set; }
+        public string? Tenant { get; set; }
 
         /// <summary>
         /// Guid used by the application to uniquely identify itself to Azure AD
         /// </summary>
-        public string ClientId { get; set; }
+        public string? ClientId { get; set; }
 
         /// <summary>
         /// MailBox
         /// </summary>
-        public string MailBox { get; set; }
+        public string? MailBox { get; set; }
 
 
 
@@ -63,7 +63,7 @@ namespace TailoredApps.Shared.Email.Office365
         /// or a certificate previously shared with AzureAD during the application registration 
         /// (and identified by the Certificate property belows)
         /// <remarks> 
-        public string ClientSecret { get; set; }
+        public string? ClientSecret { get; set; }
 
         /// <summary>
         /// The description of the certificate to be used to authenticate your application.
@@ -73,7 +73,7 @@ namespace TailoredApps.Shared.Email.Office365
         /// or a certificate previously shared with AzureAD during the application registration 
         /// (and identified by this CertificateDescription)
         /// <remarks> 
-        public CertificateDescription Certificate { get; set; }
+        public CertificateDescription? Certificate { get; set; }
 
 
     }

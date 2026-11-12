@@ -104,7 +104,7 @@ namespace TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Comman
         /// Resolves <paramref name="value"/> (relative or absolute) against <paramref name="root"/> and verifies
         /// that the result stays inside the root directory.
         /// </summary>
-        internal static string ResolveUnderRoot(string root, string value, string rootSettingName, string parameterName)
+        internal static string ResolveUnderRoot(string? root, string? value, string rootSettingName, string parameterName)
         {
             if (string.IsNullOrWhiteSpace(root))
             {

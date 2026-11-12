@@ -25,7 +25,7 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit.Changes
             }
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (!(obj is EntityStateTransition otherStateTransition))
                 return false;

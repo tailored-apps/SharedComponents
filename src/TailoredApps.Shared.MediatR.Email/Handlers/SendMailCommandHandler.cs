@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using TailoredApps.Shared.Email;
@@ -40,8 +41,11 @@ namespace TailoredApps.Shared.MediatR.Email.Handlers
         public async Task<SendMailResponse> Handle(SendMail request, CancellationToken cancellationToken)
         {
 
-            var body = mailMessageBuilder.Build(request.Template, request.TemplateVariables, request.Templates);
-            var messageId = await emailService.SendMail(request.Recipent, request.Subject, body, request.Attachments);
+            var template = request.Template ?? throw new ArgumentException("Template is required.", nameof(request));
+            var recipient = request.Recipent ?? throw new ArgumentException("Recipent is required.", nameof(request));
+
+            var body = mailMessageBuilder.Build(template, request.TemplateVariables, request.Templates);
+            var messageId = await emailService.SendMail(recipient, request.Subject ?? string.Empty, body, request.Attachments);
             return new SendMailResponse() { MessageId = messageId };
 
 

@@ -44,7 +44,7 @@ namespace TailoredApps.Shared.EntityFramework.UnitOfWork.Audit
         public void AuditChanges()
         {
             if (_changedEntities.Count > 0)
-                _entityChangesAuditor.AuditChanges(_changedEntities.Values.Select(e => e as EntityChange));
+                _entityChangesAuditor.AuditChanges(_changedEntities.Values.OfType<EntityChange>());
 
             DiscardChanges();
         }
