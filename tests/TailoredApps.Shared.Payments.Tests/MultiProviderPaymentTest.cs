@@ -171,8 +171,7 @@ public class MultiProviderPaymentTest
             {
                 { "OpenPayU-Signature",        new StringValues("sender=checkout;signature=invalid;algorithm=MD5;content=DOCUMENT") },
                 { "Signature",                 new StringValues("invalidsignature") },
-                { "X-Signature",               new StringValues("invalidsignature") },
-                { "HmacSignature",             new StringValues("invalidsignature") },
+                { "X-JWS-Signature",               new StringValues("invalidsignature") },
                 { "Revolut-Signature",         new StringValues("v1=invalidsignature") },
                 { "Revolut-Request-Timestamp", new StringValues("1234567890") },
             },

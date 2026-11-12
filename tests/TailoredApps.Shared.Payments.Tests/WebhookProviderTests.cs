@@ -25,14 +25,14 @@ public class AdyenWebhookTests
     [Fact]
     public async Task HandleWebhook_ValidHmac_AUTHORISATION_success_ReturnsOk_Finished()
     {
-        var body = """{"notificationItems":[{"NotificationRequestItem":{"eventCode":"AUTHORISATION","success":"true","pspReference":"psp_1"}}]}""";
+        var body = """{"notificationItems":[{"NotificationRequestItem":{"additionalData":{"hmacSignature":"hmac_val"},"eventCode":"AUTHORISATION","success":"true","pspReference":"psp_1"}}]}""";
         var mock = new Mock<IAdyenServiceCaller>();
-        mock.Setup(m => m.VerifyNotificationHmac(body, "hmac_val")).Returns(true);
+        mock.Setup(m => m.VerifyNotificationHmac(It.IsAny<string>(), "hmac_val")).Returns(true);
 
         var request = new PaymentWebhookRequest
         {
             Body = body,
-            Headers = new Dictionary<string, StringValues> { { "HmacSignature", "hmac_val" } },
+            Headers = new Dictionary<string, StringValues>(),
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
 
@@ -44,14 +44,14 @@ public class AdyenWebhookTests
     [Fact]
     public async Task HandleWebhook_ValidHmac_AUTHORISATION_failed_ReturnsOk_Rejected()
     {
-        var body = """{"notificationItems":[{"NotificationRequestItem":{"eventCode":"AUTHORISATION","success":"false","pspReference":"psp_1"}}]}""";
+        var body = """{"notificationItems":[{"NotificationRequestItem":{"additionalData":{"hmacSignature":"hmac_val"},"eventCode":"AUTHORISATION","success":"false","pspReference":"psp_1"}}]}""";
         var mock = new Mock<IAdyenServiceCaller>();
-        mock.Setup(m => m.VerifyNotificationHmac(body, "hmac_val")).Returns(true);
+        mock.Setup(m => m.VerifyNotificationHmac(It.IsAny<string>(), "hmac_val")).Returns(true);
 
         var request = new PaymentWebhookRequest
         {
             Body = body,
-            Headers = new Dictionary<string, StringValues> { { "HmacSignature", "hmac_val" } },
+            Headers = new Dictionary<string, StringValues>(),
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
 
@@ -69,7 +69,7 @@ public class AdyenWebhookTests
         var result = await Build(mock.Object).HandleWebhookAsync(new PaymentWebhookRequest
         {
             Body = "{}",
-            Headers = new Dictionary<string, StringValues> { { "HmacSignature", "bad" } },
+            Headers = new Dictionary<string, StringValues>(),
         });
 
         Assert.False(result.Success);
@@ -79,14 +79,14 @@ public class AdyenWebhookTests
     [Fact]
     public async Task HandleWebhook_ValidHmac_UnknownEvent_ReturnsIgnore()
     {
-        var body = """{"notificationItems":[{"NotificationRequestItem":{"eventCode":"UNKNOWN_EVENT","success":"true"}}]}""";
+        var body = """{"notificationItems":[{"NotificationRequestItem":{"additionalData":{"hmacSignature":"hmac_val"},"eventCode":"UNKNOWN_EVENT","success":"true"}}]}""";
         var mock = new Mock<IAdyenServiceCaller>();
-        mock.Setup(m => m.VerifyNotificationHmac(body, "hmac_val")).Returns(true);
+        mock.Setup(m => m.VerifyNotificationHmac(It.IsAny<string>(), "hmac_val")).Returns(true);
 
         var request = new PaymentWebhookRequest
         {
             Body = body,
-            Headers = new Dictionary<string, StringValues> { { "HmacSignature", "hmac_val" } },
+            Headers = new Dictionary<string, StringValues>(),
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
 
@@ -486,16 +486,16 @@ public class TpayWebhookTests
     private static TpayProvider Build(ITpayServiceCaller caller) => new(caller);
 
     [Fact]
-    public async Task HandleWebhook_ValidSignature_paid_ReturnsOk_Finished()
+    public async Task HandleWebhook_ValidSignature_PAID_ReturnsOk_Finished()
     {
-        var body = """{"id":"tpay_1","status":"paid"}""";
+        var body = "id=1010&tr_id=tpay_1&tr_status=PAID";
         var mock = new Mock<ITpayServiceCaller>();
-        mock.Setup(m => m.VerifyNotification(body, "sig_val")).Returns(true);
+        mock.Setup(m => m.VerifyNotificationAsync(body, "sig_val", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var request = new PaymentWebhookRequest
         {
             Body = body,
-            Headers = new Dictionary<string, StringValues> { { "X-Signature", "sig_val" } },
+            Headers = new Dictionary<string, StringValues> { { "X-JWS-Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
 
@@ -505,16 +505,16 @@ public class TpayWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_ValidSignature_error_ReturnsOk_Rejected()
+    public async Task HandleWebhook_ValidSignature_FALSE_ReturnsOk_Rejected()
     {
-        var body = """{"id":"tpay_1","status":"error"}""";
+        var body = "id=1010&tr_id=tpay_1&tr_status=FALSE";
         var mock = new Mock<ITpayServiceCaller>();
-        mock.Setup(m => m.VerifyNotification(body, "sig_val")).Returns(true);
+        mock.Setup(m => m.VerifyNotificationAsync(body, "sig_val", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var request = new PaymentWebhookRequest
         {
             Body = body,
-            Headers = new Dictionary<string, StringValues> { { "X-Signature", "sig_val" } },
+            Headers = new Dictionary<string, StringValues> { { "X-JWS-Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
 
@@ -527,12 +527,12 @@ public class TpayWebhookTests
     public async Task HandleWebhook_InvalidSignature_ReturnsFail()
     {
         var mock = new Mock<ITpayServiceCaller>();
-        mock.Setup(m => m.VerifyNotification(It.IsAny<string>(), It.IsAny<string>())).Returns(false);
+        mock.Setup(m => m.VerifyNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var result = await Build(mock.Object).HandleWebhookAsync(new PaymentWebhookRequest
         {
-            Body = """{"status":"paid"}""",
-            Headers = new Dictionary<string, StringValues> { { "X-Signature", "bad" } },
+            Body = "tr_status=TRUE",
+            Headers = new Dictionary<string, StringValues> { { "X-JWS-Signature", "bad" } },
         });
 
         Assert.False(result.Success);
@@ -540,16 +540,16 @@ public class TpayWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_ValidSignature_pending_ReturnsIgnore()
+    public async Task HandleWebhook_ValidSignature_UnknownStatus_ReturnsIgnore()
     {
-        var body = """{"id":"tpay_1","status":"pending"}""";
+        var body = "id=1010&tr_id=tpay_1&tr_status=pending";
         var mock = new Mock<ITpayServiceCaller>();
-        mock.Setup(m => m.VerifyNotification(body, "sig_val")).Returns(true);
+        mock.Setup(m => m.VerifyNotificationAsync(body, "sig_val", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var request = new PaymentWebhookRequest
         {
             Body = body,
-            Headers = new Dictionary<string, StringValues> { { "X-Signature", "sig_val" } },
+            Headers = new Dictionary<string, StringValues> { { "X-JWS-Signature", "sig_val" } },
         };
         var result = await Build(mock.Object).HandleWebhookAsync(request);
 

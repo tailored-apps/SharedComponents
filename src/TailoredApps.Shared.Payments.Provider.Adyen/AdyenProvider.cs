@@ -98,6 +98,12 @@ public interface IAdyenServiceCaller
     Task<PaymentStatusEnum> GetPaymentStatusAsync(string paymentId, CancellationToken cancellationToken = default);
 
     /// <summary>Weryfikuje HMAC podpis powiadomienia webhooka.</summary>
+    /// <param name="payload">
+    /// The signed data of one notification item: <c>pspReference</c>, <c>originalReference</c>,
+    /// <c>merchantAccountCode</c>, <c>merchantReference</c>, <c>amount.value</c>, <c>amount.currency</c>,
+    /// <c>eventCode</c> and <c>success</c> joined with <c>:</c> (an absent field is an empty string).
+    /// </param>
+    /// <param name="hmacSignature">The item's <c>additionalData.hmacSignature</c> (Base64).</param>
     bool VerifyNotificationHmac(string payload, string hmacSignature);
 }
 
@@ -175,6 +181,10 @@ public class AdyenServiceCaller : IAdyenServiceCaller
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// HMAC-SHA256 over the UTF-8 bytes of <paramref name="payload"/>, keyed with the hex-decoded
+    /// <see cref="AdyenServiceOptions.NotificationHmacKey"/>, Base64-encoded and compared in constant time.
+    /// </remarks>
     public bool VerifyNotificationHmac(string payload, string hmacSignature)
     {
         // Fail closed: an empty HMAC key would let anyone compute a "valid" signature.
@@ -265,60 +275,50 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
 
     // ─── IWebhookPaymentProvider ─────────────────────────────────────────────
 
+    /// <summary>
+    /// The body Adyen expects in the acknowledgement of a standard webhook. Returned in
+    /// <see cref="PaymentResponse.ResponseObject"/>; answer with HTTP 200 and this text.
+    /// </summary>
+    public const string Acknowledgement = "[accepted]";
+
     /// <inheritdoc/>
+    /// <remarks>
+    /// A standard Adyen webhook carries no signature header: the signature of each item is in its
+    /// <c>additionalData.hmacSignature</c> and covers eight of the item's fields, not the request body.
+    /// Only the first item of <c>notificationItems</c> is handled (Adyen sends one item per request).
+    /// </remarks>
     public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
-    {
-        var body = request.Body ?? string.Empty;
-        var hmac = request.Headers.TryGetValue("HmacSignature", out var h) ? h.ToString() : string.Empty;
-
-        var payload = new TransactionStatusChangePayload
-        {
-            Payload = body,
-            QueryParameters = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
-            {
-                { "HmacSignature", hmac },
-            },
-        };
-
-        return Task.FromResult(ProcessNotification(payload));
-    }
+        => Task.FromResult(ProcessNotification(request.Body));
 
     /// <inheritdoc/>
     public Task<PaymentResponse> TransactionStatusChange(TransactionStatusChangePayload payload, CancellationToken cancellationToken = default)
-        => Task.FromResult(ProcessNotification(payload).ToPaymentResponse());
+        => Task.FromResult(ProcessNotification(payload.Payload?.ToString()).ToPaymentResponse());
 
-    private PaymentWebhookResult ProcessNotification(TransactionStatusChangePayload payload)
+    private PaymentWebhookResult ProcessNotification(string? body)
     {
-        var body = payload.Payload?.ToString() ?? string.Empty;
-        var hmac = payload.QueryParameters.TryGetValue("HmacSignature", out var h) ? h.ToString() : string.Empty;
-
-        if (!caller.VerifyNotificationHmac(body, hmac))
-            return PaymentWebhookResult.Reject(PaymentWebhookRejection.InvalidSignature, "Invalid HMAC");
-
-        var status = PaymentStatusEnum.Processing;
-        string? paymentUniqueId = null;
+        JsonDocument document;
         try
         {
-            using var doc = JsonDocument.Parse(body);
-            var root = doc.RootElement;
+            document = JsonDocument.Parse(body ?? string.Empty);
+        }
+        catch (JsonException)
+        {
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.MalformedPayload, "The notification is not valid JSON.");
+        }
 
-            // Adyen sends notifications wrapped in notificationItems array
-            JsonElement item = root;
-            if (root.TryGetProperty("notificationItems", out var items) &&
-                items.GetArrayLength() > 0 &&
-                items[0].TryGetProperty("NotificationRequestItem", out var nri))
-            {
-                item = nri;
-            }
+        using (document)
+        {
+            var item = FindNotificationItem(document.RootElement);
+            if (item.ValueKind != JsonValueKind.Object)
+                return PaymentWebhookResult.Reject(PaymentWebhookRejection.MalformedPayload, "The notification has no NotificationRequestItem.");
 
-            var eventCode = item.TryGetProperty("eventCode", out var ev) ? ev.GetString() : null;
+            var additionalData = item.TryGetProperty("additionalData", out var data) ? data : default;
+            if (!caller.VerifyNotificationHmac(BuildSignedData(item), Text(additionalData, "hmacSignature")))
+                return PaymentWebhookResult.Reject(PaymentWebhookRejection.InvalidSignature, "Invalid HMAC");
+
             // A missing "success" flag must never be treated as success.
-            var success = item.TryGetProperty("success", out var s) ? s.GetString() : "false";
-            var succeeded = string.Equals(success, "true", StringComparison.OrdinalIgnoreCase);
-            paymentUniqueId = (item.TryGetProperty("merchantReference", out var mr) ? mr.GetString() : null)
-                              ?? (item.TryGetProperty("pspReference", out var psp) ? psp.GetString() : null);
-
-            status = eventCode switch
+            var succeeded = string.Equals(Text(item, "success"), "true", StringComparison.OrdinalIgnoreCase);
+            var status = Text(item, "eventCode") switch
             {
                 "AUTHORISATION" => succeeded ? PaymentStatusEnum.Finished : PaymentStatusEnum.Rejected,
                 "CANCELLATION" => PaymentStatusEnum.Rejected,
@@ -326,10 +326,70 @@ public class AdyenProvider : IPaymentProvider, IWebhookPaymentProvider
                 "AUTHORISATION_FAILED" => PaymentStatusEnum.Rejected,
                 _ => PaymentStatusEnum.Processing,
             };
-        }
-        catch { /* ignore */ }
 
-        return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = "OK" });
+            var merchantReference = Text(item, "merchantReference");
+            var pspReference = Text(item, "pspReference");
+            var paymentUniqueId = merchantReference.Length > 0 ? merchantReference
+                : pspReference.Length > 0 ? pspReference
+                : null;
+
+            return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = paymentUniqueId, PaymentStatus = status, ResponseObject = Acknowledgement });
+        }
+    }
+
+    /// <summary>
+    /// Returns the first <c>NotificationRequestItem</c> of the <c>notificationItems</c> envelope, or the
+    /// root object when the item was posted without the envelope.
+    /// </summary>
+    private static JsonElement FindNotificationItem(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+            return default;
+
+        if (!root.TryGetProperty("notificationItems", out var items))
+            return root;
+
+        if (items.ValueKind != JsonValueKind.Array || items.GetArrayLength() == 0)
+            return default;
+
+        var first = items[0];
+        return first.ValueKind == JsonValueKind.Object && first.TryGetProperty("NotificationRequestItem", out var item)
+            ? item
+            : default;
+    }
+
+    /// <summary>
+    /// Builds the text Adyen signs for a standard webhook item: eight fields in a fixed order, joined
+    /// with a colon, an absent field contributing an empty string.
+    /// </summary>
+    private static string BuildSignedData(JsonElement item)
+    {
+        var amount = item.TryGetProperty("amount", out var a) ? a : default;
+        return string.Join(':',
+            Text(item, "pspReference"),
+            Text(item, "originalReference"),
+            Text(item, "merchantAccountCode"),
+            Text(item, "merchantReference"),
+            Text(amount, "value"),
+            Text(amount, "currency"),
+            Text(item, "eventCode"),
+            Text(item, "success"));
+    }
+
+    /// <summary>Reads a scalar property as the text Adyen signed; an absent or non-scalar property is an empty string.</summary>
+    private static string Text(JsonElement parent, string name)
+    {
+        if (parent.ValueKind != JsonValueKind.Object || !parent.TryGetProperty(name, out var value))
+            return string.Empty;
+
+        return value.ValueKind switch
+        {
+            JsonValueKind.String => value.GetString() ?? string.Empty,
+            JsonValueKind.Number => value.GetRawText(),
+            JsonValueKind.True => "true",
+            JsonValueKind.False => "false",
+            _ => string.Empty,
+        };
     }
 }
 

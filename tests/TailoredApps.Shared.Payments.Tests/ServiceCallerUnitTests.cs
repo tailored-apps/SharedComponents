@@ -408,54 +408,6 @@ public class AdyenServiceCallerTests
     }
 }
 
-// ─── TpayServiceCaller ────────────────────────────────────────────────────────
-
-/// <summary>Unit testy dla TpayServiceCaller — czyste funkcje (bez HTTP).</summary>
-public class TpayServiceCallerTests
-{
-    private static TpayServiceCaller Build(string securityCode) =>
-        new(Options.Create(new TpayServiceOptions
-        {
-            SecurityCode = securityCode,
-            ClientId = "client_1",
-            ClientSecret = "secret",
-            ServiceUrl = "https://openapi.sandbox.tpay.com",
-        }), CallerHelper.DummyFactory());
-
-    [Fact]
-    public void VerifyNotification_ValidSig_ReturnsTrue()
-    {
-        const string code = "tpay_security";
-        const string body = "{\"id\":\"txn_1\",\"status\":\"paid\"}";
-        var caller = Build(code);
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(body + code))).ToLowerInvariant();
-        Assert.True(caller.VerifyNotification(body, hash));
-    }
-
-    [Fact]
-    public void VerifyNotification_InvalidSig_ReturnsFalse()
-    {
-        var caller = Build("tpay_sec");
-        Assert.False(caller.VerifyNotification("{}", "badsig"));
-    }
-
-    [Fact]
-    public void VerifyNotification_WrongCode_ReturnsFalse()
-    {
-        const string body = "{\"status\":\"paid\"}";
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(body + "correct_code"))).ToLowerInvariant();
-        var caller = Build("wrong_code");
-        Assert.False(caller.VerifyNotification(body, hash));
-    }
-
-    [Fact]
-    public void VerifyNotification_EmptySig_ReturnsFalse()
-    {
-        var caller = Build("code");
-        Assert.False(caller.VerifyNotification("{}", ""));
-    }
-}
-
 // ─── Przelewy24ServiceCaller ──────────────────────────────────────────────────
 
 /// <summary>Unit testy dla Przelewy24ServiceCaller — czyste funkcje (bez HTTP).</summary>

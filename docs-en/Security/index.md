@@ -33,7 +33,7 @@ the fixes that shipped with it, and the items that still need a human decision.
 | 13 | Medium | EF UnitOfWork | Transaction filter committed when the action returned 4xx/5xx; commit-failure handling could leave a dangling transaction and hide the root cause. | **Fixed**. |
 | 14 | Medium | Email.Office365 | Attachments returned still transfer-encoded and keyed by content type (crash on two attachments of one type). | **Fixed**. |
 | 15 | Medium | CI/CD | Write-scoped tokens with persisted credentials, actions pinned to mutable tags, tag name interpolated into shell, NuGet publish without tests and with failures swallowed, unpinned pip installs. | **Fixed**: least-privilege permissions, SHA pins + Dependabot, env-var passing, tests before publish, `--skip-duplicate`, pinned mkdocs-material. |
-| 16 | Medium | Payments (Tpay, Adyen) | Webhook verification does not match the vendor protocol (Tpay: form + md5sum + JWS; Adyen: HMAC over colon-separated fields in `additionalData`). Fails closed, so not exploitable, but non-functional. | **Documented**; hardened (fail-closed, constant time). Rewrite tracked in follow-ups. |
+| 16 | Medium | Payments (Tpay, Adyen) | Webhook verification does not match the vendor protocol (Tpay: form + md5sum + JWS; Adyen: HMAC over colon-separated fields in `additionalData`). Fails closed, so not exploitable, but non-functional. | **Fixed in 2.0**: Tpay verifies `md5sum` and `X-JWS-Signature` (chain to the Tpay root), Adyen the HMAC from `additionalData.hmacSignature`. |
 
 ## What changed, by library
 
@@ -126,9 +126,9 @@ the fixes that shipped with it, and the items that still need a human decision.
 
 ## Follow-ups (not done in this change)
 
-- Tpay: implement the real notification protocol (form body, `md5sum`, `X-JWS-Signature` with the
-  Tpay root certificate). Adyen: HMAC over the documented colon-separated fields from
-  `additionalData.hmacSignature`; `/sessions` returns `sessionData`, not a redirect URL.
+- Tpay and Adyen: notification verification now follows the vendor protocols, but it has not been
+  exercised with a real sandbox notification - make a test payment before going live.
+  Adyen: `/sessions` returns `sessionData`, not a redirect URL.
 - Transport failures (5xx, timeouts) are still reported as `PaymentStatusEnum.Rejected` by several
   providers; add an `Unknown` outcome so outages are never mistaken for refusals.
 - `CachingBehavior` no longer returns `default` for a cache miss on a value-type response (fixed in

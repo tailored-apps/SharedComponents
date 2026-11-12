@@ -364,14 +364,13 @@ public class MockedIntegrationTests
               .Returns(true);
 
         var svc = BuildAdyenHost(caller.Object).Services.GetRequiredService<IPaymentService>();
-        var body = """{"pspReference":"adyen_ref_002","success":"true","eventCode":"AUTHORISATION"}""";
+        var body = """{"additionalData":{"hmacSignature":"valid_hmac"},"pspReference":"adyen_ref_002","success":"true","eventCode":"AUTHORISATION"}""";
         var result = await svc.TransactionStatusChange("Adyen", new TransactionStatusChangePayload
         {
             ProviderId = "Adyen",
             Payload = body,
             QueryParameters = new Dictionary<string, StringValues>
             {
-                { "HmacSignature", new StringValues("valid_hmac") },
             },
         });
 
@@ -633,18 +632,18 @@ public class MockedIntegrationTests
     public async Task Tpay_TransactionStatusChange_ValidSignature_ReturnsCompleted()
     {
         var caller = new Mock<ITpayServiceCaller>();
-        caller.Setup(c => c.VerifyNotification(It.IsAny<string>(), "valid_sig"))
-              .Returns(true);
+        caller.Setup(c => c.VerifyNotificationAsync(It.IsAny<string>(), "valid_sig", It.IsAny<CancellationToken>()))
+              .ReturnsAsync(true);
 
         var svc = BuildTpayHost(caller.Object).Services.GetRequiredService<IPaymentService>();
-        var body = """{"transactionId":"tpay_tx_003","status":"correct"}""";
+        var body = "id=1010&tr_id=tpay_tx_003&tr_status=TRUE";
         var result = await svc.TransactionStatusChange("Tpay", new TransactionStatusChangePayload
         {
             ProviderId = "Tpay",
             Payload = body,
             QueryParameters = new Dictionary<string, StringValues>
             {
-                { "X-Signature", new StringValues("valid_sig") },
+                { "X-JWS-Signature", new StringValues("valid_sig") },
             },
         });
 
