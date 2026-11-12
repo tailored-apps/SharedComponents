@@ -387,6 +387,28 @@ public static class Przelewy24ProviderExtensions
         services.AddTransient<Przelewy24Provider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<Przelewy24Provider>());
     }
+
+    /// <summary>
+    /// Registers the Przelewy24 provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterPrzelewy24Provider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterPrzelewy24Provider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterPrzelewy24Provider();
+
+        // A host that also calls RegisterPaymentProvider<Przelewy24Provider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(Przelewy24Provider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<Przelewy24Provider>();
+    }
 }
 
 /// <summary>Wczytuje opcje Przelewy24 z konfiguracji.</summary>

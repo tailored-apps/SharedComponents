@@ -127,7 +127,7 @@ public class PayUServiceCaller : IPayUServiceCaller
 {
     /// <summary>
     /// The name of the HTTP client that creates orders. PayU answers an order with a 302 whose body holds the
-    /// order id, so this client must not follow redirects; <see cref="PayUProviderExtensions.RegisterPayUProvider"/>
+    /// order id, so this client must not follow redirects; <see cref="PayUProviderExtensions.RegisterPayUProvider(IServiceCollection)"/>
     /// registers it that way, with cookies switched off so that nothing received for one order is ever sent
     /// along with another. The other calls use the client named <c>PayU</c>.
     /// </summary>
@@ -411,6 +411,28 @@ public static class PayUProviderExtensions
         services.AddTransient<IPayUServiceCaller, PayUServiceCaller>();
         services.AddTransient<PayUProvider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<PayUProvider>());
+    }
+
+    /// <summary>
+    /// Registers the PayU provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterPayUProvider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterPayUProvider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterPayUProvider();
+
+        // A host that also calls RegisterPaymentProvider<PayUProvider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(PayUProvider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<PayUProvider>();
     }
 }
 

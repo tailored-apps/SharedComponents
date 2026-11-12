@@ -465,6 +465,28 @@ public static class AdyenProviderExtensions
         services.AddTransient<AdyenProvider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<AdyenProvider>());
     }
+
+    /// <summary>
+    /// Registers the Adyen provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterAdyenProvider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterAdyenProvider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterAdyenProvider();
+
+        // A host that also calls RegisterPaymentProvider<AdyenProvider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(AdyenProvider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<AdyenProvider>();
+    }
 }
 
 /// <summary>Wczytuje opcje Adyen z konfiguracji aplikacji.</summary>

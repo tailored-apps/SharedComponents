@@ -219,6 +219,28 @@ public static class HotPayProviderExtensions
         services.AddTransient<HotPayProvider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<HotPayProvider>());
     }
+
+    /// <summary>
+    /// Registers the HotPay provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterHotPayProvider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterHotPayProvider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterHotPayProvider();
+
+        // A host that also calls RegisterPaymentProvider<HotPayProvider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(HotPayProvider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<HotPayProvider>();
+    }
 }
 
 /// <summary>Wczytuje opcje HotPay z konfiguracji.</summary>

@@ -308,6 +308,28 @@ public static class RevolutProviderExtensions
         services.AddTransient<RevolutProvider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<RevolutProvider>());
     }
+
+    /// <summary>
+    /// Registers the Revolut provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterRevolutProvider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterRevolutProvider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterRevolutProvider();
+
+        // A host that also calls RegisterPaymentProvider<RevolutProvider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(RevolutProvider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<RevolutProvider>();
+    }
 }
 
 /// <summary>Wczytuje opcje Revolut z konfiguracji.</summary>

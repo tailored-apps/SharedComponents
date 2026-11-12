@@ -258,6 +258,28 @@ public static class CashBillProviderExtensions
         services.AddTransient<CashBillProvider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<CashBillProvider>());
     }
+
+    /// <summary>
+    /// Registers the CashBill provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterCashbillProvider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterCashbillProvider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterCashbillProvider();
+
+        // A host that also calls RegisterPaymentProvider<CashBillProvider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(CashBillProvider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<CashBillProvider>();
+    }
 }
 
 

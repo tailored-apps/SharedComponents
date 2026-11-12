@@ -588,6 +588,28 @@ public static class TpayProviderExtensions
         services.AddTransient<TpayProvider>();
         services.AddTransient<IWebhookPaymentProvider>(sp => sp.GetRequiredService<TpayProvider>());
     }
+
+    /// <summary>
+    /// Registers the Tpay provider with its dependencies and adds it to the payment service, so that
+    /// <see cref="IPaymentService"/> can route to it. This is the one call a host needs for this provider:
+    /// <c>builder.Services.AddPayments().RegisterTpayProvider();</c>
+    /// </summary>
+    /// <param name="builder">The builder returned by <c>AddPayments()</c>.</param>
+    /// <returns><paramref name="builder"/>, for chaining.</returns>
+    public static IPaymentOptionsBuilder RegisterTpayProvider(this IPaymentOptionsBuilder builder)
+    {
+        System.ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.RegisterTpayProvider();
+
+        // A host that also calls RegisterPaymentProvider<TpayProvider>() must not end up with the provider twice.
+        foreach (var registered in builder.Services)
+        {
+            if (registered.ServiceType == typeof(IPaymentProvider) && registered.ImplementationType == typeof(TpayProvider))
+                return builder;
+        }
+
+        return builder.RegisterPaymentProvider<TpayProvider>();
+    }
 }
 
 /// <summary>Wczytuje opcje Tpay z konfiguracji.</summary>
