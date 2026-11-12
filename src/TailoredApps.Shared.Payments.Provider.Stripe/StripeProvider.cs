@@ -171,7 +171,7 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// (e.g. <c>payment_method.attached</c>) result in <see cref="PaymentWebhookResult.Ignore"/>.
     /// </remarks>
     /// <param name="request">Unified HTTP webhook request.</param>
-    public Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
+    public async Task<PaymentWebhookResult> HandleWebhookAsync(PaymentWebhookRequest request)
     {
         var rawBody = request.Body ?? string.Empty;
         var signature = request.Headers.TryGetValue("Stripe-Signature", out var sig)
@@ -187,23 +187,23 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
             },
         };
 
-        var response = ((IPaymentProvider)this).TransactionStatusChange(payload).GetAwaiter().GetResult();
+        var response = await ((IPaymentProvider)this).TransactionStatusChange(payload);
 
         // Signature failure — TransactionStatusChange returns Rejected + message containing "signature"
         if (response.PaymentStatus == PaymentStatusEnum.Rejected
             && response.ResponseObject?.ToString()?.Contains("signature", StringComparison.OrdinalIgnoreCase) == true)
         {
-            return Task.FromResult(PaymentWebhookResult.Fail(response.ResponseObject?.ToString() ?? "Invalid signature"));
+            return PaymentWebhookResult.Fail(response.ResponseObject?.ToString() ?? "Invalid signature");
         }
 
         // Non-actionable event (payment_method.attached, customer.created, …)
         if (response.PaymentStatus == PaymentStatusEnum.Processing
             || string.IsNullOrEmpty(response.PaymentUniqueId))
         {
-            return Task.FromResult(PaymentWebhookResult.Ignore("Non-actionable Stripe event"));
+            return PaymentWebhookResult.Ignore("Non-actionable Stripe event");
         }
 
-        return Task.FromResult(PaymentWebhookResult.Ok(response));
+        return PaymentWebhookResult.Ok(response);
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────

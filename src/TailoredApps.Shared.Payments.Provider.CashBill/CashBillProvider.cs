@@ -180,8 +180,8 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
             // Verify MD5 signature: MD5(cmd + args + shopSecretPhrase)
             var notification = new TransactionStatusChanged { Command = cmd, TransactionId = transactionId, Sign = sign };
             var expectedSign = await cashbillService.GetSignForNotificationService(notification);
-            if (!string.Equals(expectedSign, sign, StringComparison.OrdinalIgnoreCase))
-                return PaymentWebhookResult.Fail($"Invalid signature. expected={expectedSign} got={sign}");
+            if (!SignatureComparer.FixedTimeEquals(expectedSign, sign, ignoreCase: true))
+                return PaymentWebhookResult.Fail("Invalid signature.");
 
             // Signature valid — poll the API for the actual payment status
             var statusResponse = await GetStatus(transactionId);

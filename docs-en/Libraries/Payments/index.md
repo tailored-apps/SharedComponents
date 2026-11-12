@@ -162,6 +162,14 @@ foreach (var provider in providers)
 | `PaymentWebhookRequest` | Klasa | Dane HTTP żądania webhook: `Body`, `Headers`, `QueryParams` |
 | `PaymentWebhookResult` | Enum | `Success`, `Ignored`, `Fail` |
 
+### Security
+
+| Type | Kind | Description |
+|------|------|-------------|
+| `SignatureComparer` | Static class | `FixedTimeEquals(expected, actual, ignoreCase)` — constant-time signature comparison; a missing or empty value is never a match |
+
+Every built-in provider verifies notification signatures through `SignatureComparer`. An ordinary string comparison stops at the first differing character, so the response time reveals how much of a forged signature was correct. The error message of a failed verification does not contain the expected signature.
+
 ### DI Registration
 
 | Metoda | Opis |
@@ -220,4 +228,6 @@ var result = await _payments.HandleWebhookAsync(providerKey, new PaymentWebhookR
 - Zawsze sprawdź PaymentWebhookResult — Ignored to OK, Fail to błąd podpisu/konfiguracji
 - Kwota Amount w walucie bazowej (nie w groszach — chyba że provider wymaga inaczej)
 - Dla webhooków wymagany jest endpoint HTTP POST z raw body
+- Custom provider: compare signatures (HMAC, hash, CRC) only with SignatureComparer.FixedTimeEquals — never with == or string.Equals
+- Never put the expected signature or a secret into ErrorMessage, logs or the HTTP response
 ```

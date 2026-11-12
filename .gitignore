@@ -21,3 +21,5 @@ coverage.json
 # MkDocs build output and cache
 site/
 .cache/
+coverage.*.json
+coverage/
