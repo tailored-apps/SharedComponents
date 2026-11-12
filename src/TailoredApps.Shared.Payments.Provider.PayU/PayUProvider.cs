@@ -156,7 +156,7 @@ public class PayUServiceCaller : IPayUServiceCaller
             new("client_secret", options.ClientSecret),
         ]);
         var response = await client.PostAsync($"{options.ServiceUrl}/pl/standard/user/oauth/authorize", content, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        await PaymentGatewayException.ThrowIfNotSuccessAsync("PayU", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<PayUTokenResponse>(json)?.AccessToken ?? string.Empty;
     }
@@ -182,6 +182,8 @@ public class PayUServiceCaller : IPayUServiceCaller
 
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/api/v2_1/orders", content, cancellationToken);
+        // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
+        await PaymentGatewayException.ThrowIfUnavailableAsync("PayU", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (response.StatusCode == System.Net.HttpStatusCode.Found || response.StatusCode == System.Net.HttpStatusCode.Redirect)
@@ -207,7 +209,8 @@ public class PayUServiceCaller : IPayUServiceCaller
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var safeOrderId = PaymentIdentifier.EnsureSafe(orderId, nameof(orderId));
         var response = await client.GetAsync($"{options.ServiceUrl}/api/v2_1/orders/{safeOrderId}", cancellationToken);
-        if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
+        // A failed status query says nothing about the payment: never report it as rejected.
+        await PaymentGatewayException.ThrowIfNotSuccessAsync("PayU", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<PayUStatusResponse>(json);
         var status = result?.Orders?.FirstOrDefault()?.Status;

@@ -116,6 +116,8 @@ public class PayNowServiceCaller : IPayNowServiceCaller
 
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/v2/payments", content, cancellationToken);
+        // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
+        await PaymentGatewayException.ThrowIfUnavailableAsync("PayNow", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<PayNowPaymentResponse>(json);
         return (result?.PaymentId, result?.RedirectUrl);
@@ -127,7 +129,8 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         using var client = CreateClient();
         var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
         var response = await client.GetAsync($"{options.ServiceUrl}/v2/payments/{safePaymentId}/status", cancellationToken);
-        if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
+        // A failed status query says nothing about the payment: never report it as rejected.
+        await PaymentGatewayException.ThrowIfNotSuccessAsync("PayNow", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var status = JsonSerializer.Deserialize<PayNowStatusResponse>(json)?.Status;
         return status switch

@@ -107,6 +107,8 @@ public class RevolutServiceCaller : IRevolutServiceCaller
         };
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ApiUrl}/1.0/orders", content, cancellationToken);
+        // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
+        await PaymentGatewayException.ThrowIfUnavailableAsync("Revolut", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
         return (result?.Id, result?.CheckoutUrl);
@@ -118,7 +120,8 @@ public class RevolutServiceCaller : IRevolutServiceCaller
         using var client = CreateClient();
         var safeOrderId = PaymentIdentifier.EnsureSafe(orderId, nameof(orderId));
         var response = await client.GetAsync($"{options.ApiUrl}/1.0/orders/{safeOrderId}", cancellationToken);
-        if (!response.IsSuccessStatusCode) return (null, orderId);
+        // A failed status query says nothing about the payment: never report it as a known state.
+        await PaymentGatewayException.ThrowIfNotSuccessAsync("Revolut", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
         return (result?.State, result?.Id);

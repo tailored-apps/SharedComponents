@@ -161,15 +161,6 @@ public class TpayServiceCallerHttpTests
         var status = await caller.GetTransactionStatusAsync("tok", "txn_1");
         Assert.Equal(PaymentStatusEnum.Created, status);
     }
-
-    [Fact]
-    public async Task GetTransactionStatusAsync_HttpError_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("""{}""", HttpStatusCode.InternalServerError);
-        var caller = Build(factory);
-        var status = await caller.GetTransactionStatusAsync("tok", "txn_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
-    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -289,15 +280,6 @@ public class PayNowServiceCallerHttpTests
         var status = await caller.GetPaymentStatusAsync("pn_1");
         Assert.Equal(PaymentStatusEnum.Created, status);
     }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_HttpError_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("{}", HttpStatusCode.InternalServerError);
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("pn_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
-    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -381,15 +363,6 @@ public class PayUServiceCallerHttpTests
         Assert.Equal(PaymentStatusEnum.Created, status);
     }
 
-    [Fact]
-    public async Task GetOrderStatusAsync_HttpError_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("{}", HttpStatusCode.InternalServerError);
-        var caller = Build(factory);
-        var status = await caller.GetOrderStatusAsync("tok", "ord_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
-    }
-
     // Note: CreateOrderAsync uses new HttpClientHandler{AllowAutoRedirect=false} directly,
     // not the IHttpClientFactory — tested via provider-level mocks in PayUProviderTests.
     [Fact]
@@ -449,16 +422,6 @@ public class RevolutServiceCallerHttpTests
         var caller = Build(factory);
         var (state, id) = await caller.GetOrderAsync("rev_1");
         Assert.Equal("completed", state);
-        Assert.Equal("rev_1", id);
-    }
-
-    [Fact]
-    public async Task GetOrderAsync_HttpError_ReturnsNullState()
-    {
-        var factory = HttpFactory.Create("{}", HttpStatusCode.NotFound);
-        var caller = Build(factory);
-        var (state, id) = await caller.GetOrderAsync("rev_1");
-        Assert.Null(state);
         Assert.Equal("rev_1", id);
     }
 }
@@ -575,15 +538,6 @@ public class AdyenServiceCallerHttpTests
         var caller = Build(factory);
         var status = await caller.GetPaymentStatusAsync("psp_1");
         Assert.Equal(PaymentStatusEnum.Created, status);
-    }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_HttpError_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("{}", HttpStatusCode.NotFound);
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("psp_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
     }
 }
 

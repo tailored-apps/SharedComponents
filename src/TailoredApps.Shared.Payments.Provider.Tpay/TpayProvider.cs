@@ -211,7 +211,7 @@ public class TpayServiceCaller : ITpayServiceCaller
             new("client_secret", options.ClientSecret),
         ]);
         var response = await client.PostAsync($"{options.ServiceUrl}/oauth/auth", content, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        await PaymentGatewayException.ThrowIfNotSuccessAsync("Tpay", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<TpayTokenResponse>(json)?.AccessToken ?? string.Empty;
     }
@@ -241,6 +241,8 @@ public class TpayServiceCaller : ITpayServiceCaller
 
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/transactions", content, cancellationToken);
+        // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
+        await PaymentGatewayException.ThrowIfUnavailableAsync("Tpay", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var tx = JsonSerializer.Deserialize<TpayTransactionResponse>(json);
         return (tx?.TransactionId, tx?.PaymentUrl);
@@ -253,7 +255,8 @@ public class TpayServiceCaller : ITpayServiceCaller
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var safeTransactionId = PaymentIdentifier.EnsureSafe(transactionId, nameof(transactionId));
         var response = await client.GetAsync($"{options.ServiceUrl}/transactions/{safeTransactionId}", cancellationToken);
-        if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
+        // A failed status query says nothing about the payment: never report it as rejected.
+        await PaymentGatewayException.ThrowIfNotSuccessAsync("Tpay", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var status = JsonSerializer.Deserialize<TpayStatusResponse>(json)?.Status;
         return status switch

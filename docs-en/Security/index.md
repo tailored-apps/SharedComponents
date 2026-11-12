@@ -129,8 +129,9 @@ the fixes that shipped with it, and the items that still need a human decision.
 - Tpay and Adyen: notification verification now follows the vendor protocols, but it has not been
   exercised with a real sandbox notification - make a test payment before going live.
   Adyen: `/sessions` returns `sessionData`, not a redirect URL.
-- Transport failures (5xx, timeouts) are still reported as `PaymentStatusEnum.Rejected` by several
-  providers; add an `Unknown` outcome so outages are never mistaken for refusals.
+- A failing gateway is no longer reported as `PaymentStatusEnum.Rejected`: the HTTP providers throw
+  `PaymentGatewayException` (2.0). CashBill (`WebException`) and Stripe (`StripeException`) still
+  report failures with exception types of their own.
 - `CachingBehavior` no longer returns `default` for a cache miss on a value-type response (fixed in
   1.5.1: a default value is treated as a miss and the handler runs). In 2.0 the problem is gone:
   `CachingBehavior` uses `HybridCache`, which tells a miss from a cached default value and protects

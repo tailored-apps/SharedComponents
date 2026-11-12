@@ -163,6 +163,7 @@ foreach (var provider in providers)
 | `PaymentWebhookRequest` | Klasa | Dane HTTP żądania webhook: `Body`, `Headers`, `Query` |
 | `PaymentWebhookResult` | Rekord (zamknięta hierarchia) | Dokładnie jeden z: `PaymentWebhookProcessed` (`Payment`), `PaymentWebhookIgnored` (`Reason`, `Payment`), `PaymentWebhookRejected` (`Rejection`, `Message`). Zgodnościowo: `Success`, `Ignored`, `PaymentResponse`, `ErrorMessage` |
 | `PaymentWebhookRejection` | Enum | Powód odrzucenia: `InvalidSignature`, `NotConfigured`, `MalformedPayload`, `ProcessingFailed`, `UnknownProvider`, `NotSupported`, `Unspecified` |
+| `PaymentGatewayException` | Wyjątek (`HttpRequestException`) | Bramka nie dała użytecznej odpowiedzi; stan płatności nieznany. `Provider`, `StatusCode`, `IsTransient`, `ResponseBody` |
 
 ### Walidacja konfiguracji przy starcie
 
@@ -188,6 +189,46 @@ Rejestruj tylko tych providerów, których faktycznie używasz i masz skonfiguro
 |--------|------|
 | `services.AddPayments()` | Rejestruje `IPaymentService`/`PaymentService` |
 | `builder.RegisterPaymentProvider<T>()` | Dodaje implementację `IPaymentProvider` |
+
+---
+
+## ⚠️ Awaria bramki to nie odmowa
+
+Status `Rejected` oznacza wyłącznie odpowiedź bramki: płatność odrzucona lub anulowana albo żądanie utworzenia płatności odrzucone (4xx).
+Gdy bramka nie daje użytecznej odpowiedzi, provider rzuca **`PaymentGatewayException`** — stan płatności jest wtedy **nieznany**
+i nie wolno na tej podstawie anulować zamówienia.
+
+| Sytuacja | Wynik |
+|---|---|
+| Tworzenie płatności, bramka odpowiada 5xx, 408 lub 429 | `PaymentGatewayException` (`IsTransient == true`) |
+| Tworzenie płatności, bramka odpowiada innym 4xx | `PaymentResponse` ze statusem `Rejected` i treścią błędu w `ResponseObject` |
+| Zapytanie o status lub o token, odpowiedź spoza 2xx | `PaymentGatewayException` |
+| Brak połączenia z bramką | `HttpRequestException` (klasa bazowa `PaymentGatewayException`) |
+| Przekroczony czas | `TaskCanceledException` |
+
+```csharp
+try
+{
+    var payment = await _payments.GetStatus("Tpay", paymentId, cancellationToken);
+    if (payment.PaymentStatus == PaymentStatusEnum.Rejected)
+        await _orders.CancelAsync(orderId, cancellationToken);   // bramka odpowiedziała: odrzucona
+}
+catch (HttpRequestException exception)   // obejmuje PaymentGatewayException
+{
+    // Stan płatności nieznany: zostaw zamówienie bez zmian i sprawdź ponownie później.
+    _logger.LogWarning(exception, "Gateway unavailable for payment {PaymentId}", paymentId);
+}
+```
+
+`PaymentGatewayException` niesie `Provider`, `StatusCode`, `IsTransient` oraz początek odpowiedzi bramki w `ResponseBody`
+(treść nie trafia do `Message`, bo może zawierać dane żądania). Dotyczy providerów Adyen, HotPay, PayNow, PayU, Przelewy24, Revolut i Tpay.
+CashBill zgłasza awarie jako `WebException`, a Stripe jako `StripeException` — bez zmian.
+
+Przelewy24: gdy w trakcie webhooka nie da się zweryfikować transakcji, wynikiem jest `PaymentWebhookRejected` (`ProcessingFailed`),
+a nie przetworzona płatność odrzucona — odpowiedz kodem spoza 2xx, a Przelewy24 ponowi powiadomienie.
+
+**Zmiana niekompatybilna (2.0):** do tej pory nieudane zapytanie o status zwracało `Rejected` (Revolut: `Created`), a błąd 5xx przy tworzeniu
+płatności — `Rejected` albo `JsonException`.
 
 ---
 
@@ -256,6 +297,8 @@ var response = result switch
 
 ### Zasady
 - Każdy provider ma unikalny Key (np. "Stripe", "PayU", "CashBill")
+- Łap HttpRequestException (obejmuje PaymentGatewayException) wokół RegisterPayment i GetStatus: awaria bramki oznacza stan nieznany — nie anuluj zamówienia, sprawdź ponownie później
+- Status Rejected traktuj jako odmowę tylko wtedy, gdy wywołanie zakończyło się bez wyjątku
 - Wynik webhooka to zawsze jeden z trzech rekordów: PaymentWebhookProcessed (działaj na Payment), PaymentWebhookIgnored (odpowiedz 2xx, nic nie rób), PaymentWebhookRejected (nie ufaj niczemu z żądania)
 - Powód odrzucenia czytaj z PaymentWebhookRejected.Rejection (np. InvalidSignature → 401, MalformedPayload → 400) — nigdy nie analizuj treści Message
 - W switch po wyniku nie dodawaj gałęzi domyślnej: hierarchia jest zamknięta i kompilator C# 15 pilnuje kompletności

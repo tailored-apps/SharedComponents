@@ -128,8 +128,9 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
 - Tpay i Adyen: weryfikacja powiadomień odpowiada już protokołom dostawców, ale nie była sprawdzona
   prawdziwym powiadomieniem z sandboxa — wykonaj płatność testową przed wdrożeniem.
   Adyen: `/sessions` zwraca `sessionData`, nie URL przekierowania.
-- Błędy transportu (5xx, timeouty) nadal są raportowane przez część providerów jako
-  `PaymentStatusEnum.Rejected`; dodaj wynik `Unknown`, by awaria nie była mylona z odmową.
+- Awaria bramki nie jest już raportowana jako `PaymentStatusEnum.Rejected`: providerzy HTTP rzucają
+  `PaymentGatewayException` (2.0). CashBill (`WebException`) i Stripe (`StripeException`) nadal
+  zgłaszają awarie własnymi typami wyjątków.
 - `CachingBehavior` nie zwraca już `default` przy braku wpisu dla odpowiedzi typu wartościowego
   (poprawione w 1.5.1: wartość domyślna jest traktowana jak brak wpisu i handler się wykonuje).
   W 2.0 problem znika: `CachingBehavior` korzysta z `HybridCache`, który odróżnia brak wpisu od

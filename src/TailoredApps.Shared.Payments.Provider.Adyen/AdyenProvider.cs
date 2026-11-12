@@ -151,6 +151,8 @@ public class AdyenServiceCaller : IAdyenServiceCaller
         };
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{BaseUrl}/sessions", content, cancellationToken);
+        // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
+        await PaymentGatewayException.ThrowIfUnavailableAsync("Adyen", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -166,7 +168,8 @@ public class AdyenServiceCaller : IAdyenServiceCaller
         using var client = CreateClient();
         var safePaymentId = PaymentIdentifier.EnsureSafe(paymentId, nameof(paymentId));
         var response = await client.GetAsync($"{BaseUrl}/payments/{safePaymentId}/details", cancellationToken);
-        if (!response.IsSuccessStatusCode) return PaymentStatusEnum.Rejected;
+        // A failed status query says nothing about the payment: never report it as rejected.
+        await PaymentGatewayException.ThrowIfNotSuccessAsync("Adyen", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<AdyenStatusResponse>(json);
         return result?.ResultCode switch
