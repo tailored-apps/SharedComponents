@@ -685,6 +685,7 @@ public class Przelewy24ProviderAdditionalTests
             .ReturnsAsync(("token_abc", null));
         var result = await Build(mock.Object, "https://sandbox.przelewy24.pl").RequestPayment(new PaymentRequest
         {
+            PaymentProvider = "Przelewy24",
             Currency = "PLN",
             Amount = 10m,
             Email = "x@example.com",

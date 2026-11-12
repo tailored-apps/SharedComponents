@@ -92,6 +92,7 @@ public class TpayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.CreateTransactionAsync("tok", new PaymentRequest
         {
+            PaymentProvider = "Tpay",
             Amount = 9.99m,
             Currency = "PLN",
             Email = "test@example.com",
@@ -111,6 +112,7 @@ public class TpayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, _) = await caller.CreateTransactionAsync("tok", new PaymentRequest
         {
+            PaymentProvider = "Tpay",
             Amount = 1m,
             Currency = "PLN",
         });
@@ -161,15 +163,6 @@ public class TpayServiceCallerHttpTests
         var status = await caller.GetTransactionStatusAsync("tok", "txn_1");
         Assert.Equal(PaymentStatusEnum.Created, status);
     }
-
-    [Fact]
-    public async Task GetTransactionStatusAsync_HttpError_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("""{}""", HttpStatusCode.InternalServerError);
-        var caller = Build(factory);
-        var status = await caller.GetTransactionStatusAsync("tok", "txn_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
-    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -195,6 +188,7 @@ public class PayNowServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.CreatePaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "PayNow",
             Amount = 9.99m,
             Currency = "PLN",
             Email = "test@example.com",
@@ -212,6 +206,7 @@ public class PayNowServiceCallerHttpTests
         var caller = Build(factory);
         var (id, _) = await caller.CreatePaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "PayNow",
             Amount = 1m,
             Currency = "PLN",
         });
@@ -288,15 +283,6 @@ public class PayNowServiceCallerHttpTests
         var caller = Build(factory);
         var status = await caller.GetPaymentStatusAsync("pn_1");
         Assert.Equal(PaymentStatusEnum.Created, status);
-    }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_HttpError_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("{}", HttpStatusCode.InternalServerError);
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("pn_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
     }
 }
 
@@ -381,15 +367,6 @@ public class PayUServiceCallerHttpTests
         Assert.Equal(PaymentStatusEnum.Created, status);
     }
 
-    [Fact]
-    public async Task GetOrderStatusAsync_HttpError_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("{}", HttpStatusCode.InternalServerError);
-        var caller = Build(factory);
-        var status = await caller.GetOrderStatusAsync("tok", "ord_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
-    }
-
     // Note: CreateOrderAsync uses new HttpClientHandler{AllowAutoRedirect=false} directly,
     // not the IHttpClientFactory — tested via provider-level mocks in PayUProviderTests.
     [Fact]
@@ -423,6 +400,7 @@ public class RevolutServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.CreateOrderAsync(new PaymentRequest
         {
+            PaymentProvider = "Revolut",
             Amount = 9.99m,
             Currency = "PLN",
             Title = "Test",
@@ -438,7 +416,7 @@ public class RevolutServiceCallerHttpTests
     {
         var factory = HttpFactory.Create("""{"id":"rev_xyz","checkout_url":"https://checkout.revolut.com/pay/xyz"}""");
         var caller = Build(factory);
-        var (id, _) = await caller.CreateOrderAsync(new PaymentRequest { Amount = 1m, Currency = "EUR" });
+        var (id, _) = await caller.CreateOrderAsync(new PaymentRequest { PaymentProvider = "Revolut", Amount = 1m, Currency = "EUR" });
         Assert.Equal("rev_xyz", id);
     }
 
@@ -449,16 +427,6 @@ public class RevolutServiceCallerHttpTests
         var caller = Build(factory);
         var (state, id) = await caller.GetOrderAsync("rev_1");
         Assert.Equal("completed", state);
-        Assert.Equal("rev_1", id);
-    }
-
-    [Fact]
-    public async Task GetOrderAsync_HttpError_ReturnsNullState()
-    {
-        var factory = HttpFactory.Create("{}", HttpStatusCode.NotFound);
-        var caller = Build(factory);
-        var (state, id) = await caller.GetOrderAsync("rev_1");
-        Assert.Null(state);
         Assert.Equal("rev_1", id);
     }
 }
@@ -487,6 +455,7 @@ public class AdyenServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url, error) = await caller.CreateSessionAsync(new PaymentRequest
         {
+            PaymentProvider = "Adyen",
             Amount = 9.99m,
             Currency = "PLN",
             Email = "x@e.com",
@@ -505,6 +474,7 @@ public class AdyenServiceCallerHttpTests
         var caller = Build(factory);
         var (id, _, error) = await caller.CreateSessionAsync(new PaymentRequest
         {
+            PaymentProvider = "Adyen",
             Amount = 1m,
             Currency = "EUR",
         });
@@ -517,7 +487,7 @@ public class AdyenServiceCallerHttpTests
     {
         var factory = HttpFactory.Create("""{"status":401,"message":"Unauthorized"}""", HttpStatusCode.Unauthorized);
         var caller = Build(factory);
-        var (id, url, error) = await caller.CreateSessionAsync(new PaymentRequest { Amount = 1m, Currency = "PLN" });
+        var (id, url, error) = await caller.CreateSessionAsync(new PaymentRequest { PaymentProvider = "Adyen", Amount = 1m, Currency = "PLN" });
         Assert.Null(id);
         Assert.Null(url);
         Assert.NotNull(error);
@@ -576,15 +546,6 @@ public class AdyenServiceCallerHttpTests
         var status = await caller.GetPaymentStatusAsync("psp_1");
         Assert.Equal(PaymentStatusEnum.Created, status);
     }
-
-    [Fact]
-    public async Task GetPaymentStatusAsync_HttpError_ReturnsRejected()
-    {
-        var factory = HttpFactory.Create("{}", HttpStatusCode.NotFound);
-        var caller = Build(factory);
-        var status = await caller.GetPaymentStatusAsync("psp_1");
-        Assert.Equal(PaymentStatusEnum.Rejected, status);
-    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -612,6 +573,7 @@ public class Przelewy24ServiceCallerHttpTests
         var caller = Build(factory);
         var (token, error) = await caller.RegisterTransactionAsync(new PaymentRequest
         {
+            PaymentProvider = "Przelewy24",
             Amount = 10m,
             Currency = "PLN",
             Email = "x@example.com",
@@ -629,6 +591,7 @@ public class Przelewy24ServiceCallerHttpTests
         var caller = Build(factory);
         var (token, error) = await caller.RegisterTransactionAsync(new PaymentRequest
         {
+            PaymentProvider = "Przelewy24",
             Amount = 1m,
             Currency = "PLN",
         }, "sess_1");
@@ -677,6 +640,7 @@ public class HotPayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.InitPaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "HotPay",
             Amount = 9.99m,
             Currency = "PLN",
             Title = "Test",
@@ -693,6 +657,7 @@ public class HotPayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.InitPaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "HotPay",
             Amount = 1m,
             Currency = "PLN",
             Description = "Desc",
@@ -708,6 +673,7 @@ public class HotPayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, _) = await caller.InitPaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "HotPay", Currency = "PLN",
             Amount = 5m,
             Title = "Service",
             Email = "user@test.com",

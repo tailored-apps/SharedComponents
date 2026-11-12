@@ -240,7 +240,7 @@ public class PayUCreateOrderRedirectTests
             ContinueUrl = "https://example.com/continue",
         }), Mock.Of<IHttpClientFactory>());
 
-    private static PaymentRequest Order() => new() { Amount = 12.34m, Currency = "pln", Title = "Order", Email = "buyer@example.com" };
+    private static PaymentRequest Order() => new() { PaymentProvider = "PayU", Amount = 12.34m, Currency = "pln", Title = "Order", Email = "buyer@example.com" };
 
     [Fact]
     public async Task When_PayU_Answers_With_Redirect_Should_Return_Location_Without_Following_It()

@@ -147,6 +147,8 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
 
         var content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/api/v1/transaction/register", content, cancellationToken);
+        // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
+        await PaymentGatewayException.ThrowIfUnavailableAsync("Przelewy24", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<P24RegisterResponse>(json);
         return (result?.Data?.Token, response.IsSuccessStatusCode ? null : json);
@@ -170,6 +172,9 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
         };
         var content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json");
         var response = await client.PutAsync($"{options.ServiceUrl}/api/v1/transaction/verify", content, cancellationToken);
+
+        // A 4xx answer is Przelewy24 refusing the verification; 5xx, 408 and 429 leave the transaction unverified.
+        await PaymentGatewayException.ThrowIfUnavailableAsync("Przelewy24", response, cancellationToken);
         return response.IsSuccessStatusCode ? PaymentStatusEnum.Finished : PaymentStatusEnum.Rejected;
     }
 
@@ -344,6 +349,15 @@ public class Przelewy24Provider : IPaymentProvider, IWebhookPaymentProvider
                 oid.GetInt32(), cancellationToken);
 
             return PaymentWebhookResult.FromStatus(new PaymentResponse { PaymentUniqueId = sessionId, PaymentStatus = status, ResponseObject = "OK" });
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (PaymentGatewayException exception)
+        {
+            // The transaction could not be verified now. Rejecting makes Przelewy24 send the notification again.
+            return PaymentWebhookResult.Reject(PaymentWebhookRejection.ProcessingFailed, exception.Message);
         }
         catch
         {

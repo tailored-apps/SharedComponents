@@ -92,9 +92,9 @@ public class DateTimeProviderTests
     public void As_Library_User_When_Get_UtcTimeOfDay_I_Get_TimeSpan_In_Utc_Timezone()
     {
         //arrange
-        var dateTimeBeforeTest = System.DateTime.Now.TimeOfDay;
-        var dateFromProvider = provider.TimeOfDay;
-        var dateTimeAfterTest = System.DateTime.Now.TimeOfDay;
+        var dateTimeBeforeTest = System.DateTime.UtcNow.TimeOfDay;
+        var dateFromProvider = provider.UtcTimeOfDay;
+        var dateTimeAfterTest = System.DateTime.UtcNow.TimeOfDay;
 
         //verify
 

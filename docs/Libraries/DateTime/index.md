@@ -7,9 +7,21 @@
 
 ## Opis
 
-Biblioteka rozwiązuje jeden z fundamentalnych problemów testowalności aplikacji .NET — bezpośrednie użycie `System.DateTime.Now` w kodzie produkcyjnym, które uniemożliwia pisanie deterministycznych testów jednostkowych.
+Bezpośrednie użycie `DateTime.Now` w kodzie produkcyjnym uniemożliwia pisanie deterministycznych testów. Biblioteka dostarcza
+`IDateTimeProvider` — bieżącą datę i czas jako gotowe wartości (`DateTime`, `DateTimeOffset`, `TimeSpan`), odczytywane z zegara,
+który można podmienić w testach.
 
-`TailoredApps.Shared.DateTime` dostarcza interfejs `IDateTimeProvider` i jego domyślną implementację `DateTimeProvider`. Zamiast wywoływać `DateTime.Now` wprost, wstrzykujesz `IDateTimeProvider` przez DI i wywołujesz `provider.Now`. W testach wymieniasz implementację na mock zwracający dowolny punkt w czasie — dzięki temu testy są powtarzalne i niezależne od zegara systemowego.
+Od 2.0 zegarem jest [`System.TimeProvider`](https://learn.microsoft.com/dotnet/api/system.timeprovider) z .NET:
+`DateTimeProvider` czyta z niego każdą wartość. W aplikacji jest więc **jeden zegar** — kod wstrzykujący `IDateTimeProvider`
+i kod wstrzykujący `TimeProvider` (timery, opóźnienia, biblioteki .NET) widzą ten sam czas i tę samą strefę czasową,
+także w testach z `FakeTimeProvider`.
+
+Kiedy czego użyć:
+
+| Potrzebujesz | Wstrzyknij |
+|--------------|------------|
+| Bieżącej daty lub czasu jako wartości (`UtcNow`, `OffsetUtcNow`, `Today`, …) | `IDateTimeProvider` |
+| Timera, opóźnienia, pomiaru czasu (`CreateTimer`, `Task.Delay(…, timeProvider)`, `GetTimestamp`) | `TimeProvider` |
 
 ---
 
@@ -27,8 +39,12 @@ dotnet add package TailoredApps.Shared.DateTime
 // Program.cs
 using TailoredApps.Shared.DateTime;
 
-builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+builder.Services.AddDateTimeProvider();
 ```
+
+`AddDateTimeProvider()` rejestruje jako singletony `TimeProvider` (`TimeProvider.System`) oraz `IDateTimeProvider`, który z niego czyta.
+Rejestracje już obecne w kontenerze zostają — własny `TimeProvider` można zarejestrować przed wywołaniem albo po nim,
+a `IDateTimeProvider` zawsze czyta ten, który rozwiązuje kontener.
 
 ---
 
@@ -41,73 +57,73 @@ public class OrderService
 {
     private readonly IDateTimeProvider _dateTime;
 
-    public OrderService(IDateTimeProvider dateTime)
-    {
-        _dateTime = dateTime;
-    }
+    public OrderService(IDateTimeProvider dateTime) => _dateTime = dateTime;
 
     public Order CreateOrder(string customerId, decimal amount)
     {
+        var now = _dateTime.OffsetUtcNow;   // DateTimeOffset: chwila razem z przesunięciem względem UTC
         return new Order
         {
             Id = Guid.NewGuid(),
             CustomerId = customerId,
             Amount = amount,
-            CreatedAt = _dateTime.UtcNow,   // zamiast DateTime.UtcNow
-            ExpiresAt = _dateTime.UtcNow.AddDays(30)
+            CreatedAt = now,
+            ExpiresAt = now.AddDays(30),
         };
     }
 
-    public bool IsOrderExpired(Order order)
-    {
-        return order.ExpiresAt < _dateTime.UtcNow;
-    }
+    public bool IsOrderExpired(Order order) => order.ExpiresAt < _dateTime.OffsetUtcNow;
 }
 ```
 
-### Test jednostkowy (Moq)
+### Test jednostkowy (`FakeTimeProvider`)
+
+```bash
+dotnet add package Microsoft.Extensions.TimeProvider.Testing
+```
 
 ```csharp
-using Moq;
+using Microsoft.Extensions.Time.Testing;
 using TailoredApps.Shared.DateTime;
 using Xunit;
 
 public class OrderServiceTests
 {
     [Fact]
-    public void CreateOrder_ShouldSetCreatedAtToCurrentUtcTime()
+    public void When_Thirty_Days_Pass_Should_Report_The_Order_As_Expired()
     {
         // Arrange
-        var fixedTime = new DateTime(2024, 6, 1, 12, 0, 0, DateTimeKind.Utc);
-        var dateTimeMock = new Mock<IDateTimeProvider>();
-        dateTimeMock.Setup(d => d.UtcNow).Returns(fixedTime);
-
-        var service = new OrderService(dateTimeMock.Object);
-
-        // Act
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 6, 1, 12, 0, 0, TimeSpan.Zero));
+        var service = new OrderService(new DateTimeProvider(clock));
         var order = service.CreateOrder("customer-1", 99.99m);
 
+        // Act
+        clock.Advance(TimeSpan.FromDays(31));
+
         // Assert
-        Assert.Equal(fixedTime, order.CreatedAt);
-        Assert.Equal(fixedTime.AddDays(30), order.ExpiresAt);
-    }
-
-    [Fact]
-    public void IsOrderExpired_WhenExpiresInPast_ReturnsTrue()
-    {
-        // Arrange
-        var now = new DateTime(2024, 6, 1, DateTimeKind.Utc);
-        var dateTimeMock = new Mock<IDateTimeProvider>();
-        dateTimeMock.Setup(d => d.UtcNow).Returns(now);
-
-        var service = new OrderService(dateTimeMock.Object);
-        var expiredOrder = new Order { ExpiresAt = now.AddDays(-1) };
-
-        // Act & Assert
-        Assert.True(service.IsOrderExpired(expiredOrder));
+        Assert.True(service.IsOrderExpired(order));
     }
 }
 ```
+
+Mock interfejsu (`new Mock<IDateTimeProvider>()`) działa jak dotąd; `FakeTimeProvider` ma tę przewagę, że czas można przesuwać,
+a wszystkie właściwości pozostają ze sobą spójne.
+
+### Test integracyjny — podmiana zegara w hoście
+
+```csharp
+var clock = new FakeTimeProvider(new DateTimeOffset(2026, 6, 1, 12, 0, 0, TimeSpan.Zero));
+
+await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+    builder.ConfigureServices(services => services.AddSingleton<TimeProvider>(clock)));
+// IDateTimeProvider i TimeProvider w aplikacji wskazują teraz na "clock"
+```
+
+### `DateTime` czy `DateTimeOffset`
+
+- Dla wartości zapisywanych w bazie lub wysyłanych dalej używaj `OffsetUtcNow` (albo `OffsetNow`): `DateTimeOffset` przenosi
+  przesunięcie względem UTC, którego `DateTime` nie ma — jego `Kind` gubi się przy serializacji i w większości baz.
+- `Now` i `Today` raportują strefę czasową zegara (`TimeProvider.LocalTimeZone`), z `Kind == Local`.
 
 ---
 
@@ -115,14 +131,23 @@ public class OrderServiceTests
 
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
-| `IDateTimeProvider` | Interfejs | Główny kontrakt — wszystkie właściwości do pobierania czasu |
-| `DateTimeProvider` | Klasa | Implementacja produkcyjna — deleguje do `System.DateTime` |
-| `IDateTimeProvider.Now` | Właściwość | Aktualny czas lokalny (`DateTime.Now`) |
-| `IDateTimeProvider.UtcNow` | Właściwość | Aktualny czas UTC (`DateTime.UtcNow`) |
-| `IDateTimeProvider.Today` | Właściwość | Aktualna data lokalna (`DateTime.Today`) |
-| `IDateTimeProvider.UtcToday` | Właściwość | Aktualna data UTC (`DateTime.UtcNow.Date`) |
+| `IDateTimeProvider` | Interfejs | Bieżąca data i czas jako gotowe wartości |
+| `DateTimeProvider` | Klasa | Implementacja na `TimeProvider`: `new DateTimeProvider()` czyta zegar systemowy, `new DateTimeProvider(timeProvider)` — podany |
+| `DateTimeProviderExtensions.AddDateTimeProvider()` | Metoda rozszerzająca | Rejestruje `TimeProvider` i `IDateTimeProvider` jako singletony (bez nadpisywania istniejących) |
+| `IDateTimeProvider.OffsetUtcNow` | Właściwość | Aktualna chwila w UTC jako `DateTimeOffset` (przesunięcie zero) |
+| `IDateTimeProvider.OffsetNow` | Właściwość | Aktualna chwila w lokalnej strefie zegara jako `DateTimeOffset`, z przesunięciem tej strefy |
+| `IDateTimeProvider.UtcNow` | Właściwość | Aktualny czas UTC jako `DateTime` (`Kind == Utc`) |
+| `IDateTimeProvider.Now` | Właściwość | Aktualny czas w lokalnej strefie zegara jako `DateTime` (`Kind == Local`) |
+| `IDateTimeProvider.UtcToday` | Właściwość | Aktualna data UTC |
+| `IDateTimeProvider.Today` | Właściwość | Aktualna data w lokalnej strefie zegara |
+| `IDateTimeProvider.UtcTimeOfDay` | Właściwość | Pora dnia UTC jako `TimeSpan` |
 | `IDateTimeProvider.TimeOfDay` | Właściwość | Pora dnia (lokalnie) jako `TimeSpan` |
-| `IDateTimeProvider.UtcTimeOfDaty` | Właściwość | Pora dnia UTC jako `TimeSpan` |
+| `IDateTimeProvider.UtcTimeOfDaty` | Właściwość (przestarzała) | Błędnie zapisana nazwa `UtcTimeOfDay`; działa, ale kompilator podpowiada poprawną |
+| `DateTimeProvider.TimeProvider` | Właściwość | Zegar, z którego czytane są wszystkie wartości |
+
+**Zgodność z 1.x:** `OffsetNow`, `OffsetUtcNow` i `UtcTimeOfDay` mają w interfejsie implementacje domyślne, więc własne implementacje
+`IDateTimeProvider` i istniejące mocki kompilują się bez zmian. Zmiana zachowania: `Now` i `Today` raportują strefę czasową
+użytego `TimeProvider`, a nie zawsze strefę systemu (dla zegara systemowego to to samo).
 
 ---
 
@@ -131,38 +156,26 @@ public class OrderServiceTests
 ```markdown
 ## TailoredApps.Shared.DateTime — Instrukcja dla agenta AI
 
-Używasz biblioteki TailoredApps.Shared.DateTime w projekcie .NET.
+Używasz biblioteki TailoredApps.Shared.DateTime: IDateTimeProvider to bieżąca data i czas odczytywane z System.TimeProvider.
 
 ### Rejestracja
-```csharp
 // Program.cs
-builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-```
+builder.Services.AddDateTimeProvider();
 
-### Użycie
-- Nigdy nie używaj `DateTime.Now` ani `DateTime.UtcNow` bezpośrednio w kodzie produkcyjnym
-- Wstrzykuj `IDateTimeProvider` przez konstruktor
-- Używaj `provider.UtcNow` dla timestampów w bazie danych
-- Używaj `provider.Now` tylko gdy potrzebujesz czasu lokalnego (np. do wyświetlania)
+### Co jest konfigurowane
+- TimeProvider (TimeProvider.System) — jedyny zegar aplikacji, singleton
+- IDateTimeProvider (DateTimeProvider) — wartości daty i czasu odczytywane z tego zegara, singleton
+- Istniejące rejestracje TimeProvider i IDateTimeProvider nie są nadpisywane
 
-```csharp
-// ✅ Poprawnie
-public class MyService
-{
-    private readonly IDateTimeProvider _dateTime;
-    public MyService(IDateTimeProvider dateTime) => _dateTime = dateTime;
-    public DateTime GetExpiry() => _dateTime.UtcNow.AddHours(1);
-}
-
-// ❌ Niepoprawnie
-public class MyService
-{
-    public DateTime GetExpiry() => DateTime.UtcNow.AddHours(1); // nie testowalny!
-}
-```
+### Konfiguracja
+- Brak kluczy konfiguracji. Inny zegar: services.AddSingleton<TimeProvider>(mojZegar) przed lub po AddDateTimeProvider()
 
 ### Zasady
-- Zawsze używaj `IDateTimeProvider` zamiast `System.DateTime` bezpośrednio
-- W testach mockuj interfejs, aby zwracał stały punkt w czasie
-- Preferuj `UtcNow`/`UtcToday` dla wartości zapisywanych w bazie danych
+- Nie używaj DateTime.Now, DateTime.UtcNow ani DateTimeOffset.UtcNow bezpośrednio w kodzie produkcyjnym
+- Wstrzykuj IDateTimeProvider, gdy potrzebna jest wartość daty lub czasu; TimeProvider, gdy potrzebny jest timer, opóźnienie lub pomiar czasu
+- Dla wartości zapisywanych w bazie lub wysyłanych dalej używaj OffsetUtcNow (DateTimeOffset), nie UtcNow (DateTime)
+- Now / Today / OffsetNow tylko tam, gdzie potrzebny jest czas lokalny (np. do wyświetlania)
+- Używaj UtcTimeOfDay, nie błędnie zapisanego UtcTimeOfDaty
+- W testach: new DateTimeProvider(new FakeTimeProvider(...)) z pakietu Microsoft.Extensions.TimeProvider.Testing; przesuwaj czas przez Advance
+- Nie rejestruj drugiego, niezależnego zegara obok TimeProvider — aplikacja ma mieć jedno źródło czasu
 ```

@@ -19,6 +19,10 @@ public interface IPaymentService
     /// <summary>Initiates a new payment via the specified provider.</summary>
     /// <param name="request">Payment details including the target provider key.</param>
     /// <param name="cancellationToken">Token that cancels the operation.</param>
+    /// <exception cref="System.ArgumentNullException"><paramref name="request"/> is <c>null</c>.</exception>
+    /// <exception cref="System.ArgumentException">The provider key or the currency of <paramref name="request"/> is blank.</exception>
+    /// <exception cref="System.ArgumentOutOfRangeException">The amount of <paramref name="request"/> is zero or negative.</exception>
+    /// <exception cref="PaymentGatewayException">The gateway could not handle the call; the payment may or may not exist.</exception>
     Task<PaymentResponse> RegisterPayment(PaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Fetches the current payment status from the provider.</summary>

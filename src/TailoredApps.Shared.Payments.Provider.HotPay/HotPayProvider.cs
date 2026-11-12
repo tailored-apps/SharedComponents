@@ -89,6 +89,8 @@ public class HotPayServiceCaller : IHotPayServiceCaller
         using var client = httpClientFactory.CreateClient("HotPay");
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync(options.ServiceUrl, content, cancellationToken);
+        // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal the caller reports.
+        await PaymentGatewayException.ThrowIfUnavailableAsync("HotPay", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<HotPayResponse>(json);
         return (result?.PaymentId ?? paymentId, result?.RedirectUrl);

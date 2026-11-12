@@ -93,7 +93,7 @@ together under a single version taken from the git tag.
 
 ## Naming Conventions
 - Use PascalCase for class, method, property, interface names
-- Interface names should start with "I" (e.g., `IDateTimeProvider`)
+- Interface names should start with "I" (e.g., `IPaymentProvider`)
 - Use descriptive names for types and members
 - Use verb phrases for method names (e.g., `SendMail`)
 

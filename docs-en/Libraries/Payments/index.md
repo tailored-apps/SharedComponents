@@ -88,6 +88,13 @@ public class CheckoutService
 }
 ```
 
+`PaymentProvider`, `Amount` and `Currency` are `required` members: an object initializer that leaves one out does not compile
+(CS9035), and `System.Text.Json` refuses a document without them (`JsonException`, a 400 response in an API controller). The shorter form is
+the constructor `new PaymentRequest("Stripe", cart.TotalAmount, "PLN") { Title = "…" }`. `RegisterPayment` also refuses a blank provider key
+or currency (`ArgumentException`) and an amount of zero or less (`ArgumentOutOfRangeException`) before it calls the gateway.
+
+**Breaking change (2.0):** code that creates a `PaymentRequest` without one of these three members no longer compiles.
+
 ### Obsługa webhooków
 
 ```csharp
@@ -154,7 +161,7 @@ foreach (var provider in providers)
 
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
-| `PaymentRequest` | Klasa | Dane płatności: provider, kanał, kwota, waluta, dane płatnika |
+| `PaymentRequest` | Class | Payment data. Required (`required`): `PaymentProvider`, `Amount`, `Currency`; optional: channel, title, description, payer details, `AdditionalData`. Constructor `PaymentRequest(paymentProvider, amount, currency)` |
 | `PaymentResponse` | Klasa | Wynik: `RedirectUrl`, `PaymentUniqueId`, `PaymentStatus` |
 | `PaymentStatusEnum` | Enum | `Created`, `Processing`, `Finished`, `Rejected` |
 | `PaymentModel` | Enum | `OneTime`, `Subscription` |
@@ -163,6 +170,7 @@ foreach (var provider in providers)
 | `PaymentWebhookRequest` | Class | HTTP data of the webhook request: `Body`, `Headers`, `Query` |
 | `PaymentWebhookResult` | Record (closed hierarchy) | Exactly one of: `PaymentWebhookProcessed` (`Payment`), `PaymentWebhookIgnored` (`Reason`, `Payment`), `PaymentWebhookRejected` (`Rejection`, `Message`). For compatibility: `Success`, `Ignored`, `PaymentResponse`, `ErrorMessage` |
 | `PaymentWebhookRejection` | Enum | Why a webhook was rejected: `InvalidSignature`, `NotConfigured`, `MalformedPayload`, `ProcessingFailed`, `UnknownProvider`, `NotSupported`, `Unspecified` |
+| `PaymentGatewayException` | Exception (`HttpRequestException`) | The gateway gave no usable answer; the state of the payment is not known. `Provider`, `StatusCode`, `IsTransient`, `ResponseBody` |
 
 ### Startup validation of configuration
 
@@ -188,6 +196,46 @@ Register only the providers you actually use and have configured in the given en
 |--------|------|
 | `services.AddPayments()` | Rejestruje `IPaymentService`/`PaymentService` |
 | `builder.RegisterPaymentProvider<T>()` | Dodaje implementację `IPaymentProvider` |
+
+---
+
+## ⚠️ A failing gateway is not a refusal
+
+`Rejected` means only what the gateway said: the payment was declined or cancelled, or the request to create a payment was refused (4xx).
+When the gateway gives no usable answer, the provider throws **`PaymentGatewayException`** - the state of the payment is then **not known**
+and an order must not be cancelled on that basis.
+
+| Situation | Outcome |
+|---|---|
+| Creating a payment, the gateway answers 5xx, 408 or 429 | `PaymentGatewayException` (`IsTransient == true`) |
+| Creating a payment, the gateway answers another 4xx | `PaymentResponse` with status `Rejected` and the error text in `ResponseObject` |
+| Status or token query, an answer outside 2xx | `PaymentGatewayException` |
+| The gateway cannot be reached | `HttpRequestException` (the base class of `PaymentGatewayException`) |
+| Timeout | `TaskCanceledException` |
+
+```csharp
+try
+{
+    var payment = await _payments.GetStatus("Tpay", paymentId, cancellationToken);
+    if (payment.PaymentStatus == PaymentStatusEnum.Rejected)
+        await _orders.CancelAsync(orderId, cancellationToken);   // the gateway answered: declined
+}
+catch (HttpRequestException exception)   // covers PaymentGatewayException
+{
+    // The state of the payment is not known: leave the order as it is and check again later.
+    _logger.LogWarning(exception, "Gateway unavailable for payment {PaymentId}", paymentId);
+}
+```
+
+`PaymentGatewayException` carries `Provider`, `StatusCode`, `IsTransient` and the beginning of the gateway's answer in `ResponseBody`
+(the text is kept out of `Message` because it may hold details of the request). It applies to the Adyen, HotPay, PayNow, PayU, Przelewy24,
+Revolut and Tpay providers. CashBill reports failures as `WebException` and Stripe as `StripeException` - unchanged.
+
+Przelewy24: when a transaction cannot be verified during a webhook, the result is `PaymentWebhookRejected` (`ProcessingFailed`),
+not a processed payment that was rejected - answer with a status outside 2xx and Przelewy24 sends the notification again.
+
+**Breaking change (2.0):** until now a failed status query returned `Rejected` (Revolut: `Created`), and a 5xx while creating a payment
+returned `Rejected` or threw `JsonException`.
 
 ---
 
@@ -256,6 +304,9 @@ var response = result switch
 
 ### Zasady
 - Każdy provider ma unikalny Key (np. "Stripe", "PayU", "CashBill")
+- PaymentRequest: always set PaymentProvider, Amount (greater than zero) and Currency - they are required; leaving one out is compile error CS9035
+- Catch HttpRequestException (covers PaymentGatewayException) around RegisterPayment and GetStatus: a failing gateway means an unknown state - do not cancel the order, check again later
+- Treat Rejected as a refusal only when the call returned without an exception
 - A webhook result is always one of three records: PaymentWebhookProcessed (act on Payment), PaymentWebhookIgnored (answer 2xx, do nothing), PaymentWebhookRejected (trust nothing in the request)
 - Read the rejection reason from PaymentWebhookRejected.Rejection (e.g. InvalidSignature -> 401, MalformedPayload -> 400) - never parse the Message text
 - Do not add a default branch to a switch over the result: the hierarchy is closed and the C# 15 compiler checks completeness
