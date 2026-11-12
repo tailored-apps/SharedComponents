@@ -127,19 +127,7 @@ public class Office365EmailProvider : IEmailProvider
             }
             folder.Open(FolderAccess.ReadOnly);
 
-            var query = SearchQuery.All;
-            if (!string.IsNullOrEmpty(sender))
-            {
-                query = query.And(SearchQuery.FromContains(sender));
-            }
-            if (!string.IsNullOrEmpty(recipent))
-            {
-                query = query.And(SearchQuery.ToContains(recipent));
-            }
-            if (fromLast.HasValue)
-            {
-                query = query.And(SearchQuery.DeliveredAfter(DateTime.Now - fromLast.Value));
-            }
+            var query = BuildSearchQuery(sender, recipent, fromLast, DateTime.Now);
 
             var uids = folder.Search(query);
             var items = folder.Fetch(uids, MessageSummaryItems.UniqueId | MessageSummaryItems.Headers);
@@ -147,19 +135,7 @@ public class Office365EmailProvider : IEmailProvider
             foreach (var uid in uids)
             {
                 var message = folder.GetMessage(uid);
-
-                var mailMessage = new Models.MailMessage
-                {
-                    HtmlBody = message.HtmlBody,
-                    Topic = message.Subject,
-                    Copy = string.Join(",", message.Cc?.Select(z => z.ToString()) ?? []),
-                    Sender = string.Join(",", message.From?.Select(z => z.ToString()) ?? []),
-                    Recipent = string.Join(",", message.To?.Select(z => z.ToString()) ?? []),
-                    Body = message.GetTextBody(MimeKit.Text.TextFormat.Plain),
-                    Date = message.Date,
-                    Attachements = GetAttachements(message.Attachments)
-                };
-                response.Add(mailMessage);
+                response.Add(ToMailMessage(message));
 
             }
             await client.DisconnectAsync(true);
@@ -167,7 +143,49 @@ public class Office365EmailProvider : IEmailProvider
         return response;
     }
 
-    private Dictionary<string, string> GetAttachements(IEnumerable<MimeEntity> attachments)
+    /// <summary>
+    /// Builds the IMAP search for <see cref="GetMail"/>: every message, narrowed by each filter that was given.
+    /// </summary>
+    /// <param name="sender">Text the sender must contain; empty for any sender.</param>
+    /// <param name="recipent">Text the recipient must contain; empty for any recipient.</param>
+    /// <param name="fromLast">How far back to look; <c>null</c> for no limit.</param>
+    /// <param name="now">The moment <paramref name="fromLast"/> is counted back from.</param>
+    internal static SearchQuery BuildSearchQuery(string sender, string recipent, TimeSpan? fromLast, DateTime now)
+    {
+        var query = SearchQuery.All;
+        if (!string.IsNullOrEmpty(sender))
+        {
+            query = query.And(SearchQuery.FromContains(sender));
+        }
+        if (!string.IsNullOrEmpty(recipent))
+        {
+            query = query.And(SearchQuery.ToContains(recipent));
+        }
+        if (fromLast.HasValue)
+        {
+            query = query.And(SearchQuery.DeliveredAfter(now - fromLast.Value));
+        }
+
+        return query;
+    }
+
+    /// <summary>Maps a message read from the mailbox to the library model.</summary>
+    internal static Models.MailMessage ToMailMessage(MimeMessage message)
+    {
+        return new Models.MailMessage
+        {
+            HtmlBody = message.HtmlBody,
+            Topic = message.Subject,
+            Copy = string.Join(",", message.Cc?.Select(z => z.ToString()) ?? []),
+            Sender = string.Join(",", message.From?.Select(z => z.ToString()) ?? []),
+            Recipent = string.Join(",", message.To?.Select(z => z.ToString()) ?? []),
+            Body = message.GetTextBody(MimeKit.Text.TextFormat.Plain),
+            Date = message.Date,
+            Attachements = GetAttachements(message.Attachments)
+        };
+    }
+
+    private static Dictionary<string, string> GetAttachements(IEnumerable<MimeEntity> attachments)
     {
         var result = new Dictionary<string, string>();
         foreach (var attachement in attachments)

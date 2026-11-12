@@ -123,7 +123,7 @@ public class ImageClassificationService : IImageClassificationService
     /// <param name="testDataView">The data view containing the test dataset.</param>
     /// <param name="trainDataView">The trained transformer to evaluate.</param>
     /// <returns>A tuple of discovered class labels and a formatted metrics info string.</returns>
-    private (string[] labels, string info) EvaluateModel(MLContext mlContext, IDataView testDataView, ITransformer trainDataView)
+    internal (string[] labels, string info) EvaluateModel(MLContext mlContext, IDataView testDataView, ITransformer trainDataView)
     {
         var watch = Stopwatch.StartNew();
         var predictionDataView = trainDataView.Transform(testDataView);

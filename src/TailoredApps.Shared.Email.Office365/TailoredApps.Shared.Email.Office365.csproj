@@ -19,6 +19,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <InternalsVisibleTo Include="TailoredApps.Shared.Email.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <ProjectReference Include="..\TailoredApps.Shared.Email\TailoredApps.Shared.Email.csproj" />
 	</ItemGroup>
 
