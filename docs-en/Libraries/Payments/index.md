@@ -164,6 +164,24 @@ foreach (var provider in providers)
 | `PaymentWebhookResult` | Record (closed hierarchy) | Exactly one of: `PaymentWebhookProcessed` (`Payment`), `PaymentWebhookIgnored` (`Reason`, `Payment`), `PaymentWebhookRejected` (`Rejection`, `Message`). For compatibility: `Success`, `Ignored`, `PaymentResponse`, `ErrorMessage` |
 | `PaymentWebhookRejection` | Enum | Why a webhook was rejected: `InvalidSignature`, `NotConfigured`, `MalformedPayload`, `ProcessingFailed`, `UnknownProvider`, `NotSupported`, `Unspecified` |
 
+### Startup validation of configuration
+
+Every `Register*Provider()` checks the settings the provider cannot work without: its API credentials and the secret that signs its webhooks. If one is missing the host **does not start** — the `OptionsValidationException` names every missing setting (for example `'Payments:Providers:PayU:SignatureKey' is not configured.`). Return and notification URLs are not validated.
+
+| Provider (`Payments:Providers:<Name>`) | Required settings |
+|---|---|
+| Adyen | `ApiKey`, `MerchantAccount`, `NotificationHmacKey` |
+| CashBill (`Payments:Providers:Cashbill`) | `ServiceUrl`, `ShopId`, `ShopSecretPhrase` |
+| HotPay | `SecretHash` |
+| PayNow | `ApiKey`, `SignatureKey` |
+| PayU | `ClientId`, `ClientSecret`, `PosId`, `SignatureKey` |
+| Przelewy24 | `MerchantId`, `PosId`, `ApiKey`, `CrcKey` |
+| Revolut | `ApiKey`, `WebhookSecret` |
+| Stripe | `SecretKey`, `WebhookSecret` |
+| Tpay | `ClientId`, `ClientSecret`, `SecurityCode` |
+
+Register only the providers you actually use and have configured in the given environment.
+
 ### DI Registration
 
 | Metoda | Opis |
@@ -247,6 +265,7 @@ var response = result switch
 - In custom providers compare signatures with WebhookSignature.FixedTimeEquals and pass URL identifiers through PaymentIdentifier.EnsureSafe
 - Do not echo the webhook ErrorMessage to the caller - log it server-side
 - De-duplicate events on PaymentUniqueId; the webhook consumer must be idempotent
+- Register only configured providers: missing credentials or a missing webhook secret stop the application at startup (OptionsValidationException)
 - Pass a CancellationToken (HttpContext.RequestAborted in a controller) to every IPaymentService call - it reaches the gateway HTTP calls
 - Custom provider: every asynchronous method takes CancellationToken cancellationToken = default and forwards it to HttpClient
 ```

@@ -294,7 +294,11 @@ public static class RevolutProviderExtensions
     /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterRevolutProvider(this IServiceCollection services)
     {
-        services.AddOptions<RevolutServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<RevolutServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ApiKey), $"'{RevolutServiceOptions.ConfigurationKey}:ApiKey' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.WebhookSecret), $"'{RevolutServiceOptions.ConfigurationKey}:WebhookSecret' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<RevolutConfigureOptions>();
         services.AddHttpClient("Revolut");
         services.AddTransient<IRevolutServiceCaller, RevolutServiceCaller>();

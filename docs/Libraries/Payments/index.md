@@ -164,6 +164,24 @@ foreach (var provider in providers)
 | `PaymentWebhookResult` | Rekord (zamknięta hierarchia) | Dokładnie jeden z: `PaymentWebhookProcessed` (`Payment`), `PaymentWebhookIgnored` (`Reason`, `Payment`), `PaymentWebhookRejected` (`Rejection`, `Message`). Zgodnościowo: `Success`, `Ignored`, `PaymentResponse`, `ErrorMessage` |
 | `PaymentWebhookRejection` | Enum | Powód odrzucenia: `InvalidSignature`, `NotConfigured`, `MalformedPayload`, `ProcessingFailed`, `UnknownProvider`, `NotSupported`, `Unspecified` |
 
+### Walidacja konfiguracji przy starcie
+
+Każde `Register*Provider()` sprawdza ustawienia, bez których provider nie może działać: dane dostępowe do API oraz sekret podpisujący webhooki. Gdy czegoś brakuje, host **nie wystartuje** — `OptionsValidationException` wymienia każde brakujące ustawienie (np. `'Payments:Providers:PayU:SignatureKey' is not configured.`). Adresy powrotu i powiadomień nie są walidowane.
+
+| Provider (`Payments:Providers:<Nazwa>`) | Wymagane ustawienia |
+|---|---|
+| Adyen | `ApiKey`, `MerchantAccount`, `NotificationHmacKey` |
+| CashBill (`Payments:Providers:Cashbill`) | `ServiceUrl`, `ShopId`, `ShopSecretPhrase` |
+| HotPay | `SecretHash` |
+| PayNow | `ApiKey`, `SignatureKey` |
+| PayU | `ClientId`, `ClientSecret`, `PosId`, `SignatureKey` |
+| Przelewy24 | `MerchantId`, `PosId`, `ApiKey`, `CrcKey` |
+| Revolut | `ApiKey`, `WebhookSecret` |
+| Stripe | `SecretKey`, `WebhookSecret` |
+| Tpay | `ClientId`, `ClientSecret`, `SecurityCode` |
+
+Rejestruj tylko tych providerów, których faktycznie używasz i masz skonfigurowanych w danym środowisku.
+
 ### DI Registration
 
 | Metoda | Opis |
@@ -247,6 +265,7 @@ var response = result switch
 - We własnych providerach porównuj podpisy przez WebhookSignature.FixedTimeEquals, a identyfikatory do URL przepuszczaj przez PaymentIdentifier.EnsureSafe
 - Nie zwracaj klientowi ErrorMessage z webhooka w treści odpowiedzi — loguj go po stronie serwera
 - De-duplikuj zdarzenia po PaymentUniqueId; konsument webhooka musi być idempotentny
+- Rejestruj tylko skonfigurowanych providerów: brak danych dostępowych lub sekretu webhooka zatrzymuje start aplikacji (OptionsValidationException)
 - Przekazuj CancellationToken (w kontrolerze HttpContext.RequestAborted) do każdego wywołania IPaymentService — token dociera do wywołań HTTP bramki
 - Własny provider: każda metoda asynchroniczna przyjmuje CancellationToken cancellationToken = default i przekazuje go dalej do HttpClient
 ```

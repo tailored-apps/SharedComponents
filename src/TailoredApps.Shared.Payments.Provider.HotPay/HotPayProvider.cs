@@ -207,7 +207,10 @@ public static class HotPayProviderExtensions
     /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterHotPayProvider(this IServiceCollection services)
     {
-        services.AddOptions<HotPayServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<HotPayServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.SecretHash), $"'{HotPayServiceOptions.ConfigurationKey}:SecretHash' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<HotPayConfigureOptions>();
         services.AddHttpClient("HotPay");
         services.AddTransient<IHotPayServiceCaller, HotPayServiceCaller>();

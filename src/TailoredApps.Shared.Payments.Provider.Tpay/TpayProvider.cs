@@ -322,7 +322,12 @@ public static class TpayProviderExtensions
     /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterTpayProvider(this IServiceCollection services)
     {
-        services.AddOptions<TpayServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<TpayServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), $"'{TpayServiceOptions.ConfigurationKey}:ClientId' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ClientSecret), $"'{TpayServiceOptions.ConfigurationKey}:ClientSecret' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.SecurityCode), $"'{TpayServiceOptions.ConfigurationKey}:SecurityCode' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<TpayConfigureOptions>();
         services.AddHttpClient("Tpay");
         services.AddTransient<ITpayServiceCaller, TpayServiceCaller>();

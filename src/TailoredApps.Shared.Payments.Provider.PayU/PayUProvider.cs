@@ -387,7 +387,13 @@ public static class PayUProviderExtensions
     /// <summary>Rejestruje <see cref="PayUProvider"/> i jego zależności w kontenerze DI.</summary>
     public static void RegisterPayUProvider(this IServiceCollection services)
     {
-        services.AddOptions<PayUServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<PayUServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), $"'{PayUServiceOptions.ConfigurationKey}:ClientId' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ClientSecret), $"'{PayUServiceOptions.ConfigurationKey}:ClientSecret' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.PosId), $"'{PayUServiceOptions.ConfigurationKey}:PosId' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.SignatureKey), $"'{PayUServiceOptions.ConfigurationKey}:SignatureKey' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<PayUConfigureOptions>();
         services.AddHttpClient("PayU");
         services.AddTransient<IPayUServiceCaller, PayUServiceCaller>();

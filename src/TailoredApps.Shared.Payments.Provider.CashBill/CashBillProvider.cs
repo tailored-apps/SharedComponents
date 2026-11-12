@@ -243,7 +243,12 @@ namespace TailoredApps.Shared.Payments.Provider.CashBill
         /// <param name="services">The DI service collection.</param>
         public static void RegisterCashbillProvider(this IServiceCollection services)
         {
-            services.AddOptions<CashbillServiceOptions>();
+            // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+            services.AddOptions<CashbillServiceOptions>()
+                .Validate(o => !string.IsNullOrWhiteSpace(o.ServiceUrl), $"'{CashbillServiceOptions.ConfigurationKey}:ServiceUrl' is not configured.")
+                .Validate(o => !string.IsNullOrWhiteSpace(o.ShopId), $"'{CashbillServiceOptions.ConfigurationKey}:ShopId' is not configured.")
+                .Validate(o => !string.IsNullOrWhiteSpace(o.ShopSecretPhrase), $"'{CashbillServiceOptions.ConfigurationKey}:ShopSecretPhrase' is not configured.")
+                .ValidateOnStart();
             services.ConfigureOptions<CashbillConfigureOptions>();
             services.AddTransient<ICashbillServiceCaller, CashbillServiceCaller>();
             services.AddTransient<ICashbillHttpClient, CashbillHttpClient>();

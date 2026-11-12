@@ -341,7 +341,12 @@ public static class AdyenProviderExtensions
     /// <summary>Rejestruje <see cref="AdyenProvider"/> i jego zależności w kontenerze DI.</summary>
     public static void RegisterAdyenProvider(this IServiceCollection services)
     {
-        services.AddOptions<AdyenServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<AdyenServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ApiKey), $"'{AdyenServiceOptions.ConfigurationKey}:ApiKey' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.MerchantAccount), $"'{AdyenServiceOptions.ConfigurationKey}:MerchantAccount' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.NotificationHmacKey), $"'{AdyenServiceOptions.ConfigurationKey}:NotificationHmacKey' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<AdyenConfigureOptions>();
         services.AddHttpClient("Adyen");
         services.AddTransient<IAdyenServiceCaller, AdyenServiceCaller>();

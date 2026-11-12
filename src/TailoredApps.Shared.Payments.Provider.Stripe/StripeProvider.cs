@@ -259,7 +259,11 @@ public static class StripeProviderExtensions
     /// </summary>
     public static void RegisterStripeProvider(this IServiceCollection services)
     {
-        services.AddOptions<StripeServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<StripeServiceOptions>()
+            .Validate(o => !string.IsNullOrWhiteSpace(o.SecretKey), $"'{StripeServiceOptions.ConfigurationKey}:SecretKey' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.WebhookSecret), $"'{StripeServiceOptions.ConfigurationKey}:WebhookSecret' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<StripeConfigureOptions>();
         services.AddTransient<global::Stripe.Checkout.SessionService>();
         services.AddTransient<IStripeServiceCaller, StripeServiceCaller>();

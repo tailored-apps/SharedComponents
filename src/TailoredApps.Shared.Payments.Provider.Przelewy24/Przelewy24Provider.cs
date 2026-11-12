@@ -360,7 +360,13 @@ public static class Przelewy24ProviderExtensions
     /// <summary>Rejestruje provider i jego zależności w kontenerze DI.</summary>
     public static void RegisterPrzelewy24Provider(this IServiceCollection services)
     {
-        services.AddOptions<Przelewy24ServiceOptions>();
+        // Fail when the host starts, not on the first payment: these are the settings the provider cannot work without.
+        services.AddOptions<Przelewy24ServiceOptions>()
+            .Validate(o => o.MerchantId > 0, $"'{Przelewy24ServiceOptions.ConfigurationKey}:MerchantId' is not configured.")
+            .Validate(o => o.PosId > 0, $"'{Przelewy24ServiceOptions.ConfigurationKey}:PosId' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ApiKey), $"'{Przelewy24ServiceOptions.ConfigurationKey}:ApiKey' is not configured.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.CrcKey), $"'{Przelewy24ServiceOptions.ConfigurationKey}:CrcKey' is not configured.")
+            .ValidateOnStart();
         services.ConfigureOptions<Przelewy24ConfigureOptions>();
         services.AddHttpClient("Przelewy24");
         services.AddTransient<IPrzelewy24ServiceCaller, Przelewy24ServiceCaller>();
