@@ -20,7 +20,7 @@ Każda paczka `TailoredApps.Shared.*` jest budowana dla kilku platform docelowyc
 
 ### Zależności dopasowane do platformy
 
-Paczki powiązane z wersją runtime'u (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) są referowane osobno dla każdej platformy docelowej: asset `net11.0` zależy od linii `11.x`, a `net10.0` od `10.x`. Aplikacja na .NET 11 nie dostaje więc w zależnościach paczek z poprzedniej generacji.
+Paczki powiązane z wersją runtime'u (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) mają osobną wersję dla każdej platformy docelowej: asset `net11.0` zależy od linii `11.x`, a `net10.0` od `10.x`. Wersje wszystkich paczek są zapisane w jednym miejscu, w `Directory.Packages.props`; pliki projektów wymieniają paczki tylko z nazwy. Aplikacja na .NET 11 nie dostaje więc w zależnościach paczek z poprzedniej generacji.
 
 !!! note "Wyjątek: WebApi na net11.0"
     W dniu wydania .NET 11 na nuget.org nie było jeszcze linii `11.x` paczek `Microsoft.Extensions.Http.Resilience` i `Microsoft.Extensions.ServiceDiscovery`, dlatego asset `net11.0` biblioteki `WebApi` korzysta tymczasowo z ich linii `10.x`.
@@ -98,10 +98,10 @@ dotnet test TailoredApps.Shared.slnx
 
 ### Nowa biblioteka
 
-- Użyj `<TargetFrameworks>net10.0;net11.0</TargetFrameworks>`.
-- Paczki powiązane z wersją runtime'u referuj warunkowo, osobno dla każdej platformy (`Condition="'$(TargetFramework)' == 'net11.0'"` → `Version="11.*"`).
+- Nie ustawiaj `TargetFrameworks`, autora, licencji ani wersji języka w pliku `.csproj` — są dziedziczone z `Directory.Build.props` i `src/Directory.Build.props`. Plik projektu zawiera tylko to, co własne: `PackageId`, `Title`, `Description`, `PackageTags`, referencje.
+- Paczki dodawaj jako `<PackageReference Include="Nazwa" />` bez wersji; wersję dopisz w `Directory.Packages.props`. Paczkę powiązaną z wersją runtime'u dopisz do obu grup warunkowych (`10.*` dla `net10.0`, `11.*` dla `net11.0`).
 - Nie ustawiaj `Features` w pliku `.csproj` — runtime async jest dziedziczony z `src/Directory.Build.targets`.
-- Dodaj `net11.0` do `<TargetFrameworks>` projektu testów, aby asset `net11.0` był faktycznie testowany.
+- Projekt testów umieść w `tests/` — dziedziczy te same platformy docelowe, więc asset `net11.0` jest faktycznie testowany.
 
 ---
 
@@ -136,7 +136,8 @@ Pracujesz z paczkami TailoredApps.Shared.* albo z repozytorium SharedComponents.
   SYSLIB5007 / CA2252.
 - Nie używaj assetów net11.0 bibliotek z kodem async w Blazor WebAssembly (Mono nie obsługuje
   runtime async w .NET 11) — zbuduj je z UseRuntimeAsync=false.
-- Nowa biblioteka: TargetFrameworks net10.0;net11.0, zależności runtime'owe
-  warunkowo per platforma, projekt testów z net10.0;net11.0.
+- Nowa biblioteka: nie ustawiaj TargetFrameworks ani metadanych paczki w csproj (są dziedziczone);
+  PackageReference bez wersji, wersje w Directory.Packages.props (paczki runtime'owe w obu grupach
+  warunkowych: 10.* i 11.*); projekt testów w tests/.
 - Do budowania repozytorium używaj .NET SDK 11.0.100 lub nowszego.
 ```

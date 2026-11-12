@@ -39,12 +39,14 @@ There is no application project: every library is consumed through dependency-in
 together under a single version taken from the git tag.
 
 ## Build configuration shared by every project
-- `Directory.Build.props` (root): artifacts output and `LangVersion=latest`, so both target frameworks compile with the same C# version.
+- `Directory.Build.props` (root): artifacts output, `TargetFrameworks` (`net10.0;net11.0` for every project) and `LangVersion=latest`, so both target frameworks compile with the same C# version.
 - `src/Directory.Build.targets`: turns on runtime async for the `net11.0` assets (`UseRuntimeAsync`, opt out per library or per build). Never set `Features` or `EnablePreviewFeatures` in a csproj.
-- Packages tied to the runtime generation (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) are referenced once per target framework
-  with a `Condition` (`net10.0` -> `10.*`, `net11.0` -> `11.*`). Adding such a dependency means adding both lines.
+- Package versions are managed centrally in `Directory.Packages.props`; a project file lists `<PackageReference Include="X" />` without a version.
+  Packages tied to the runtime generation (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) have one `PackageVersion` per target
+  framework in conditional groups (`net10.0` -> `10.*`, `net11.0` -> `11.*`). Adding such a dependency means adding it to both groups.
 - Most versions float (`10.*`, `1.*`). The weekly *Bump dependencies* workflow (`scripts/Bump-Deps.ps1`) raises the pinned ones and writes its own docs entry.
-- Package metadata is repeated in each csproj; there is no central package management yet.
+- Project files hold only what is their own (PackageId, Title, Description, tags, references). Target frameworks, `SourceRevisionId`, nullable, packaging and the shared package metadata come from `Directory.Build.props`, `src/Directory.Build.props` and `tests/Directory.Build.props`.
+- `nuget.config` restricts package sources to nuget.org.
 
 ## Library families and how they fit together
 - **Payments** - `TailoredApps.Shared.Payments` holds the contracts: `IPaymentProvider` (channels, `RequestPayment`, `GetStatus`, and the
@@ -142,7 +144,7 @@ tells an AI coding agent how to wire the library into a project. It must state:
 When in doubt, mirror an existing page such as `docs/Libraries/EntityFramework/UnitOfWork.WebApiCore.md`.
 
 ## Automated dependency bumps
-`.github/workflows/bump-deps.yml` changes `src/**/*.csproj`, so it must satisfy the same rule.
+`.github/workflows/bump-deps.yml` changes the package versions in `Directory.Packages.props`, and every bump ships its own docs entry.
 `scripts/Bump-Deps.ps1 -RecordsPath <json>` emits a machine-readable BUMP/SKIP report and
 `scripts/New-BumpDocs.ps1 -RecordsPath <json>` turns it into a dated entry on
 `docs/Dependencies/index.md` + `docs-en/Dependencies/index.md`. Only the region between the

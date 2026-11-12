@@ -82,8 +82,9 @@ Używasz biblioteki TailoredApps.Shared.XXXXX w projekcie .NET.
 
 ## Automatyczne bumpy zależności
 
-PR-y tworzone przez workflow **Bump dependencies** też muszą spełniać tę zasadę — zmieniają
-`*.csproj` pod `src/`, więc *Docs guard* wymaga od nich zmiany w `docs/` i `docs-en/`.
+PR-y tworzone przez workflow **Bump dependencies** też niosą dokumentację — zmieniają wersje paczek
+w `Directory.Packages.props` (od wersji 2.0; wcześniej `*.csproj` pod `src/`), a każda taka zmiana
+ma być opisana w `docs/` i `docs-en/`.
 Robi to za nie `scripts/New-BumpDocs.ps1`, uruchamiany zaraz po `scripts/Bump-Deps.ps1`:
 dopisuje datowany wpis (projekt → pakiet → wersja z/na → licencja) na stronach
 `docs/Dependencies/index.md` i `docs-en/Dependencies/index.md`.

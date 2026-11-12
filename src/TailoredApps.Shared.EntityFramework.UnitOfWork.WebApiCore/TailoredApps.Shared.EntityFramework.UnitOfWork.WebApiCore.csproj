@@ -1,13 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
-		<TargetFrameworks>net10.0;net11.0</TargetFrameworks>
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-	</PropertyGroup>
-
-	<ItemGroup>
+<ItemGroup>
 		<ProjectReference Include="..\TailoredApps.Shared.EntityFramework\TailoredApps.Shared.EntityFramework.csproj" />
 	</ItemGroup>
 	<ItemGroup>

@@ -1,0 +1,87 @@
+<Project>
+
+	<!--
+		Every package version used in the repository lives here; project files reference packages by name only.
+
+		Packages tied to a runtime generation (Microsoft.Extensions.*, EF Core) follow the target framework:
+		the net10.0 asset of a library depends on the 10.x line, the net11.0 asset on 11.x. Add such a package
+		to both conditional groups. Floating versions (10.*) are resolved when a build restores;
+		scripts/Bump-Deps.ps1 raises the pinned ones.
+	-->
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageVersion Include="AutoMoqCore" Version="2.*" />
+		<PackageVersion Include="coverlet.msbuild" Version="10.1.0" />
+		<PackageVersion Include="FluentValidation" Version="12.*" />
+		<PackageVersion Include="MailKit" Version="4.18.2" />
+		<PackageVersion Include="MediatR" Version="12.5.0" />
+		<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.14" />
+		<!-- Http.Resilience and ServiceDiscovery: no 11.x existed on nuget.org when .NET 11 went GA, so both
+		     frameworks use the 10.x line. Move them to the per-framework groups once 11.x is published. -->
+		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.ML" Version="5.0.1" />
+		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.*" />
+		<PackageVersion Include="Microsoft.Identity.Web" Version="4.18.0" />
+		<PackageVersion Include="Microsoft.ML" Version="5.0.1" />
+		<PackageVersion Include="Microsoft.ML.AutoML" Version="0.23.1" />
+		<PackageVersion Include="Microsoft.ML.ImageAnalytics" Version="5.0.1" />
+		<PackageVersion Include="Microsoft.ML.Vision" Version="5.0.1" />
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.*" />
+		<PackageVersion Include="MimeKit" Version="4.18.2" />
+		<PackageVersion Include="Moq" Version="4.*" />
+		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.*" />
+		<PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.*" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.*" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.*" />
+		<PackageVersion Include="SciSharp.TensorFlow.Redist" Version="2.16.0" />
+		<PackageVersion Include="Scrutor" Version="7.0.0" />
+		<PackageVersion Include="Stripe.net" Version="47.*" />
+		<PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.4" />
+		<PackageVersion Include="xunit" Version="2.*" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="2.*" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.*" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.*" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Http" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Options" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Primitives" Version="10.*" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
+		<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="11.*" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="11.*" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Http" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Options" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Primitives" Version="11.*" />
+	</ItemGroup>
+
+</Project>

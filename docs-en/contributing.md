@@ -50,7 +50,7 @@ The root `Directory.Build.props` enables `UseArtifactsOutput`, so projects **no 
 | `artifacts/obj/<Project>/` | intermediate files |
 | `artifacts/package/<configuration>/` | NuGet packages (`*.nupkg`) for every library — the release workflow publishes from here |
 
-To clean the build, delete the `artifacts/` directory. Add a new library to the solution with `dotnet sln TailoredApps.Shared.slnx add <path to .csproj>` — the settings from `Directory.Build.props` apply automatically. `*.user` files and the `.vs/`, `.idea/`, `.vscode/` folders are never committed (they are in `.gitignore`).
+To clean the build, delete the `artifacts/` directory. Add a new library to the solution with `dotnet sln TailoredApps.Shared.slnx add <path to .csproj>` — the settings from `Directory.Build.props` apply automatically: target frameworks, language version, nullable, package metadata (author, MIT licence, project URL) and NuGet package generation. Package versions live in `Directory.Packages.props`, and `nuget.config` limits the sources to nuget.org. `*.user` files and the `.vs/`, `.idea/`, `.vscode/` folders are never committed (they are in `.gitignore`).
 
 ---
 

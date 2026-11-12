@@ -62,7 +62,7 @@ public class AuthenticationConfig
     /// (which is a kind of application password: this property)
     /// or a certificate previously shared with AzureAD during the application registration 
     /// (and identified by the Certificate property belows)
-    /// <remarks> 
+    /// </remarks>
     public string? ClientSecret { get; set; }
 
     /// <summary>
@@ -72,7 +72,7 @@ public class AuthenticationConfig
     /// (which is a kind of application password: the property above)
     /// or a certificate previously shared with AzureAD during the application registration 
     /// (and identified by this CertificateDescription)
-    /// <remarks> 
+    /// </remarks>
     public CertificateDescription? Certificate { get; set; }
 
 
