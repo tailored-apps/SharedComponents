@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: 3.x
 
-      # The 11.0 SDK builds every target framework (net8.0 - net11.0). The tests run on net10.0 and
+      # The 11.0 SDK builds both target frameworks (net10.0 and net11.0). The tests run on net10.0 and
       # net11.0, so the 10.0 runtime has to be present as well - it comes with the 10.0 SDK.
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:

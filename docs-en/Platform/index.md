@@ -11,14 +11,16 @@ Every `TailoredApps.Shared.*` package is built for several target frameworks at 
 
 | Libraries | Target frameworks |
 |---|---|
-| `DateTime`, `Email.Models`, `MediatR.Caching`, `Querying` | `netstandard2.0`, `netstandard2.1` |
-| `Email`, `Email.Office365`, `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore`, `ExceptionHandling`, `MediatR`, `MediatR.Email`, `MediatR.ML`, `MediatR.PagedRequest`, `Payments` and every payment provider, `WebApi` | `net8.0`, `net9.0`, `net10.0`, `net11.0` |
+| `DateTime`, `Email`, `Email.Models`, `Email.Office365`, `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore`, `ExceptionHandling`, `MediatR`, `MediatR.Caching`, `MediatR.Email`, `MediatR.ML`, `MediatR.PagedRequest`, `Payments` and every payment provider, `Querying`, `WebApi` | `net10.0`, `net11.0` |
 
-The `netstandard` libraries run on all of the .NET versions above, .NET 11 included — they do not need a dedicated asset.
+!!! info "Version 2.0 and older frameworks"
+    From version **2.0** every library targets `net10.0` and `net11.0` only. Applications on `net8.0`, `net9.0`,
+    .NET Framework or any other `netstandard2.0` / `netstandard2.1` platform stay on the **1.x** packages
+    (`1.6.x`), which keep receiving security fixes from the `release/1.x` branch.
 
 ### Framework-aligned dependencies
 
-Packages tied to the runtime generation (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`, `System.Configuration.ConfigurationManager`) are referenced separately for each target framework: the `net11.0` asset depends on the `11.x` line, `net10.0` on `10.x`, and so on. An application on .NET 11 therefore does not pull in packages from the previous generation.
+Packages tied to the runtime generation (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) are referenced separately for each target framework: the `net11.0` asset depends on the `11.x` line and `net10.0` on `10.x`. An application on .NET 11 therefore does not pull in packages from the previous generation.
 
 !!! note "Exception: WebApi on net11.0"
     On the day .NET 11 was released, nuget.org had no `11.x` line of `Microsoft.Extensions.Http.Resilience` and `Microsoft.Extensions.ServiceDiscovery` yet, so the `net11.0` asset of `WebApi` temporarily uses their `10.x` line.
@@ -34,17 +36,16 @@ The libraries in this repository use it in their `net11.0` assets:
 | Asset in the package | How `async` methods are compiled |
 |---|---|
 | `net11.0` | **runtime async** |
-| `net8.0`, `net9.0`, `net10.0` | compiler-generated state machine (unchanged) |
-| `netstandard2.0`, `netstandard2.1` | compiler-generated state machine (unchanged) |
+| `net10.0` | compiler-generated state machine (unchanged) |
 
 ### What it means for your application
 
-- **Nothing to switch on.** An application on `net11.0` gets the runtime-async asset automatically; applications on `net8.0`–`net10.0` get exactly what they got before.
+- **Nothing to switch on.** An application on `net11.0` gets the runtime-async asset automatically; applications on `net10.0` get exactly what they got before.
 - **Your application does not have to use runtime async itself.** Classically compiled code can freely call library methods compiled as runtime async and the other way round — this repository's tests are compiled classically and run on both `net10.0` and `net11.0`.
 - **No environment variables** and no `<EnablePreviewFeatures>` are needed.
 
 !!! warning "Requires CoreCLR or NativeAOT"
-    Runtime async works on CoreCLR and NativeAOT. The Mono runtime — used by **Blazor WebAssembly**, among others — cannot execute such methods in .NET 11. If you want to use one of the libraries that contain `async` code on the Blazor WebAssembly client side on `net11.0`, build it with runtime async switched off (see below). The `netstandard` libraries (`DateTime`, `Email.Models`, `MediatR.Caching`, `Querying`) are not affected.
+    Runtime async works on CoreCLR and NativeAOT. The Mono runtime — used by **Blazor WebAssembly**, among others — cannot execute such methods in .NET 11. If you want to use one of the libraries that contain `async` code on the Blazor WebAssembly client side on `net11.0`, build it with runtime async switched off (see below). `DateTime`, `Email.Models`, `MediatR.Caching` and `Querying` contain no `async` code and are not affected.
 
 !!! info "Feature status"
     In .NET 11 runtime async is an opt-in feature that Microsoft's documentation still describes as a preview: [What's new in the .NET 11 runtime](https://learn.microsoft.com/dotnet/core/whats-new/dotnet-11/runtime).
@@ -74,7 +75,7 @@ With the switch off, the `net11.0` asset is compiled like the others — with st
 
 ## Building the repository
 
-- **.NET SDK 11.0.100 or newer** is required — it builds every target framework from `net8.0` to `net11.0`.
+- **.NET SDK 11.0.100 or newer** is required — it builds both target frameworks, `net10.0` and `net11.0`.
 - The tests run on `net10.0` and `net11.0`, so both runtimes are needed locally.
 - The CI workflows install the `10.0.x` SDK (runtime for the `net10.0` tests) and `11.0.x` (build).
 
@@ -85,7 +86,7 @@ dotnet test TailoredApps.Shared.slnx
 
 ### Adding a new library
 
-- Use `<TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>`.
+- Use `<TargetFrameworks>net10.0;net11.0</TargetFrameworks>`.
 - Reference runtime-aligned packages conditionally, once per target framework (`Condition="'$(TargetFramework)' == 'net11.0'"` → `Version="11.*"`).
 - Do not set `Features` in the `.csproj` — runtime async is inherited from `src/Directory.Build.targets`.
 - Add `net11.0` to the test project's `<TargetFrameworks>` so the `net11.0` asset is actually tested.
@@ -104,8 +105,8 @@ You are working with TailoredApps.Shared.* packages or with the SharedComponents
   matches the application's TargetFramework.
 
 ### What gets configured
-- Frameworks: net8.0, net9.0, net10.0, net11.0. Only these are netstandard2.0/netstandard2.1:
-  DateTime, Email.Models, MediatR.Caching, Querying.
+- Frameworks from version 2.0: net10.0 and net11.0 for every library. Older frameworks
+  (net8.0, net9.0, netstandard2.x) are served only by the 1.x packages (1.6.x).
 - The net11.0 assets have their async methods compiled as runtime async; every other asset uses
   compiler-generated state machines. The public API is identical on every framework.
 - Microsoft.Extensions.* / EF Core dependencies are aligned with the framework (net11.0 -> 11.x).
@@ -123,7 +124,7 @@ You are working with TailoredApps.Shared.* packages or with the SharedComponents
   SYSLIB5007 / CA2252.
 - Do not use the net11.0 assets of libraries containing async code in Blazor WebAssembly (Mono
   does not support runtime async in .NET 11) — build them with UseRuntimeAsync=false.
-- New library: TargetFrameworks net8.0;net9.0;net10.0;net11.0, runtime-aligned dependencies
+- New library: TargetFrameworks net10.0;net11.0, runtime-aligned dependencies
   conditioned per framework, test project on net10.0;net11.0.
 - Build the repository with .NET SDK 11.0.100 or newer.
 ```
