@@ -91,8 +91,8 @@ public class OrdersTests(DemoApplication app) : IClassFixture<DemoApplication>
     }
 
     [Theory]
-    [InlineData("Revolut")]   // PaymentGatewayException, as every provider on HttpClient throws
-    [InlineData("Stripe")]    // StripeException from the Stripe SDK
+    [InlineData("Revolut")]   // a provider on HttpClient
+    [InlineData("Stripe")]    // the Stripe SDK's StripeException, turned into PaymentGatewayException by the provider
     public async Task When_The_Gateway_Is_Down_Should_Answer_503_And_Leave_The_Order_Unchanged(string provider)
     {
         var order = await CreateOrderAsync($"outage-{provider.ToLowerInvariant()}@demo.example");
@@ -112,6 +112,29 @@ public class OrdersTests(DemoApplication app) : IClassFixture<DemoApplication>
         var stored = await client.GetFromJsonAsync<OrderDto>($"/api/orders/{order.Number}");
         Assert.Equal(nameof(OrderStatus.New), stored?.Status);
         Assert.Null(stored?.PaymentProvider);
+    }
+
+    [Theory]
+    [InlineData("Revolut")]
+    [InlineData("Stripe")]    // a 4xx StripeException becomes Rejected, as a 4xx answer does for every provider
+    public async Task When_The_Gateway_Refuses_Should_Answer_422_And_Leave_The_Order_Unchanged(string provider)
+    {
+        var order = await CreateOrderAsync($"refused-{provider.ToLowerInvariant()}@demo.example");
+
+        app.Gateways.Refusing = true;
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.PostAsJsonAsync($"/api/orders/{order.Number}/checkout", new Checkout(provider, "card"));
+        }
+        finally
+        {
+            app.Gateways.Refusing = false;
+        }
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var stored = await client.GetFromJsonAsync<OrderDto>($"/api/orders/{order.Number}");
+        Assert.Equal(nameof(OrderStatus.New), stored?.Status);
     }
 
     private int SentTo(string gateway)

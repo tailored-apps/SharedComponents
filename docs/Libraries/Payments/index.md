@@ -246,8 +246,9 @@ catch (HttpRequestException exception)   // obejmuje PaymentGatewayException
 ```
 
 `PaymentGatewayException` niesie `Provider`, `StatusCode`, `IsTransient` oraz początek odpowiedzi bramki w `ResponseBody`
-(treść nie trafia do `Message`, bo może zawierać dane żądania). Dotyczy providerów Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut i Tpay.
-Stripe zgłasza awarie jako `StripeException`. CashBill do wersji 2.0.1 zgłaszał `WebException`; od kolejnej wersji także `PaymentGatewayException`.
+(treść nie trafia do `Message`, bo może zawierać dane żądania). Dotyczy wszystkich dziewięciu providerów. Stripe od 3.0 zamienia
+`StripeException` z SDK na `PaymentGatewayException` (oryginał w `InnerException`), a odmowę 4xx zwraca jako `Rejected`; w 2.x przepuszczał
+`StripeException`. CashBill do wersji 2.0.1 zgłaszał `WebException`.
 
 Przelewy24: gdy w trakcie webhooka nie da się zweryfikować transakcji, wynikiem jest `PaymentWebhookRejected` (`ProcessingFailed`),
 a nie przetworzona płatność odrzucona — odpowiedz kodem spoza 2xx, a Przelewy24 ponowi powiadomienie.

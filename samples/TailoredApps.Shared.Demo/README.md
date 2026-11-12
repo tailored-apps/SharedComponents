@@ -42,7 +42,8 @@ curl -X POST http://localhost:5080/api/orders/<number>/checkout -H "Content-Type
 
 - **Payment gateways** - `Payments/FakeGateway.cs` is the primary handler of the providers' named HTTP clients and answers
   the way each gateway does; the first segment of the path names the gateway (`ServiceUrl` values in `appsettings.json`).
-  Stripe's SDK gets an `IStripeClient` that uses the same fake. Set `Demo:UseFakeGateways` to `false` and configure
+  Stripe's SDK gets an `IStripeClient` that uses the same fake. `FakeGatewayState` makes every gateway fail (503) or
+  refuse (400), for the outage and refusal paths. Set `Demo:UseFakeGateways` to `false` and configure
   sandbox credentials to talk to the real gateways.
 - **Gateway notifications** are verified for real, with the placeholder secrets of `appsettings.json`.
 - **E-mail** - the console provider prints the message.

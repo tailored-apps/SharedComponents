@@ -68,6 +68,8 @@ with the other tests. A new library is added to the demo with a test of its scen
   Each provider is its own package (`Payments.Provider.*`) with the same shape: `XServiceOptions` bound from `Payments:Providers:X`, a service
   caller (HTTP calls and signature verification), `XProvider`, and a `RegisterXProvider()` extension. HotPay is the smallest one to copy.
   Signature checks must fail closed and use `Payments/Security/WebhookSignature` (constant time); identifiers placed in gateway URLs go through `PaymentIdentifier`.
+  A gateway that cannot handle a call (5xx, 408, 429, no answer) is `PaymentGatewayException` from every provider; creating a payment turns a 4xx into
+  `Rejected`, and a failed status query is always `PaymentGatewayException`. A provider on an SDK translates its exceptions (Stripe: `StripeException`).
 - **MediatR** - built on **ForkForward.Mediator** (a fork of MediatR 12.5.0; namespace `ForkForward.Mediator`, registration `AddMediator`), not on the
   MediatR package; the library and namespace names keep `MediatR`. `PipelineRegistration` adds the behaviours in a fixed order:
   Logging -> Validation (FluentValidation) -> Caching -> Fallback -> Retry.
@@ -78,7 +80,8 @@ with the other tests. A new library is added to the demo with a test of its scen
   plus paging/sorting/filtering extensions (dynamic LINQ with sort-field validation). `EntityFramework.UnitOfWork.WebApiCore` adds the MVC
   transaction filter (`AddUnitOfWorkForWebApi<,>`). `Querying` holds the framework-free query contracts used by both EntityFramework and `MediatR.PagedRequest`.
 - **ExceptionHandling** - `AddExceptionHandlingForWebApi<,>` plus a filter and middleware; an `IExceptionHandlingProvider` maps exceptions to the
-  response model. Unexpected exceptions are answered with 500 and a generic message.
+  response model. Unexpected exceptions are answered with 500 and a generic message. Exceptions mapped to 4xx are not logged as errors (middleware
+  diagnostics suppressed, Debug entry instead), and `LoggingBehavior` logs validation refusals and cancellations at Information.
 - **Email** - `IEmailProvider` with SMTP, console and Office365 providers (`Register*Provider()`), and message builders that HTML-encode template variables.
 - **WebApi** - `builder.AddTailoredWebApiDefaults()` and `app.MapTailoredWebApiDefaults()` wire OpenTelemetry (OTLP), health checks and HTTP
   client resilience with service discovery from the `WebApiDefaults` configuration section.

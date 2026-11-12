@@ -82,18 +82,10 @@ public class OrdersController(IUnitOfWork<IShopDbContext> unitOfWork, IPaymentSe
                 AdditionalData = order.Number,   // the gateway sends it back; Tpay and Adyen identify the payment by it
             }, cancellationToken);
         }
-        catch (HttpRequestException exception)   // covers PaymentGatewayException
+        catch (HttpRequestException exception)   // PaymentGatewayException, from every provider, or no connection
         {
             // The gateway did not give a usable answer: the payment may or may not exist. The order stays as it was.
-            return GatewayUnavailable(exception.Message);
-        }
-        catch (Stripe.StripeException exception)
-        {
-            // Stripe reports through the exception of its SDK, for an outage and for a refusal alike; the rule
-            // the other providers apply before they throw PaymentGatewayException tells the two apart.
-            return PaymentGatewayException.IsUnavailable(exception.HttpStatusCode)
-                ? GatewayUnavailable(exception.Message)
-                : UnprocessableEntity(new { message = "The gateway refused the payment.", detail = exception.Message });
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "The payment gateway is not available. Try again in a moment.", detail = exception.Message });
         }
 
         if (payment.PaymentStatus == PaymentStatusEnum.Rejected)
@@ -104,9 +96,6 @@ public class OrdersController(IUnitOfWork<IShopDbContext> unitOfWork, IPaymentSe
         order.Status = OrderStatus.AwaitingPayment;
         return Ok(new { order.Number, paymentId = payment.PaymentUniqueId, redirectUrl = payment.RedirectUrl });
     }
-
-    private ObjectResult GatewayUnavailable(string detail)
-        => StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "The payment gateway is not available. Try again in a moment.", detail });
 }
 
 /// <summary>

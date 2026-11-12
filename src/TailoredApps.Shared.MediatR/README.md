@@ -78,8 +78,9 @@ public class GetProductFallback : IFallbackHandler<GetProduct, ProductDto>
 - A request cancelled by its caller is not retried, does not count towards the circuit and is not sent to the fallback.
 - `ValidationBehavior` runs every registered `IValidator<TRequest>` synchronously and throws FluentValidation's
   `ValidationException` with all failures.
-- `LoggingBehavior` logs start and finish at Debug and failures at Error, with the request type name and a
-  correlation id. The request object itself is never logged.
+- `LoggingBehavior` logs start and finish at Debug and handler failures at Error, with the request type name and a
+  correlation id. A request refused by validation is logged at Information with the names of the invalid properties
+  (never their values), and so is a request its caller cancelled. The request object itself is never logged.
 
 ## Documentation
 

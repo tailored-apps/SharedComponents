@@ -14,6 +14,9 @@ public class FakeGatewayState
     /// <summary>When set, every gateway answers 503, as during an outage.</summary>
     public bool Unavailable { get; set; }
 
+    /// <summary>When set, every gateway answers 400, as it does to a request it refuses.</summary>
+    public bool Refusing { get; set; }
+
     public List<string> Requests { get; } = [];
 
     public int Next() => Interlocked.Increment(ref counter);
@@ -43,6 +46,9 @@ public class FakeGatewayHandler(FakeGatewayState state) : HttpMessageHandler
 
         if (state.Unavailable)
             return Task.FromResult(Json(HttpStatusCode.ServiceUnavailable, """{"error":"The gateway is down for maintenance."}"""));
+
+        if (state.Refusing)
+            return Task.FromResult(Json(HttpStatusCode.BadRequest, """{"error":{"type":"invalid_request_error","message":"The gateway refused the request."}}"""));
 
         var gateway = path.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
         var post = request.Method == HttpMethod.Post;

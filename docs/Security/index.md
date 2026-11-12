@@ -129,8 +129,7 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
   prawdziwym powiadomieniem z sandboxa — wykonaj płatność testową przed wdrożeniem.
   Adyen: sesja Hosted Checkout i odczyt jej wyniku są zgodne ze specyfikacją API, ale też bez testu w środowisku Adyen.
 - Awaria bramki nie jest już raportowana jako `PaymentStatusEnum.Rejected`: providerzy HTTP rzucają
-  `PaymentGatewayException` (2.0). Stripe nadal zgłasza awarie własnym typem wyjątku
-  (`StripeException`).
+  `PaymentGatewayException` (2.0), a od 3.0 także Stripe (wcześniej `StripeException`).
 - `CachingBehavior` nie zwraca już `default` przy braku wpisu dla odpowiedzi typu wartościowego
   (poprawione w 1.5.1: wartość domyślna jest traktowana jak brak wpisu i handler się wykonuje).
   W 2.0 problem znika: `CachingBehavior` korzysta z `HybridCache`, który odróżnia brak wpisu od

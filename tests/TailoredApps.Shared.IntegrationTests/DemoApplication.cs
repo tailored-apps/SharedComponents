@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using TailoredApps.Demo.Payments;
 using TailoredApps.Shared.Email;
 using TailoredApps.Shared.Email.Models;
@@ -11,8 +12,9 @@ namespace TailoredApps.Demo.IntegrationTests;
 
 /// <summary>
 /// The demo application, started in memory. Two things differ from a normal run: the clock is fixed, so that
-/// times can be asserted exactly, and sent e-mail is recorded instead of printed. Everything else, including
-/// the fake payment gateways and the in-memory database, is the application's own configuration.
+/// times can be asserted exactly, and sent e-mail is recorded instead of printed. The log is recorded as well,
+/// next to the usual providers. Everything else, including the fake payment gateways and the in-memory
+/// database, is the application's own configuration.
 /// </summary>
 public class DemoApplication : WebApplicationFactory<Program>
 {
@@ -24,10 +26,13 @@ public class DemoApplication : WebApplicationFactory<Program>
 
     public Outbox Outbox { get; } = new();
 
+    public LogRecorder Logs { get; } = new();
+
     public FakeGatewayState Gateways => Services.GetRequiredService<FakeGatewayState>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.ConfigureLogging(logging => logging.AddProvider(Logs));
         builder.ConfigureTestServices(services =>
         {
             // The last registration wins: IDateTimeProvider, the Revolut signature check and the retry
@@ -72,6 +77,32 @@ public class RecordingEmailProvider(Outbox outbox) : IEmailProvider
 
     public Task<ICollection<MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
         => Task.FromResult<ICollection<MailMessage>>([]);
+}
+
+public record LogEntry(string Category, LogLevel Level, string Message);
+
+/// <summary>Everything the application logged, in order, at the levels its configuration lets through.</summary>
+public sealed class LogRecorder : ILoggerProvider
+{
+    private readonly ConcurrentQueue<LogEntry> entries = new();
+
+    public IReadOnlyList<LogEntry> Entries => entries.ToArray();
+
+    public ILogger CreateLogger(string categoryName) => new Logger(categoryName, entries);
+
+    public void Dispose()
+    {
+    }
+
+    private sealed class Logger(string category, ConcurrentQueue<LogEntry> entries) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => entries.Enqueue(new LogEntry(category, logLevel, formatter(state, exception)));
+    }
 }
 
 // The shapes of the answers, as a client of the API sees them.

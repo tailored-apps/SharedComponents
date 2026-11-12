@@ -87,8 +87,8 @@ Znacznik czasu powiadomienia musi być aktualny: Revolut odrzuca podpisy starsze
   wskazuje bramkę: wartości `ServiceUrl` w `appsettings.json` prowadzą do `https://gateway.demo/<bramka>`. Stripe działa przez własne
   SDK, więc demo rejestruje `IStripeClient` korzystający z tego samego handlera. Biblioteki dostawców działają bez zmian — podstawiony jest
   tylko transport.
-- **Awaria bramki** — `FakeGatewayState.Unavailable` sprawia, że każda bramka odpowiada 503; testy sprawdzają, że checkout odpowiada
-  wtedy 503, a zamówienie zostaje bez zmian.
+- **Awaria i odmowa bramki** — `FakeGatewayState.Unavailable` sprawia, że każda bramka odpowiada 503, a `FakeGatewayState.Refusing` — że
+  odpowiada 400; testy sprawdzają, że checkout odpowiada wtedy 503 albo 422, a zamówienie zostaje bez zmian.
 - **Prawdziwe bramki** — `Demo:UseFakeGateways` ustawione na `false` i dane sandboxów w konfiguracji (najlepiej w user secrets).
 - **Podpisy powiadomień** są sprawdzane naprawdę, kluczami-zaślepkami z `appsettings.json`.
 - **Poczta** — dostawca konsolowy z biblioteki Email; testy podmieniają go na dostawcę zapisującego wiadomości.
@@ -102,8 +102,8 @@ Znacznik czasu powiadomienia musi być aktualny: Revolut odrzuca podpisy starsze
 | Klasa | Co sprawdza |
 |---|---|
 | `WebApiDefaultsTests` | `/health` i `/alive` |
-| `CatalogTests` | stronicowanie, sortowanie, filtr, walidację parametrów (400 z nazwą pola), cache (drugi odczyt nie uruchamia handlera), 404, retry i fallback |
-| `OrdersTests` | zapis i commit przez filtr, rollback po 400, 404, checkout we wszystkich 9 bramkach (z żądaniem HTTP do bramki), awarię bramki (503, zamówienie bez zmian) |
+| `CatalogTests` | stronicowanie, sortowanie, filtr, walidację parametrów (400 z nazwą pola; w logu wpis Information bez wartości pól, żadnego Error), cache (drugi odczyt nie uruchamia handlera), 404, retry i fallback |
+| `OrdersTests` | zapis i commit przez filtr, rollback po 400, 404, checkout we wszystkich 9 bramkach (z żądaniem HTTP do bramki), awarię bramki (503) i odmowę (422) — także dla Stripe — z zamówieniem bez zmian |
 | `WebhookTests` | podpisane powiadomienie → zamówienie opłacone i jeden mail z szablonu (także przy powtórzonym powiadomieniu), płatność odrzucona, zły podpis i stary znacznik czasu → 400 |
 | `ApplicationTests` | lista dostawców i kanałów, 501 dla nieskonfigurowanych ML i Office365 |
 
@@ -116,7 +116,7 @@ konfiguracja samej aplikacji. Pokrycie kodu z tych testów liczy się dla biblio
 
 - Akcje nie wołają `SaveChanges`: filtr transakcji zapisuje i zatwierdza po udanej akcji, a wycofuje po odpowiedzi 4xx/5xx lub wyjątku.
 - Checkout łapie `HttpRequestException` (w tym `PaymentGatewayException`) i odpowiada 503 — płatność mogła powstać albo nie.
-  Stripe zgłasza błędy jako `StripeException`; demo rozróżnia awarię od odmowy przez `PaymentGatewayException.IsUnavailable(...)`.
+  Ten jeden blok obejmuje wszystkich dziewięciu dostawców, także Stripe; odmowę bramki (`Rejected`) demo zamienia na 422.
 - Powiadomienia z bramek trafiają do jednego endpointu z surowym body; odpowiedź to `ResponseObject` dostawcy (Tpay: `TRUE`, Adyen:
   `[accepted]`). Powtórzone powiadomienie niczego nie zmienia.
 - Do `PaymentRequest.AdditionalData` trafia własny numer zamówienia — Tpay i Adyen identyfikują nim płatność w powiadomieniu.
@@ -151,8 +151,8 @@ Configuration: WebApiDefaults, Payments:Providers:<Provider>, Mail:Providers:<Pr
 
 Rules:
 - Never call SaveChanges in a controller action; return a 4xx result to roll the request back.
-- Wrap RegisterPayment and GetStatus in catch (HttpRequestException) and answer 503; for Stripe also catch StripeException and use
-  PaymentGatewayException.IsUnavailable(exception.HttpStatusCode).
+- Wrap RegisterPayment and GetStatus in catch (HttpRequestException) and answer 503 (every provider, Stripe included); answer
+  PaymentStatus == Rejected with 422.
 - Pass the raw request body to HandleWebhookAsync and answer with PaymentResponse.ResponseObject; make the handling idempotent.
 - Put the application's own order number in PaymentRequest.AdditionalData.
 - Validate paging and sorting parameters with FluentValidation and give paged requests a default page and sort order.

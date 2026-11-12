@@ -84,6 +84,33 @@ a `PaymentRequest.PaymentChannel` nie wybiera metody (trafia do metadanych sesji
 
 ---
 
+## Błędy bramki
+
+SDK Stripe.net zgłasza każdy błąd API jako `StripeException`. Od 3.0 provider zamienia go na wyniki, które zgłaszają wszyscy dostawcy
+(w 2.x `StripeException` przechodził do aplikacji):
+
+| Sytuacja | Wynik |
+|---|---|
+| `RegisterPayment`: Stripe nie obsłużył wywołania (5xx, 408, 429, brak odpowiedzi) | `PaymentGatewayException` z `StripeException` w `InnerException` — sesja mogła powstać albo nie |
+| `RegisterPayment`: odpowiedź 4xx (złe parametry, nieaktywna metoda płatności, zły klucz) | `PaymentStatus = Rejected`, komunikat Stripe w `ResponseObject` |
+| `GetStatus`: dowolny błąd, także 404 | `PaymentGatewayException` — nieudane zapytanie nie mówi nic o płatności |
+
+```csharp
+try
+{
+    var payment = await payments.RegisterPayment(new PaymentRequest("Stripe", 129.00m, "PLN") { Title = "Order 42" }, cancellationToken);
+    if (payment.PaymentStatus == PaymentStatusEnum.Rejected)
+        return UnprocessableEntity(payment.ResponseObject);   // Stripe odmówił
+    return Redirect(payment.RedirectUrl!);
+}
+catch (HttpRequestException)   // PaymentGatewayException: stan płatności nieznany
+{
+    return StatusCode(StatusCodes.Status503ServiceUnavailable);
+}
+```
+
+---
+
 ## Webhook
 
 Stripe weryfikuje webhook przez `Stripe-Signature` w nagłówku. Niezbędny jest dostęp do **raw body** żądania HTTP.
@@ -149,4 +176,5 @@ Sandbox: SecretKey = "sk_test_..." (nie ma opcji IsTest)
 Rejestracja: builder.Services.AddPayments().RegisterStripeProvider();
 - WebhookSecret jest obowiązkowy — bez niego host nie wystartuje, a webhook, który nie przejdzie weryfikacji, kończy się PaymentWebhookRejected
 - Zdarzenia payment_intent.* niosą id payment intentu, a nie id sesji — zapisane id sesji dopasowuj na zdarzeniach checkout.session.*
+- RegisterPayment i GetStatus obejmij catch (HttpRequestException) — awaria Stripe to PaymentGatewayException; odmowę (4xx) RegisterPayment zwraca jako PaymentStatus == Rejected. Nie łap StripeException wokół tych wywołań
 ```

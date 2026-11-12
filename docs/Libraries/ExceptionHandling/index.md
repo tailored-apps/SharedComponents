@@ -118,6 +118,7 @@ Właściwość `field` jest pomijana (serializacja `WhenWritingNull`), gdy błą
 - **Szczegóły wyjątków nie wyciekają domyślnie.** `DefaultExceptionHandlingProvider` zwraca `500` z komunikatem `"An unexpected error occurred."` dla wszystkiego, co nie jest błędem walidacji. Komunikat pierwotnego wyjątku jest dołączany tylko wtedy, gdy provider został utworzony z `IHostEnvironment` w środowisku *Development*, lub jawnie przez `new DefaultExceptionHandlingProvider(includeExceptionDetails: true)`. Wcześniej komunikat najgłębszego wyjątku (błędy SQL, nazwy hostów, ścieżki plików) trafiał do każdego anonimowego klienta jako HTTP 400.
 - **Poprawne kody statusu.** Awarie serwera to 5xx, więc alerty, load balancery i polityki retry klientów widzą je jako awarie. Middleware ogranicza `ErrorCode` providera do zakresu 400–599, a `ExceptionOccuredResult` honoruje kod z modelu zamiast wymuszać 400.
 - **Głośny błąd konfiguracji.** Middleware rozwiązuje `IExceptionHandlingService` przez `GetRequiredService`, więc pominięcie `AddExceptionHandlingForWebApi` daje czytelny wyjątek zamiast pustego 500.
+- **Błąd klienta nie jest błędem serwera (3.0).** Wyjątek, któremu provider nadał status 4xx (walidacja, brak zasobu), nie trafia do logu jako `An unhandled exception has occurred…` na poziomie Error i nie dodaje tagu `error.type` do metryki `http.server.request.duration` — alerty na błędy serwera nie reagują na złe dane od klienta. Wyjątek jest zapisywany na poziomie Debug w kategorii `TailoredApps.Shared.ExceptionHandling`. Odpowiedzi 5xx są logowane jako błędy, jak dotąd; 404 wybrane przez providera jest wysyłane jako 404.
 
 ---
 
@@ -184,6 +185,7 @@ public class MyProvider : IExceptionHandlingProvider
 - ExceptionOrValidationError z pustym field (string.Empty) → pole Field = null w JSON (pomijane)
 - Provider musi implementować OBA przeciążenia: Response(Exception) i Response(ModelStateDictionary)
 - ConfigureExceptionHandler obsługuje WSZYSTKIE nieobsłużone wyjątki — filter konwertuje tylko nieprawidłowy ModelState
+- Wyjątki, które są błędem klienta, mapuj w providerze na 4xx (nie trafiają wtedy do logu jako Error); błędy serwera zostawiaj jako 5xx
 - [HandleException] działa na poziomie akcji ORAZ klasy kontrolera
 - Dla zagnieżdżonych wyjątków użyj GetBaseException(), by znaleźć pierwotną przyczynę
 - AddExceptionHAndlingFilterAttribute (literówka) jest [Obsolete] — używaj AddExceptionHandlingFilterAttribute

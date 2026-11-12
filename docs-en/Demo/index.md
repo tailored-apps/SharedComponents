@@ -86,8 +86,8 @@ The notification timestamp has to be current: Revolut rejects signatures older t
   (`AddHttpClient(name).ConfigurePrimaryHttpMessageHandler(...)`) and answers the way each gateway does. The first path segment names
   the gateway: the `ServiceUrl` values in `appsettings.json` point to `https://gateway.demo/<gateway>`. Stripe works through its own SDK,
   so the demo registers an `IStripeClient` that uses the same handler. The provider libraries run unchanged - only the transport is replaced.
-- **Gateway outage** - `FakeGatewayState.Unavailable` makes every gateway answer 503; the tests check that checkout then answers 503 and
-  the order stays as it was.
+- **Gateway outage and refusal** - `FakeGatewayState.Unavailable` makes every gateway answer 503, and `FakeGatewayState.Refusing` 400;
+  the tests check that checkout then answers 503 or 422 and the order stays as it was.
 - **Real gateways** - set `Demo:UseFakeGateways` to `false` and put sandbox credentials in the configuration (user secrets preferably).
 - **Notification signatures** are verified for real, with the placeholder keys of `appsettings.json`.
 - **E-mail** - the console provider of the Email library; the tests replace it with a provider that records the messages.
@@ -101,8 +101,8 @@ The notification timestamp has to be current: Revolut rejects signatures older t
 | Class | What it checks |
 |---|---|
 | `WebApiDefaultsTests` | `/health` and `/alive` |
-| `CatalogTests` | paging, sorting, the filter, parameter validation (400 naming the field), the cache (a second read does not run the handler), 404, retry and fallback |
-| `OrdersTests` | saving and committing through the filter, rollback after 400, 404, checkout at all 9 gateways (with the HTTP request to the gateway), a gateway outage (503, order unchanged) |
+| `CatalogTests` | paging, sorting, the filter, parameter validation (400 naming the field; one Information entry without field values in the log, no Error), the cache (a second read does not run the handler), 404, retry and fallback |
+| `OrdersTests` | saving and committing through the filter, rollback after 400, 404, checkout at all 9 gateways (with the HTTP request to the gateway), a gateway outage (503) and a refusal (422) - Stripe included - with the order unchanged |
 | `WebhookTests` | a signed notification → the order is paid and one e-mail is sent from the template (also when the notification is repeated), a declined payment, a wrong signature and an old timestamp → 400 |
 | `ApplicationTests` | the providers and channels, 501 for ML and Office365 when they are not configured |
 
@@ -116,7 +116,7 @@ else is the application's own configuration. Code coverage from these tests coun
 - Actions do not call `SaveChanges`: the transaction filter saves and commits after a successful action and rolls back after a 4xx/5xx
   result or an exception.
 - Checkout catches `HttpRequestException` (including `PaymentGatewayException`) and answers 503 - the payment may or may not exist.
-  Stripe reports errors as `StripeException`; the demo tells an outage from a refusal with `PaymentGatewayException.IsUnavailable(...)`.
+  That one block covers all nine providers, Stripe included; the demo turns a gateway refusal (`Rejected`) into 422.
 - Gateway notifications go to one endpoint with the raw body; the answer is the provider's `ResponseObject` (Tpay: `TRUE`, Adyen:
   `[accepted]`). A repeated notification changes nothing.
 - `PaymentRequest.AdditionalData` carries the application's own order number - Tpay and Adyen identify the payment by it in the notification.
@@ -151,8 +151,8 @@ Configuration: WebApiDefaults, Payments:Providers:<Provider>, Mail:Providers:<Pr
 
 Rules:
 - Never call SaveChanges in a controller action; return a 4xx result to roll the request back.
-- Wrap RegisterPayment and GetStatus in catch (HttpRequestException) and answer 503; for Stripe also catch StripeException and use
-  PaymentGatewayException.IsUnavailable(exception.HttpStatusCode).
+- Wrap RegisterPayment and GetStatus in catch (HttpRequestException) and answer 503 (every provider, Stripe included); answer
+  PaymentStatus == Rejected with 422.
 - Pass the raw request body to HandleWebhookAsync and answer with PaymentResponse.ResponseObject; make the handling idempotent.
 - Put the application's own order number in PaymentRequest.AdditionalData.
 - Validate paging and sorting parameters with FluentValidation and give paged requests a default page and sort order.

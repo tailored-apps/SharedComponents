@@ -78,6 +78,10 @@ An error tied to a field also carries `"field"`; the property is left out when t
   of an action with invalid model state, and only on actions or controllers marked with `[HandleException]`.
 - The HTTP status is the model's `ErrorCode`. The middleware answers 500 and the filter result 400 when the
   code is outside 400-599. If the response has already started, the middleware writes nothing.
+- An exception the provider answers with 4xx (validation, a missing resource) is the client's mistake: the middleware
+  logs no "unhandled exception" error for it and adds no `error.type` tag to the request metric; it is logged at Debug
+  in the `TailoredApps.Shared.ExceptionHandling` category. A 5xx answer is logged as an error, as before. A 404 the
+  provider chose is sent as such.
 - `ExceptionHandlingResultModel(message, errors)` and `ExceptionHandlingResultModel(modelState)` use code 400;
   the latter has the message `Validation Failed` and one error per model-state entry.
 - The middleware needs `AddExceptionHandlingForWebApi`: it resolves `IExceptionHandlingService` and throws

@@ -67,10 +67,33 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <inheritdoc/>
     /// <remarks>
     /// Tworzy Stripe Checkout Session. Zwraca URL do hosted page Stripe oraz ID sesji.
+    /// Stripe reports every error through <see cref="StripeException"/>; the provider sorts them the way
+    /// the other providers do. When Stripe could not handle the call (5xx, 408, 429, or no answer at all)
+    /// it throws <see cref="PaymentGatewayException"/> with the <see cref="StripeException"/> as its inner
+    /// exception: the session may or may not exist. A 4xx answer is a refusal and returns
+    /// <see cref="PaymentStatusEnum.Rejected"/> with Stripe's message in <see cref="PaymentResponse.ResponseObject"/>.
     /// </remarks>
+    /// <exception cref="PaymentGatewayException">Stripe could not handle the call.</exception>
     public async Task<PaymentResponse> RequestPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
-        var session = await stripeCaller.CreateCheckoutSessionAsync(request, cancellationToken);
+        global::Stripe.Checkout.Session session;
+        try
+        {
+            session = await stripeCaller.CreateCheckoutSessionAsync(request, cancellationToken);
+        }
+        catch (StripeException exception) when (!IsRefusal(exception))
+        {
+            throw GatewayFailure(exception);
+        }
+        catch (StripeException exception)
+        {
+            // Invalid parameters, a payment method not enabled for the account, a wrong key, ...
+            return new PaymentResponse
+            {
+                PaymentStatus = PaymentStatusEnum.Rejected,
+                ResponseObject = exception.StripeError?.Message ?? exception.Message,
+            };
+        }
 
         return new PaymentResponse
         {
@@ -83,10 +106,21 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     /// <inheritdoc/>
     /// <remarks>
     /// Pobiera aktualny status Checkout Session. ID = Stripe Session ID (cs_...).
+    /// Any <see cref="StripeException"/> becomes <see cref="PaymentGatewayException"/>: a failed status query
+    /// says nothing about the payment - not even a 404 means it was rejected.
     /// </remarks>
+    /// <exception cref="PaymentGatewayException">Stripe did not answer the query with a session.</exception>
     public async Task<PaymentResponse> GetStatus(string paymentId, CancellationToken cancellationToken = default)
     {
-        var session = await stripeCaller.GetCheckoutSessionAsync(paymentId, cancellationToken);
+        global::Stripe.Checkout.Session session;
+        try
+        {
+            session = await stripeCaller.GetCheckoutSessionAsync(paymentId, cancellationToken);
+        }
+        catch (StripeException exception)
+        {
+            throw GatewayFailure(exception);
+        }
 
         return new PaymentResponse
         {
@@ -195,6 +229,16 @@ public class StripeProvider : IPaymentProvider, IWebhookPaymentProvider
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A 4xx answer from Stripe refuses the request. 5xx, 408 and 429 mean Stripe could not handle it, and
+    /// an exception without an HTTP status did not come from an answer at all.
+    /// </summary>
+    private static bool IsRefusal(StripeException exception)
+        => exception.HttpStatusCode != 0 && !PaymentGatewayException.IsUnavailable(exception.HttpStatusCode);
+
+    private PaymentGatewayException GatewayFailure(StripeException exception)
+        => new(Key, exception.HttpStatusCode, exception.StripeResponse?.Content, exception);
 
     private static PaymentResponse HandleSessionCompleted(Event stripeEvent)
     {

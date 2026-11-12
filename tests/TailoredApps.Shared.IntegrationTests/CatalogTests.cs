@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using TailoredApps.Demo.Catalog;
 using Xunit;
 
@@ -87,6 +88,22 @@ public class CatalogTests(DemoApplication app) : IClassFixture<DemoApplication>
         Assert.NotNull(error);
         Assert.Equal(400, error.ErrorCode);
         Assert.Contains(error.Errors, e => e.Field == nameof(GetProduct.Id));
+    }
+
+    [Fact]
+    public async Task When_Validation_Refuses_A_Request_Should_Log_It_As_Information_And_Nothing_As_An_Error()
+    {
+        var before = app.Logs.Entries.Count;
+
+        var response = await client.GetAsync("/api/products/-5");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var written = app.Logs.Entries.Skip(before).ToList();
+        Assert.DoesNotContain(written, e => e.Level >= LogLevel.Warning);
+        var rejected = Assert.Single(written, e => e.Message.Contains("rejected by validation"));
+        Assert.Equal(LogLevel.Information, rejected.Level);
+        Assert.Contains("invalid: Id", rejected.Message);
+        Assert.DoesNotContain("-5", rejected.Message);   // names of the invalid properties, never the values
     }
 
     [Fact]

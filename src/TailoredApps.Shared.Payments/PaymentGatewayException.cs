@@ -28,7 +28,20 @@ public class PaymentGatewayException : HttpRequestException
     /// <param name="statusCode">The HTTP status the gateway answered with.</param>
     /// <param name="responseBody">The body of the answer, for diagnostics; it is not part of the message.</param>
     public PaymentGatewayException(string provider, HttpStatusCode statusCode, string? responseBody = null)
-        : base($"Payment gateway '{provider}' answered {(int)statusCode} ({statusCode}); the state of the payment is not known.", null, statusCode)
+        : this(provider, statusCode, responseBody, null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="PaymentGatewayException"/> for an answer that the gateway's
+    /// SDK reported through an exception of its own, which is kept as <see cref="Exception.InnerException"/>.
+    /// </summary>
+    /// <param name="provider">The key of the payment provider whose gateway answered.</param>
+    /// <param name="statusCode">The HTTP status the gateway answered with.</param>
+    /// <param name="responseBody">The body of the answer, for diagnostics; it is not part of the message.</param>
+    /// <param name="innerException">The exception the gateway's SDK threw, with its own error details.</param>
+    public PaymentGatewayException(string provider, HttpStatusCode statusCode, string? responseBody, Exception? innerException)
+        : base($"Payment gateway '{provider}' answered {(int)statusCode} ({statusCode}); the state of the payment is not known.", innerException, statusCode)
     {
         Provider = provider;
         ResponseBody = responseBody is { Length: > MaxResponseBodyLength } ? responseBody[..MaxResponseBodyLength] : responseBody;

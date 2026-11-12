@@ -143,7 +143,7 @@ public class GetProductQueryRetry : IRetryableRequest<GetProductQuery, ProductDt
 
 | Type | Kind | Description |
 |-----|--------|------|
-| `LoggingBehavior<TRequest, TResponse>` | Pipeline Behavior | Logs the execution time and exceptions; correlation ID per request |
+| `LoggingBehavior<TRequest, TResponse>` | Pipeline Behavior | Logs the execution time (Debug), handler failures (Error), validation refusals and cancellations (Information); correlation ID per request |
 | `ValidationBehavior<TRequest, TResponse>` | Pipeline Behavior | Runs every `IValidator<TRequest>` (FluentValidation) |
 | `CachingBehavior<TRequest, TResponse>` | Pipeline Behavior | Caches the response in `HybridCache` according to `ICachePolicy<TRequest, TResponse>`; concurrent identical requests run the handler once |
 | `FallbackBehavior<TRequest, TResponse>` | Pipeline Behavior | On an exception calls `IFallbackHandler<TRequest, TResponse>` |
@@ -162,6 +162,9 @@ public class GetProductQueryRetry : IRetryableRequest<GetProductQuery, ProductDt
 - **The cache key carries no request data.** The default `ICachePolicy.GetCacheKey` builds `{RequestType.FullName}:{SHA-256 of the request JSON}` (`CacheKeyGenerator.Generate`). The previous `Prop:ToString()` format gave requests that differed only in collection contents (`CustomerIds = [1]` vs `[2]`) the same key, returning another caller's data.
 - **The key does not include the caller's identity.** For per-user or per-tenant data override `GetCacheKey` and prefix the key with the caller id, otherwise one user's response is served to another.
 - **`LoggingBehavior` does not serialize the request.** Only the request type name and a correlation id go into the logging scope; passwords, tokens and binary payloads never reach the logs.
+- **A validation refusal is not an error.** A `ValidationException` is logged at Information level (`rejected by validation …; invalid: Id`)
+  with the property names only - validation messages can quote the values the client sent. A request cancelled by its caller is logged as
+  Information too; every other handler exception as Error. The exception is always rethrown.
 
 ---
 
@@ -224,7 +227,7 @@ public class MyRetry : IRetryableRequest<MyQuery, MyResponse>
 - ValidationBehavior runs the IValidator<TRequest> instances registered in DI - the library does not register validators, do it yourself
 - For the cache to work, implement ICachePolicy<TRequest, TResponse> in the scanned assembly (or register it yourself)
 - IFallbackHandler has one method: HandleFallback(request, cancellationToken) - the exception is not passed to it
-- LoggingBehavior logs at the DEBUG level — enable the matching log level
+- LoggingBehavior: start and finish at Debug, validation refusals and cancellations at Information, handler failures at Error - do not count validation failures from Error entries
 - Every request has a unique correlation ID in the logs
 - The default cache key is a hash of the request content; for per-user data override GetCacheKey and add the user/tenant id
 - LoggingBehavior logs only the request name and correlation id - log request fields explicitly in the handler, never whole objects with secrets

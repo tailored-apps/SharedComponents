@@ -118,6 +118,7 @@ The `field` property is omitted (`WhenWritingNull`) when the error is not tied t
 - **No exception details leak by default.** `DefaultExceptionHandlingProvider` returns `500` with `"An unexpected error occurred."` for anything that is not a validation failure. The root-cause message is included only when the provider is created with `IHostEnvironment` in the *Development* environment, or explicitly with `new DefaultExceptionHandlingProvider(includeExceptionDetails: true)`. Previously the innermost exception message (SQL errors, host names, file paths) was returned to every anonymous caller as HTTP 400.
 - **Correct status codes.** Server failures are 5xx, so alerting, load balancers and client retry policies see them as such. The middleware clamps the provider's `ErrorCode` to 400-599 and `ExceptionOccuredResult` honours the model's code instead of forcing 400.
 - **Fail loudly on mis-configuration.** The middleware resolves `IExceptionHandlingService` with `GetRequiredService`, so forgetting `AddExceptionHandlingForWebApi` produces a clear exception instead of a blank 500.
+- **A client error is not a server error (3.0).** An exception the provider answers with a 4xx status (validation, a missing resource) is not logged as `An unhandled exception has occurred…` at Error level and adds no `error.type` tag to the `http.server.request.duration` metric - alerts on server errors do not fire on bad client input. The exception is logged at Debug level in the `TailoredApps.Shared.ExceptionHandling` category. 5xx answers are logged as errors, as before; a 404 the provider chose is sent as a 404.
 
 ---
 
@@ -184,6 +185,7 @@ public class MyProvider : IExceptionHandlingProvider
 - ExceptionOrValidationError with an empty field (string.Empty) -> Field = null in JSON (omitted)
 - The provider must implement BOTH overloads: Response(Exception) and Response(ModelStateDictionary)
 - ConfigureExceptionHandler handles ALL unhandled exceptions; the filter only converts invalid ModelState
+- Map exceptions that are the client's mistake to 4xx in the provider (they are then not logged as Error); leave server errors at 5xx
 - [HandleException] works at both the action AND the controller class level
 - For nested exceptions use GetBaseException() to find the root cause
 - AddExceptionHAndlingFilterAttribute (typo) is [Obsolete] - use AddExceptionHandlingFilterAttribute

@@ -130,8 +130,7 @@ the fixes that shipped with it, and the items that still need a human decision.
   exercised with a real sandbox notification - make a test payment before going live.
   Adyen: the Hosted Checkout session and reading its outcome follow the API specification, also without a test in the Adyen environment.
 - A failing gateway is no longer reported as `PaymentStatusEnum.Rejected`: the HTTP providers throw
-  `PaymentGatewayException` (2.0). Stripe still reports failures with an exception type of
-  its own (`StripeException`).
+  `PaymentGatewayException` (2.0), and from 3.0 Stripe does too (before: `StripeException`).
 - `CachingBehavior` no longer returns `default` for a cache miss on a value-type response (fixed in
   1.5.1: a default value is treated as a miss and the handler runs). In 2.0 the problem is gone:
   `CachingBehavior` uses `HybridCache`, which tells a miss from a cached default value and protects
