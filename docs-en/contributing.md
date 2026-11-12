@@ -146,6 +146,25 @@ You are using the TailoredApps.Shared.XXXXX library in a .NET project.
 - [ ] `mkdocs.yml` nav updated
 - [ ] Table on `docs/index.md` updated
 - [ ] `mkdocs build --strict` passes without errors
+- [ ] `dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true` passes (no change incompatible with 2.0.0)
+
+---
+
+## Public API compatibility
+
+The 2.x line must stay compatible with `2.0.0`: code compiled against any 2.x version has to work with every later 2.x. The
+*Build & Test PR* check compares the public API of every library with its `2.0.0` package on nuget.org and fails on a breaking change
+(removing a public type or member, or changing its signature - `CP0001`, `CP0002`, …). Adding API is allowed.
+
+```bash
+# the same locally
+dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true
+```
+
+- The baseline version is set by `PublicApiBaselineVersion` in `src/Directory.Build.targets`.
+- A new library: until its first release add `<SkipPublicApiValidation>true</SkipPublicApiValidation>` to its csproj,
+  and after the release replace it with `<PublicApiBaselineVersion>` holding the first version it was published in.
+- A breaking change is possible only in the next major version (3.0). Instead of removing a member, mark it `[Obsolete]` and add a new one.
 
 ---
 

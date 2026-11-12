@@ -146,6 +146,25 @@ Używasz biblioteki TailoredApps.Shared.XXXXX w projekcie .NET.
 - [ ] `mkdocs.yml` nav zaktualizowany
 - [ ] Tabela na `docs/index.md` zaktualizowana
 - [ ] `mkdocs build --strict` przechodzi bez błędów
+- [ ] `dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true` przechodzi (brak zmian niekompatybilnych z 2.0.0)
+
+---
+
+## Zgodność publicznego API
+
+Linia 2.x musi pozostać zgodna z `2.0.0`: kod skompilowany z dowolną wersją 2.x ma działać z każdą nowszą 2.x. Sprawdzenie
+*Build & Test PR* porównuje publiczne API każdej biblioteki z paczką `2.0.0` z nuget.org i kończy się błędem przy zmianie
+niekompatybilnej (usunięcie lub zmiana sygnatury publicznego typu albo składowej — `CP0001`, `CP0002`, …). Dodawanie API jest dozwolone.
+
+```bash
+# to samo lokalnie
+dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true
+```
+
+- Wersję bazową ustawia `PublicApiBaselineVersion` w `src/Directory.Build.targets`.
+- Nowa biblioteka: do pierwszego wydania dodaj w jej csproj `<SkipPublicApiValidation>true</SkipPublicApiValidation>`,
+  a po wydaniu zastąp to przez `<PublicApiBaselineVersion>` z numerem pierwszej wersji, w której się ukazała.
+- Zmiana niekompatybilna jest możliwa dopiero w kolejnej wersji głównej (3.0). Zamiast usuwać składową, oznacz ją `[Obsolete]` i dodaj nową.
 
 ---
 
