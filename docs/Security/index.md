@@ -99,7 +99,9 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
 - `ci.yml`: build/test oddzielony od joba publikującego `gh-pages` (tylko ten ma `contents: write`).
 - `release.yml`: `dotnet test` przed publikacją, każda paczka wypychana z `artifacts/package/release`
   z `--skip-duplicate`, job kończy się błędem, gdy którykolwiek push się nie powiedzie,
-  klucz API przez zmienną środowiskową, `environment: nuget` (dodaj wymaganych recenzentów w ustawieniach repozytorium).
+  `environment: nuget` (dodaj wymaganych recenzentów w ustawieniach repozytorium). Publikacja korzysta
+  z Trusted Publishing w nuget.org: job wymienia token OIDC z GitHuba na klucz API ważny godzinę, więc
+  w repozytorium nie jest przechowywany żaden długotrwały klucz NuGet.
 - `release-notes.yml`: nazwa tagu przez `env`, bez interpolacji do skryptu.
 - `bump-deps.yml`: pełny przebieg testów przed utworzeniem PR.
 
@@ -113,6 +115,8 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
    poświadczenie środowiska testowego; przenieś go do user-secrets/sekretów CI, jeśli sklep testowy ma znaczenie.
 3. W ustawieniach repozytorium dodaj wymaganych recenzentów do nowego środowiska `nuget`, aby push tagu
    nie publikował pakietów bez akceptacji, i ustaw checki *Docs guard* oraz *Build & Test PR* jako wymagane na `master`.
+   Utwórz politykę Trusted Publishing w nuget.org i sekret `NUGET_USER` opisane w sekcji *Wydawanie wersji*
+   na stronie [Contributing](../contributing.md), a następnie usuń stary sekret `NUGET_API_KEY` i unieważnij ten klucz w nuget.org.
 4. Skonfiguruj `ImageClassification:TrainingRoot` / `ModelsRoot` w hostach używających komendy treningu
    i przekazuj `allowedSortFields` do `ApplySorting` w endpointach listujących wrażliwe encje.
 5. Przejrzyj konsumentów zależnych od starych zachowań: 400 z komunikatem wyjątku (teraz 500 ogólne),

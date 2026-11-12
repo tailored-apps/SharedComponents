@@ -5,7 +5,13 @@ on:
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
-# The workflow never writes to the repository; NuGet publishing uses its own API key.
+# The workflow never writes to the repository. Packages are published through nuget.org Trusted
+# Publishing: the job proves its identity with a GitHub OIDC token and receives an API key that is
+# valid for one hour. No long-lived NuGet key is stored in this repository.
+#
+# The matching policy on nuget.org (Account > Trusted Publishing) must name:
+#   Repository Owner: tailored-apps    Repository: SharedComponents
+#   Workflow File:    release.yml      Environment: nuget
 permissions:
   contents: read
 
@@ -14,9 +20,23 @@ jobs:
     name: Build, test and publish packages
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # Protect this environment with required reviewers in the repository settings to gate publishing.
+    # The trusted publishing policy is restricted to this environment. Protect it with required
+    # reviewers in the repository settings to gate publishing.
     environment: nuget
+    permissions:
+      contents: read
+      id-token: write # lets the job request the OIDC token that nuget.org exchanges for an API key
     steps:
+      # Fail in seconds, not after the build, when publishing is not configured.
+      - name: Check publishing configuration
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+        run: |
+          if [ -z "$NUGET_USER" ]; then
+            echo "::error::The NUGET_USER secret is not set. It must hold the nuget.org profile name of the account that owns the trusted publishing policy."
+            exit 1
+          fi
+
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -44,6 +64,13 @@ jobs:
       - name: Test
         run: dotnet test TailoredApps.Shared.slnx -c Release --no-build
 
+      # Requested after the tests and right before pushing: the key expires after one hour.
+      - name: NuGet login (OIDC -> short-lived API key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       # UseArtifactsOutput (Directory.Build.props) collects every package in one folder.
       # Every package is attempted so that one failure does not hide the state of the others, but the
       # job fails if any push failed: a release that published nothing must never look green.
@@ -51,7 +78,7 @@ jobs:
       - name: Push packages to nuget.org
         working-directory: artifacts/package/release
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: |
           set -uo pipefail
           shopt -s nullglob

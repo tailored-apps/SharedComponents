@@ -97,8 +97,10 @@ the fixes that shipped with it, and the items that still need a human decision.
   pinned to commit SHAs (with version comments), `.github/dependabot.yml` for `github-actions`.
 - `ci.yml`: build/test job separated from the `gh-pages` deploy job (only the latter has `contents: write`).
 - `release.yml`: `dotnet test` before publishing, every package pushed from `artifacts/package/release`
-  with `--skip-duplicate`, the job fails when any push fails, API key via environment variable,
-  `environment: nuget` (add required reviewers in repository settings).
+  with `--skip-duplicate`, the job fails when any push fails, `environment: nuget` (add required
+  reviewers in repository settings). Publishing uses nuget.org Trusted Publishing: the job exchanges a
+  GitHub OIDC token for an API key valid for one hour, so no long-lived NuGet key is stored in the
+  repository.
 - `release-notes.yml`: tag name passed through `env`, not interpolated into the script.
 - `bump-deps.yml`: full test run before the PR is created.
 
@@ -113,7 +115,9 @@ the fixes that shipped with it, and the items that still need a human decision.
    is a test-environment credential; move it to user-secrets/CI secrets if the sandbox shop matters.
 3. In repository settings, add required reviewers to the new `nuget` environment so tag pushes
    cannot publish packages without approval, and make the *Docs guard* and *Build & Test PR*
-   checks required on `master`.
+   checks required on `master`. Create the nuget.org Trusted Publishing policy and the `NUGET_USER`
+   secret described under *Releasing* in [Contributing](../contributing.md), then delete the old
+   `NUGET_API_KEY` secret and revoke that key on nuget.org.
 4. Configure `ImageClassification:TrainingRoot` / `ModelsRoot` in hosts that use the training
    command, and pass `allowedSortFields` to `ApplySorting` for endpoints listing sensitive entities.
 5. Review consumers that relied on the old behaviours: 400 with exception message (now 500 generic),

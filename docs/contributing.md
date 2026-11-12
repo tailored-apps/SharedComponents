@@ -148,6 +148,22 @@ Używasz biblioteki TailoredApps.Shared.XXXXX w projekcie .NET.
 
 ---
 
+## Wydawanie wersji (maintainerzy)
+
+Wypchnięcie tagu `vX.Y.Z` (lub wersji przedpremierowej, np. `v2.0.0-preview.1`) uruchamia workflow *Create Release* (`.github/workflows/release.yml`): buduje wszystkie biblioteki z wersją wziętą z tagu, uruchamia testy i publikuje paczki z `artifacts/package/release` w nuget.org. Job kończy się błędem, jeśli którejkolwiek paczki nie udało się opublikować. Workflow *Release notes* tworzy GitHub Release na podstawie zmergowanych pull requestów.
+
+Paczki są publikowane przez **Trusted Publishing w nuget.org** — repozytorium nie przechowuje klucza API NuGet. Job prosi o token OIDC z GitHuba, a nuget.org wymienia go na klucz API ważny godzinę. Wymaga to jednorazowej konfiguracji:
+
+| Gdzie | Ustawienie |
+|-------|------------|
+| nuget.org → menu konta → **Trusted Publishing** → nowa polityka | Repository Owner `tailored-apps`, Repository `SharedComponents`, Workflow File `release.yml` (sama nazwa pliku), Environment `nuget` |
+| GitHub → ustawienia repozytorium → **Secrets and variables → Actions** | Sekret `NUGET_USER`: nazwa profilu w nuget.org (nie adres e-mail) konta będącego właścicielem polityki |
+| GitHub → ustawienia repozytorium → **Environments** | Środowisko `nuget`; dodaj wymaganych recenzentów, aby każde wydanie czekało na akceptację |
+
+Polityka obejmuje wszystkie paczki należące do konta lub organizacji wybranej jako jej właściciel. Ten sam plik workflow obsługuje gałęzie utrzymaniowe `release/*`, więc jedna polityka wystarcza dla wszystkich linii wydań.
+
+---
+
 ## Pytania
 
 Otwórz [Issue na GitHub](https://github.com/tailored-apps/SharedComponents/issues) lub skontaktuj się z maintainerami projektu.
