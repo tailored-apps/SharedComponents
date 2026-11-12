@@ -30,7 +30,7 @@ jobs:
         run: dotnet workload restore
 
       - name: Test
-        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat="opencover"
+        run: dotnet test TailoredApps.Shared.slnx /p:CollectCoverage=true /p:CoverletOutputFormat="opencover"
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v7

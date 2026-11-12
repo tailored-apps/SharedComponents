@@ -1,11 +1,15 @@
 # Build & Test Commands
 
 ## Build
-- Build solution: `dotnet build TailoredApps.Shared.sln`
+- Build solution: `dotnet build TailoredApps.Shared.slnx`
 - Build specific project: `dotnet build src/TailoredApps.Shared.DateTime/TailoredApps.Shared.DateTime.csproj`
 
+## Build output
+- `Directory.Build.props` sets `UseArtifactsOutput`, so nothing is written to per-project `bin/` or `obj/` folders.
+- Everything lands in `artifacts/` (git-ignored): `artifacts/bin/<Project>/<configuration>_<tfm>/`, `artifacts/obj/<Project>/`, and NuGet packages in `artifacts/package/<configuration>/`.
+
 ## Test
-- Run all tests: `dotnet test TailoredApps.Shared.sln`
+- Run all tests: `dotnet test TailoredApps.Shared.slnx`
 - Run specific test project: `dotnet test tests/TailoredApps.Shared.DateTime.Tests/TailoredApps.Shared.DateTime.Tests.csproj`
 - Run single test: `dotnet test --filter "FullyQualifiedName=TailoredApps.Shared.DateTime.Tests.DateTimeProviderTests.As_Library_User_When_Get_Now_I_Get_Mine_System_Date_In_Current_Timezone_And_Local_Kind"`
 

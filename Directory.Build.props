@@ -1,0 +1,19 @@
+<Project>
+
+	<!--
+		Settings shared by every project in the repository (src/ and tests/).
+
+		UseArtifactsOutput moves all build output out of the project folders and into a single
+		artifacts/ directory next to this file:
+
+			artifacts/bin/<Project>/<configuration>_<tfm>/   compiled assemblies
+			artifacts/obj/<Project>/                         intermediate files
+			artifacts/package/<configuration>/               NuGet packages (*.nupkg)
+
+		The release workflow pushes packages from artifacts/package/release.
+	-->
+	<PropertyGroup>
+		<UseArtifactsOutput>true</UseArtifactsOutput>
+	</PropertyGroup>
+
+</Project>

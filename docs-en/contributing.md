@@ -32,6 +32,25 @@ pip install mkdocs-material
 mkdocs serve  # http://127.0.0.1:8000
 ```
 
+### Solution and build output
+
+The repository uses the XML solution format — `TailoredApps.Shared.slnx` (opened by the `dotnet` CLI and by Visual Studio 2022 17.13 or newer).
+
+```bash
+dotnet build TailoredApps.Shared.slnx
+dotnet test TailoredApps.Shared.slnx
+```
+
+The root `Directory.Build.props` enables `UseArtifactsOutput`, so projects **no longer** create their own `bin/` and `obj/` folders. Everything goes to a single git-ignored `artifacts/` directory:
+
+| Path | Contents |
+|------|----------|
+| `artifacts/bin/<Project>/<configuration>_<tfm>/` | compiled libraries, e.g. `artifacts/bin/TailoredApps.Shared.WebApi/release_net10.0/` |
+| `artifacts/obj/<Project>/` | intermediate files |
+| `artifacts/package/<configuration>/` | NuGet packages (`*.nupkg`) for every library — the release workflow publishes from here |
+
+To clean the build, delete the `artifacts/` directory. Add a new library to the solution with `dotnet sln TailoredApps.Shared.slnx add <path to .csproj>` — the settings from `Directory.Build.props` apply automatically. `*.user` files and the `.vs/`, `.idea/`, `.vscode/` folders are never committed (they are in `.gitignore`).
+
 ---
 
 ## 🔴 IRON RULE OF DOCUMENTATION

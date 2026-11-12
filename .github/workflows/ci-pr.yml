@@ -24,13 +24,13 @@ jobs:
         run: dotnet workload restore
 
       - name: Restoring Packages
-        run: dotnet restore
+        run: dotnet restore TailoredApps.Shared.slnx
 
       - name: Building Solution
-        run: dotnet build TailoredApps.Shared.sln --configuration Release --no-restore 
+        run: dotnet build TailoredApps.Shared.slnx --configuration Release --no-restore
 
       - name: Testing
-        run: dotnet test --no-build --configuration Release --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat="opencover"
+        run: dotnet test TailoredApps.Shared.slnx --no-build --configuration Release --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat="opencover"
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v7

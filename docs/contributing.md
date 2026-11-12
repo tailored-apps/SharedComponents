@@ -32,6 +32,25 @@ pip install mkdocs-material
 mkdocs serve  # http://127.0.0.1:8000
 ```
 
+### Solution i katalog wyjściowy
+
+Repozytorium używa pliku solution w formacie XML — `TailoredApps.Shared.slnx` (otwiera go `dotnet` CLI oraz Visual Studio 2022 17.13 lub nowsze).
+
+```bash
+dotnet build TailoredApps.Shared.slnx
+dotnet test TailoredApps.Shared.slnx
+```
+
+Plik `Directory.Build.props` w katalogu głównym włącza `UseArtifactsOutput`, więc projekty **nie** tworzą już własnych folderów `bin/` i `obj/`. Całość trafia do jednego, ignorowanego przez git katalogu `artifacts/`:
+
+| Ścieżka | Zawartość |
+|---------|-----------|
+| `artifacts/bin/<Projekt>/<konfiguracja>_<tfm>/` | skompilowane biblioteki, np. `artifacts/bin/TailoredApps.Shared.WebApi/release_net10.0/` |
+| `artifacts/obj/<Projekt>/` | pliki pośrednie |
+| `artifacts/package/<konfiguracja>/` | paczki NuGet (`*.nupkg`) wszystkich bibliotek — stąd publikuje je workflow release |
+
+Aby wyczyścić build, wystarczy usunąć katalog `artifacts/`. Nową bibliotekę dodaj do solution poleceniem `dotnet sln TailoredApps.Shared.slnx add <ścieżka do .csproj>` — ustawienia z `Directory.Build.props` zostaną zastosowane automatycznie. Plików `*.user` oraz folderów `.vs/`, `.idea/`, `.vscode/` nie commitujemy (są w `.gitignore`).
+
 ---
 
 ## 🔴 ŻELAZNA ZASADA DOKUMENTACJI

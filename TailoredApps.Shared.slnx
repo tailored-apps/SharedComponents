@@ -1,0 +1,64 @@
+<Solution>
+  <Folder Name="/.github/">
+    <File Path=".github/release.yml" />
+  </Folder>
+  <Folder Name="/.github/workflows/">
+    <File Path=".github/workflows/bump-deps.yml" />
+    <File Path=".github/workflows/ci-pr.yml" />
+    <File Path=".github/workflows/ci.yml" />
+    <File Path=".github/workflows/docs-guard.yml" />
+    <File Path=".github/workflows/manual-build.yml" />
+    <File Path=".github/workflows/release-notes.yml" />
+    <File Path=".github/workflows/release.yml" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="CLAUDE.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="DOCUMENTATION_RULE.md" />
+    <File Path="LICENSE" />
+    <File Path="mkdocs-en.yml" />
+    <File Path="mkdocs.yml" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/TailoredApps.Shared.DateTime/TailoredApps.Shared.DateTime.csproj" />
+    <Project Path="src/TailoredApps.Shared.Email.Models/TailoredApps.Shared.Email.Models.csproj" />
+    <Project Path="src/TailoredApps.Shared.Email.Office365/TailoredApps.Shared.Email.Office365.csproj" />
+    <Project Path="src/TailoredApps.Shared.Email/TailoredApps.Shared.Email.csproj" />
+    <Project Path="src/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.csproj" />
+    <Project Path="src/TailoredApps.Shared.EntityFramework/TailoredApps.Shared.EntityFramework.csproj" />
+    <Project Path="src/TailoredApps.Shared.ExceptionHandling/TailoredApps.Shared.ExceptionHandling.csproj" />
+    <Project Path="src/TailoredApps.Shared.MediatR.Caching/TailoredApps.Shared.MediatR.Caching.csproj" />
+    <Project Path="src/TailoredApps.Shared.MediatR.Email/TailoredApps.Shared.MediatR.Email.csproj" />
+    <Project Path="src/TailoredApps.Shared.MediatR.ML/TailoredApps.Shared.MediatR.ML.csproj" />
+    <Project Path="src/TailoredApps.Shared.MediatR.PagedRequest/TailoredApps.Shared.MediatR.PagedRequest.csproj" />
+    <Project Path="src/TailoredApps.Shared.MediatR/TailoredApps.Shared.MediatR.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments.Provider.Adyen/TailoredApps.Shared.Payments.Provider.Adyen.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments.Provider.CashBill/TailoredApps.Shared.Payments.Provider.CashBill.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments.Provider.HotPay/TailoredApps.Shared.Payments.Provider.HotPay.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments.Provider.PayNow/TailoredApps.Shared.Payments.Provider.PayNow.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments.Provider.PayU/TailoredApps.Shared.Payments.Provider.PayU.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments.Provider.Przelewy24/TailoredApps.Shared.Payments.Provider.Przelewy24.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments.Provider.Revolut/TailoredApps.Shared.Payments.Provider.Revolut.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments.Provider.Stripe/TailoredApps.Shared.Payments.Provider.Stripe.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments.Provider.Tpay/TailoredApps.Shared.Payments.Provider.Tpay.csproj" />
+    <Project Path="src/TailoredApps.Shared.Payments/TailoredApps.Shared.Payments.csproj" />
+    <Project Path="src/TailoredApps.Shared.Querying/TailoredApps.Shared.Querying.csproj" />
+    <Project Path="src/TailoredApps.Shared.WebApi/TailoredApps.Shared.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TailoredApps.Shared.DateTime.Tests/TailoredApps.Shared.DateTime.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.Email.Tests/TailoredApps.Shared.Email.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.EntityFramework.Tests/TailoredApps.Shared.EntityFramework.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Tests/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.ExceptionHandling.Tests/TailoredApps.Shared.ExceptionHandling.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.MediatR.ML.Tests/TailoredApps.Shared.MediatR.ML.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.MediatR.Tests/TailoredApps.Shared.MediatR.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.Payments.Tests/TailoredApps.Shared.Payments.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.Querying.Tests/TailoredApps.Shared.Querying.Tests.csproj" />
+    <Project Path="tests/TailoredApps.Shared.WebApi.Tests/TailoredApps.Shared.WebApi.Tests.csproj" />
+  </Folder>
+</Solution>
