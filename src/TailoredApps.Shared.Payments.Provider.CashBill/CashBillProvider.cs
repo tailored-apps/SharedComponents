@@ -251,6 +251,7 @@ public static class CashBillProviderExtensions
             .ValidateOnStart();
         services.ConfigureOptions<CashbillConfigureOptions>();
         services.AddTransient<ICashbillServiceCaller, CashbillServiceCaller>();
+        services.AddHttpClient(CashbillHttpClient.HttpClientName);
         services.AddTransient<ICashbillHttpClient, CashbillHttpClient>();
 
         // Register as both IPaymentProvider and IWebhookPaymentProvider
