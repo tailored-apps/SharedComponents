@@ -367,8 +367,7 @@ public class PayUServiceCallerHttpTests
         Assert.Equal(PaymentStatusEnum.Created, status);
     }
 
-    // Note: CreateOrderAsync uses new HttpClientHandler{AllowAutoRedirect=false} directly,
-    // not the IHttpClientFactory — tested via provider-level mocks in PayUProviderTests.
+    // CreateOrderAsync is covered in PayUOrderTests.
     [Fact]
     public void VerifySignature_DefaultKey_Truthy()
     {

@@ -8,6 +8,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Moq;
@@ -144,7 +146,9 @@ public class PayUCreateOrderRedirectTests
         public RedirectingServer()
         {
             listener.Start();
-            loop = Task.Run(AcceptLoopAsync);
+
+            // Not Task.Run: the first accept has to be pending before the constructor returns.
+            loop = AcceptLoopAsync();
         }
 
         public int Requests { get; private set; }
@@ -160,7 +164,7 @@ public class PayUCreateOrderRedirectTests
                 {
                     client = await listener.AcceptTcpClientAsync();
                 }
-                catch (Exception e) when (e is ObjectDisposedException or SocketException)
+                catch (Exception e) when (e is InvalidOperationException or SocketException)
                 {
                     return;
                 }
@@ -228,17 +232,24 @@ public class PayUCreateOrderRedirectTests
         }
     }
 
-    private static PayUServiceCaller Build(string serviceUrl)
-        => new(Options.Create(new PayUServiceOptions
+    /// <summary>The caller exactly as a host gets it: from <c>RegisterPayUProvider()</c> and the real HTTP client factory.</summary>
+    private static (ServiceProvider Services, IPayUServiceCaller Caller) Build(string serviceUrl)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ClientId = "client",
-            ClientSecret = "secret",
-            PosId = "pos123",
-            SignatureKey = "sigkey",
-            ServiceUrl = serviceUrl,
-            NotifyUrl = "https://example.com/notify",
-            ContinueUrl = "https://example.com/continue",
-        }), Mock.Of<IHttpClientFactory>());
+            ["Payments:Providers:PayU:ClientId"] = "client",
+            ["Payments:Providers:PayU:ClientSecret"] = "secret",
+            ["Payments:Providers:PayU:PosId"] = "pos123",
+            ["Payments:Providers:PayU:SignatureKey"] = "sigkey",
+            ["Payments:Providers:PayU:ServiceUrl"] = serviceUrl,
+            ["Payments:Providers:PayU:NotifyUrl"] = "https://example.com/notify",
+            ["Payments:Providers:PayU:ContinueUrl"] = "https://example.com/continue",
+        }).Build());
+        services.RegisterPayUProvider();
+        var provider = services.BuildServiceProvider();
+        return (provider, provider.GetRequiredService<IPayUServiceCaller>());
+    }
 
     private static PaymentRequest Order() => new() { PaymentProvider = "PayU", Amount = 12.34m, Currency = "pln", Title = "Order", Email = "buyer@example.com" };
 
@@ -246,7 +257,8 @@ public class PayUCreateOrderRedirectTests
     public async Task When_PayU_Answers_With_Redirect_Should_Return_Location_Without_Following_It()
     {
         using var server = new RedirectingServer();
-        var caller = Build(server.Url);
+        var (services, caller) = Build(server.Url);
+        using var _ = services;
 
         var (orderId, redirectUri, error) = await caller.CreateOrderAsync("token", Order());
 
@@ -257,11 +269,12 @@ public class PayUCreateOrderRedirectTests
     }
 
     [Fact]
-    public async Task When_Several_Orders_Are_Created_Should_Reuse_The_Shared_Handler()
+    public async Task When_Several_Orders_Are_Created_Should_Send_Each_Once_Through_The_Factory_Client()
     {
-        // Each call disposes its HttpClient; the shared handler must stay usable for the next order.
+        // Each call disposes its HttpClient; the factory keeps the handler usable for the next order.
         using var server = new RedirectingServer();
-        var caller = Build(server.Url);
+        var (services, caller) = Build(server.Url);
+        using var _ = services;
 
         for (var i = 0; i < 3; i++)
         {
