@@ -30,7 +30,7 @@ dotnet add package TailoredApps.Shared.MediatR
 using TailoredApps.Shared.MediatR.DI;
 
 // Rejestracja MediatR
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 var pipeline = new PipelineRegistration(builder.Services);
@@ -52,6 +52,9 @@ Potrzebne są oba wywołania `RegisterPipelineBehaviors`. Przeciążenie bez par
 ```csharp
 builder.Services.AddStackExchangeRedisCache(options => options.Configuration = "localhost:6379");
 ```
+
+!!! info "Zmiany w 3.0 (wersja testowa)"
+    Biblioteki `TailoredApps.Shared.MediatR*` korzystają z [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator) — forka MediatR 12.5.0 na licencji Apache-2.0 — zamiast pakietu MediatR. Typy i zachowanie są te same; w aplikacji zamień `using MediatR;` na `using ForkForward.Mediator;` oraz `AddMediatR(...)` na `AddMediator(...)`. Szczegóły: [Aktualizacja do 3.0](../../Migration/v3.md).
 
 !!! info "Zmiany w 2.0"
     `CachingBehavior` korzysta z `HybridCache`. Interfejs `ICache` i klasa `Cache` zostały usunięte razem z zależnością od Newtonsoft.Json — usuń własną rejestrację `ICache`. Odpowiedzi są serializowane przez System.Text.Json, a `ICachePolicy.SlidingExpiration` nie jest już obsługiwane (wpis żyje do czasu wygaśnięcia). Po aktualizacji wyczyść współdzielony cache lub zmień prefiks kluczy: wpisy zapisane przez 1.x mają inny format.
@@ -171,7 +174,7 @@ Używasz biblioteki TailoredApps.Shared.MediatR z pipeline behaviors w projekcie
 
 ### Rejestracja
 ```csharp
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediator(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 var pipeline = new PipelineRegistration(builder.Services);
 pipeline.RegisterPipelineBehaviors();                         // pięć behaviorów + HybridCache
 pipeline.RegisterPipelineBehaviors(typeof(Program).Assembly); // skan: ICachePolicy<,>, IFallbackHandler<,>, IRetryableRequest<,>

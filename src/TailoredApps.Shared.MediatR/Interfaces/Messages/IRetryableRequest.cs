@@ -1,4 +1,4 @@
-using MediatR;
+using ForkForward.Mediator;
 
 namespace TailoredApps.Shared.MediatR.Interfaces.Messages;
 

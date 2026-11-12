@@ -66,6 +66,7 @@ public class GetProductsHandler(ShopDbContext db) : IRequestHandler<GetProducts,
 
 ## Good to know
 
+- Built on [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator), a fork of MediatR 12.5.0 under the Apache-2.0 licence, not on the MediatR package: requests and handlers use the `ForkForward.Mediator` namespace and the mediator is registered with `AddMediator(...)`. "MediatR" in the name of this library is its history, not its dependency.
 - `TQuery` must derive from `QueryBase` and `TResponse` must implement `IPagedResult<TModel>`.
 - The class only carries the values. `Page`, `Count` and `SortField` usually come straight from the HTTP
   request and are not checked here: a handler that calls `Skip`/`Take` itself has to limit the page size.

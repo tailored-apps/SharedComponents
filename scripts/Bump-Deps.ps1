@@ -56,9 +56,8 @@ param(
     [switch]$GithubOutput,
     [string]$RecordsPath,
     [hashtable]$Ignore = @{
-        # MediatR 13+ relicensed Apache-2.0 -> RPL-1.5 (Lucky Penny Software).
-        # SPDX is not published, so the license-change rule cannot catch it.
-        'MediatR' = '13.0.0'
+        # No ceilings at the moment. The one for MediatR (13+ relicensed Apache-2.0 -> RPL-1.5 without
+        # publishing an SPDX expression) went away with the package: 3.0 uses ForkForward.Mediator.
     }
 )
 

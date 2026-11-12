@@ -28,7 +28,7 @@ builder.Services.Configure<TokenReplacingMailMessageBuilderOptions>(options =>
 });
 builder.Services.AddTransient<IMailMessageBuilder, TokenReplacingMailMessageBuilder>();
 
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly);
@@ -55,6 +55,7 @@ var result = await mediator.Send(new SendMail
 
 ## Good to know
 
+- Built on [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator), a fork of MediatR 12.5.0 under the Apache-2.0 licence, not on the MediatR package: requests and handlers use the `ForkForward.Mediator` namespace and the mediator is registered with `AddMediator(...)`. "MediatR" in the name of this library is its history, not its dependency.
 - The package reads no configuration itself. The SMTP settings (`Mail:Providers:Smtp`) and the template options
   belong to `TailoredApps.Shared.Email`.
 

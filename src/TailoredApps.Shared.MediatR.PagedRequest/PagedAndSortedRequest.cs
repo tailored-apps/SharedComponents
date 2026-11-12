@@ -1,5 +1,5 @@
 using System;
-using MediatR;
+using ForkForward.Mediator;
 using TailoredApps.Shared.Querying;
 
 namespace TailoredApps.Shared.MediatR.PagedRequest;

@@ -15,7 +15,7 @@ dotnet add package TailoredApps.Shared.MediatR
 ```csharp
 using TailoredApps.Shared.MediatR.DI;
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediator(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 var pipeline = new PipelineRegistration(builder.Services);
 pipeline.RegisterPipelineBehaviors();                           // the five behaviours and HybridCache
@@ -60,6 +60,7 @@ public class GetProductFallback : IFallbackHandler<GetProduct, ProductDto>
 
 ## Good to know
 
+- Built on [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator), a fork of MediatR 12.5.0 under the Apache-2.0 licence, not on the MediatR package: requests and handlers use the `ForkForward.Mediator` namespace and the mediator is registered with `AddMediator(...)`. "MediatR" in the name of this library is its history, not its dependency.
 - Order: Logging -> Validation -> Caching -> Fallback -> Retry -> handler. A cached response skips fallback,
   retry and the handler; validation still runs. A response produced by a fallback handler is cached like any other.
 - Every response is cached as returned, including `null`, `0` and `false`; a handler that throws caches nothing.

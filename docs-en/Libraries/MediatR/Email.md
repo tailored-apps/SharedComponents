@@ -41,7 +41,7 @@ builder.Services.Configure<TokenReplacingMailMessageBuilderOptions>(o =>
 });
 
 // 3. MediatR: scan the library assembly as well - that is where SendMailCommandHandler lives
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly);
@@ -135,7 +135,7 @@ You are using TailoredApps.Shared.MediatR.Email to send emails through the Media
 ```csharp
 builder.Services.RegisterSmtpProvider(); // or RegisterConsoleProvider()
 builder.Services.AddTransient<IMailMessageBuilder, TokenReplacingMailMessageBuilder>();
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly); // the SendMail handler

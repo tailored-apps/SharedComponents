@@ -161,6 +161,11 @@ You are using the TailoredApps.Shared.XXXXX library in a .NET project.
 
 ## Public API compatibility
 
+The `master` branch is the **3.0 line in a test phase** (`3.0.0-preview.N`): breaking changes are allowed until `3.0.0`, but only on
+purpose. The `release/2.1` branch is the 2.1.x fix line, compatible with `2.0.0`. On `master` the `TailoredApps.Shared.MediatR*` libraries are
+left out of the comparison (they moved from MediatR to ForkForward.Mediator); the others are still compared, so that a breaking change does
+not happen by accident.
+
 The 2.x line must stay compatible with `2.0.0`: code compiled against any 2.x version has to work with every later 2.x. The
 *Build & Test PR* check compares the public API of every library with its `2.0.0` package on nuget.org and fails on a breaking change
 (removing a public type or member, or changing its signature - `CP0001`, `CP0002`, …). Adding API is allowed.

@@ -30,7 +30,7 @@ using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
 
 // MediatR: handlery obu komend są w assembly biblioteki, więc trzeba je także przeskanować
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).Assembly);
@@ -178,7 +178,7 @@ Używasz TailoredApps.Shared.MediatR.ML do klasyfikacji obrazów przez ML.NET i 
 // using Microsoft.Extensions.ML;
 // using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
 // using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).Assembly); // handlery biblioteki
@@ -221,7 +221,7 @@ var result = await _mediator.Send(new TrainImageClassificationModel
 
 ### Zasady
 - Przestrzeń nazw to TailoredApps.Shared.MediatR.ImageClassification, a nie nazwa pakietu
-- AddMediatR musi przeskanować assembly biblioteki — AddPredictionEngine nie rejestruje handlerów
+- AddMediator musi przeskanować assembly biblioteki — AddPredictionEngine nie rejestruje handlerów
 - Model musi być plikiem ZIP (ML.NET format)
 - Sekcja konfiguracji `ImageClassification` jest wymagana — jej brak powoduje `InvalidOperationException` przy pierwszym użyciu opcji
 - Wersja i etykiety modelu są zapisywane w archiwum jako osobne wpisy `Version.txt` i `Labels.txt`

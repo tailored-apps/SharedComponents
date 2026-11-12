@@ -2,7 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using MediatR;
+using ForkForward.Mediator;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,7 +27,7 @@ public class MLEngineTests
              .ConfigureAppConfiguration(a => a.AddEnvironmentVariables())
              .ConfigureServices((_, services) =>
              {
-                 services.AddMediatR(conf =>
+                 services.AddMediator(conf =>
                  {
                      conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
                      conf.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).GetTypeInfo().Assembly);
@@ -50,7 +50,7 @@ public class MLEngineTests
              .ConfigureAppConfiguration(a => a.AddEnvironmentVariables())
              .ConfigureServices((_, services) =>
              {
-                 services.AddMediatR(conf =>
+                 services.AddMediator(conf =>
                  {
                      conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
                      conf.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).GetTypeInfo().Assembly);

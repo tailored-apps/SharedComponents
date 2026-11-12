@@ -30,7 +30,7 @@ dotnet add package TailoredApps.Shared.MediatR
 using TailoredApps.Shared.MediatR.DI;
 
 // Register MediatR
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 var pipeline = new PipelineRegistration(builder.Services);
@@ -52,6 +52,9 @@ Both `RegisterPipelineBehaviors` calls are needed. The parameterless overload re
 ```csharp
 builder.Services.AddStackExchangeRedisCache(options => options.Configuration = "localhost:6379");
 ```
+
+!!! info "Changes in 3.0 (test phase)"
+    The `TailoredApps.Shared.MediatR*` libraries use [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator) - a fork of MediatR 12.5.0 under the Apache-2.0 licence - instead of the MediatR package. The types and the behaviour are the same; in the application replace `using MediatR;` with `using ForkForward.Mediator;` and `AddMediatR(...)` with `AddMediator(...)`. Details: [Upgrading to 3.0](../../Migration/v3.md).
 
 !!! info "Changes in 2.0"
     `CachingBehavior` uses `HybridCache`. The `ICache` interface and the `Cache` class are removed together with the Newtonsoft.Json dependency — delete your own `ICache` registration. Responses are serialized with System.Text.Json, and `ICachePolicy.SlidingExpiration` is no longer supported (an entry lives until it expires). After upgrading, clear the shared cache or change the key prefix: entries written by 1.x have a different format.
@@ -171,7 +174,7 @@ You are using the TailoredApps.Shared.MediatR library with pipeline behaviors in
 
 ### Registration
 ```csharp
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediator(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 var pipeline = new PipelineRegistration(builder.Services);
 pipeline.RegisterPipelineBehaviors();                         // the five behaviors + HybridCache
 pipeline.RegisterPipelineBehaviors(typeof(Program).Assembly); // scans for ICachePolicy<,>, IFallbackHandler<,>, IRetryableRequest<,>

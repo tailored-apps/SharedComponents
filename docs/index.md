@@ -42,6 +42,8 @@ Witaj w dokumentacji **TailoredApps Shared Components** — zestawu wielokrotneg
 
 Przechodzisz z 1.x na 2.0? Zmiany wymagane w kodzie aplikacji — obsługa awarii bramki płatności, wymagane pola `PaymentRequest`, webhooki Tpay i Adyen — zebrano na stronie [Aktualizacja do 2.0](Migration/v2.md).
 
+Linia **3.0** jest w fazie testowej (`3.0.0-preview.N`): biblioteki MediatR przechodzą na ForkForward.Mediator. Co zmienić w aplikacji: [Aktualizacja do 3.0](Migration/v3.md).
+
 ---
 
 ## Platformy docelowe

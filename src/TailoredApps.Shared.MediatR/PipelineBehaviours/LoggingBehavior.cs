@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
+using ForkForward.Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace TailoredApps.Shared.MediatR.PipelineBehaviours;
