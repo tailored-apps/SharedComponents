@@ -33,7 +33,7 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
 | 13 | Średnie | EF UnitOfWork | Filtr transakcji commitował, gdy akcja zwróciła 4xx/5xx; obsługa błędu commitu mogła zostawić otwartą transakcję i ukryć pierwotną przyczynę. | **Naprawione**. |
 | 14 | Średnie | Email.Office365 | Załączniki zwracane w kodowaniu transferowym i kluczowane typem MIME (awaria przy dwóch załącznikach tego samego typu). | **Naprawione**. |
 | 15 | Średnie | CI/CD | Tokeny z prawem zapisu i zachowanymi poświadczeniami, akcje przypięte do ruchomych tagów, nazwa tagu interpolowana do skryptu, publikacja NuGet bez testów i z ukrywaniem błędów, niezaprzypięte instalacje pip. | **Naprawione**: minimalne uprawnienia, przypięcie do SHA + Dependabot, przekazywanie przez env, testy przed publikacją, `--skip-duplicate`, przypięty mkdocs-material. |
-| 16 | Średnie | Payments (Tpay, Adyen) | Weryfikacja webhooka nie odpowiada protokołowi dostawcy (Tpay: formularz + md5sum + JWS; Adyen: HMAC z pól rozdzielonych dwukropkami w `additionalData`). Fail-closed, więc niewykorzystywalne, ale niefunkcjonalne. | **Udokumentowane**; utwardzone (fail-closed, stały czas). Przepisanie w zadaniach do wykonania. |
+| 16 | Średnie | Payments (Tpay, Adyen) | Weryfikacja webhooka nie odpowiada protokołowi dostawcy (Tpay: formularz + md5sum + JWS; Adyen: HMAC z pól rozdzielonych dwukropkami w `additionalData`). Fail-closed, więc niewykorzystywalne, ale niefunkcjonalne. | **Naprawione w 2.0**: Tpay weryfikuje `md5sum` i `X-JWS-Signature` (łańcuch do roota Tpay), Adyen — HMAC z `additionalData.hmacSignature`. |
 
 ## Co się zmieniło, per biblioteka
 
@@ -125,9 +125,9 @@ poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji
 
 ## Do wykonania (poza tą zmianą)
 
-- Tpay: implementacja prawdziwego protokołu notyfikacji (formularz, `md5sum`, `X-JWS-Signature`
-  z certyfikatem głównym Tpay). Adyen: HMAC z udokumentowanych pól rozdzielonych dwukropkami z
-  `additionalData.hmacSignature`; `/sessions` zwraca `sessionData`, nie URL przekierowania.
+- Tpay i Adyen: weryfikacja powiadomień odpowiada już protokołom dostawców, ale nie była sprawdzona
+  prawdziwym powiadomieniem z sandboxa — wykonaj płatność testową przed wdrożeniem.
+  Adyen: `/sessions` zwraca `sessionData`, nie URL przekierowania.
 - Błędy transportu (5xx, timeouty) nadal są raportowane przez część providerów jako
   `PaymentStatusEnum.Rejected`; dodaj wynik `Unknown`, by awaria nie była mylona z odmową.
 - `CachingBehavior` nie zwraca już `default` przy braku wpisu dla odpowiedzi typu wartościowego

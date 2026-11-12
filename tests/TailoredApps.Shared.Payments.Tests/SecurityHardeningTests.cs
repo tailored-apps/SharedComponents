@@ -191,12 +191,13 @@ public class MissingSecretFailsClosedTests
     }
 
     [Fact]
-    public void Tpay_EmptySecurityCode_RejectsForgedSignature()
+    public async Task Tpay_EmptySecurityCode_RejectsForgedChecksum()
     {
-        const string body = "{\"status\":\"correct\"}";
+        // With no security code md5(id + tr_id + tr_amount + tr_crc) is computable by anyone.
+        var forged = Hex(MD5.HashData(Encoding.UTF8.GetBytes("1010" + "TR-1" + "10.00" + "order-1")));
+        var body = $"id=1010&tr_id=TR-1&tr_amount=10.00&tr_crc=order-1&tr_status=TRUE&md5sum={forged}";
         var caller = new TpayServiceCaller(Options.Create(new TpayServiceOptions { SecurityCode = "" }), Http.Dummy());
-        var forged = Hex(SHA256.HashData(Encoding.UTF8.GetBytes(body)));
-        Assert.False(caller.VerifyNotification(body, forged));
+        Assert.False(await caller.VerifyNotificationAsync(body, "header..signature"));
     }
 
     [Fact]
@@ -414,13 +415,13 @@ public class WebhookResultCarriesPaymentIdTests
     [Fact]
     public async Task Adyen_Authorisation_Carries_MerchantReference_And_Missing_Success_Is_Rejected()
     {
-        const string body = "{\"notificationItems\":[{\"NotificationRequestItem\":{\"eventCode\":\"AUTHORISATION\",\"merchantReference\":\"ORDER-7\",\"pspReference\":\"psp_1\"}}]}";
+        const string body = "{\"notificationItems\":[{\"NotificationRequestItem\":{\"additionalData\":{\"hmacSignature\":\"hmac\"},\"eventCode\":\"AUTHORISATION\",\"merchantReference\":\"ORDER-7\",\"pspReference\":\"psp_1\"}}]}";
         var mock = new Mock<IAdyenServiceCaller>();
-        mock.Setup(m => m.VerifyNotificationHmac(body, "hmac")).Returns(true);
+        mock.Setup(m => m.VerifyNotificationHmac(It.IsAny<string>(), "hmac")).Returns(true);
         var result = await new AdyenProvider(mock.Object).HandleWebhookAsync(new PaymentWebhookRequest
         {
             Body = body,
-            Headers = new Dictionary<string, StringValues> { { "HmacSignature", "hmac" } },
+            Headers = new Dictionary<string, StringValues>(),
         });
         Assert.True(result.Success);
         Assert.Equal("ORDER-7", result.PaymentResponse!.PaymentUniqueId);
@@ -443,13 +444,13 @@ public class WebhookResultCarriesPaymentIdTests
     [Fact]
     public async Task Tpay_Notification_Carries_TransactionId()
     {
-        const string body = "{\"transactionId\":\"ta_1\",\"status\":\"correct\"}";
+        const string body = "id=1010&tr_id=ta_1&tr_status=TRUE";
         var mock = new Mock<ITpayServiceCaller>();
-        mock.Setup(m => m.VerifyNotification(body, "sig")).Returns(true);
+        mock.Setup(m => m.VerifyNotificationAsync(body, "sig", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var result = await new TpayProvider(mock.Object).HandleWebhookAsync(new PaymentWebhookRequest
         {
             Body = body,
-            Headers = new Dictionary<string, StringValues> { { "X-Signature", "sig" } },
+            Headers = new Dictionary<string, StringValues> { { "X-JWS-Signature", "sig" } },
         });
         Assert.True(result.Success);
         Assert.Equal("ta_1", result.PaymentResponse!.PaymentUniqueId);

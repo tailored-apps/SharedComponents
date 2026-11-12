@@ -51,7 +51,8 @@ public class PagedResult<T> : IPagedResult<T>
     public async Task<PagedResult<T>> GetPagedResultAsync()
     {
         if (pagingQuery == null) throw new ArgumentNullException(nameof(pagingQuery));
-        Results = pagingQuery.IsMoreDataToFetch ? await pagingQuery.ToListAsync() : EmptyList.ToList();
+        // The wrapped query, not the wrapper: EF Core runs asynchronously only what implements IAsyncEnumerable<T>.
+        Results = pagingQuery.IsMoreDataToFetch ? await pagingQuery.Query.ToListAsync() : EmptyList.ToList();
         Count = pagingQuery.TotalCount > 0 ? pagingQuery.TotalCount : Results.Count;
         return this;
     }

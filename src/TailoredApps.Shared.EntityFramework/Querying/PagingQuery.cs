@@ -11,8 +11,9 @@ namespace TailoredApps.Shared.EntityFramework.Querying;
 
 /// <summary>
 /// Wraps an <see cref="IQueryable{T}"/> with paging information, applying skip/take logic
-/// based on the provided <see cref="IPagingParameters"/>. Implements <see cref="IQueryable{T}"/>
-/// so it can be consumed directly by EF Core materialization methods.
+/// based on the provided <see cref="IPagingParameters"/>. Implements <see cref="IQueryable{T}"/>,
+/// so it can be composed and materialised synchronously. For asynchronous materialisation
+/// (<c>ToListAsync</c> and the like) use <see cref="Query"/>: EF Core accepts only its own queryables there.
 /// </summary>
 /// <typeparam name="T">The type of elements in the query.</typeparam>
 public class PagingQuery<T> : IQueryable<T>

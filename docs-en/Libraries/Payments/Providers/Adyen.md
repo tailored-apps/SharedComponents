@@ -70,28 +70,56 @@ builder.Services
 
 ## Webhook
 
-Adyen wysyła powiadomienia na endpoint HTTP. Weryfikacja odbywa się przez HMAC SHA-256 na podstawie `NotificationHmacKey`.
+A standard Adyen webhook is JSON with a `notificationItems` array; each `NotificationRequestItem` carries its own signature in
+`additionalData.hmacSignature` - **there is no signature header**. The signature is HMAC-SHA256 (key: `NotificationHmacKey` decoded from hex,
+output in Base64) over eight fields of the item joined with a colon; an absent field is an empty string:
+
+```text
+pspReference:originalReference:merchantAccountCode:merchantReference:amount.value:amount.currency:eventCode:success
+```
+
+In the Adyen Customer Area (Developers → Webhooks) enable HMAC signing for the webhook and copy the generated key into `NotificationHmacKey`.
 
 ```csharp
 [HttpPost("webhooks/adyen")]
-public async Task<IActionResult> AdyenWebhook([FromBody] JsonElement body)
+public async Task<IActionResult> AdyenWebhook(CancellationToken cancellationToken)
 {
+    using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+    var body = await reader.ReadToEndAsync(cancellationToken);
+
     var result = await _payments.HandleWebhookAsync("Adyen", new PaymentWebhookRequest
     {
-        Body = body.GetRawText(),
-        Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString())
-    });
-    return result is PaymentWebhookRejected ? BadRequest() : Ok("[accepted]");
+        Body = body,
+        ContentType = Request.ContentType,
+        Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value),
+    }, cancellationToken);
+
+    // Adyen repeats the notification until it gets a 2xx response.
+    return result is PaymentWebhookRejected ? Unauthorized() : Content(AdyenProvider.Acknowledgement, "text/plain");
 }
 ```
+
+| `eventCode` | `success` | Result |
+|-------------|-----------|--------|
+| `AUTHORISATION`, `REFUND` | `true` | `PaymentWebhookProcessed`, status `Finished` |
+| `AUTHORISATION`, `REFUND` | anything else / absent | `PaymentWebhookProcessed`, status `Rejected` |
+| `CANCELLATION`, `AUTHORISATION_FAILED` | any | `PaymentWebhookProcessed`, status `Rejected` |
+| another event | any | `PaymentWebhookIgnored` (status `Processing`) - still acknowledge it |
 
 ---
 
 ## 🔒 Security
 
-- Empty `NotificationHmacKey` or an empty signature → rejected (fail-closed); constant-time comparison. A missing `success` field is treated as **failure**.
-- The webhook result carries `PaymentUniqueId` (`merchantReference`, falling back to `pspReference`).
-- ⚠️ **Known limitation.** Adyen computes the HMAC over the fields `pspReference:originalReference:merchantAccountCode:merchantReference:amount.value:amount.currency:eventCode:success` and delivers it in `additionalData.hmacSignature`, not in a header. The current verification therefore rejects genuine notifications (safe, but not functional) - do not bypass it with a stub returning `true`.
+- Verification fails closed: an empty or non-hex `NotificationHmacKey`, a missing `additionalData.hmacSignature` or a signature that does not match →
+  `PaymentWebhookRejection.InvalidSignature`; a body that is not JSON or has no `NotificationRequestItem` → `MalformedPayload`. Constant-time comparison.
+- The signature covers eight fields, not the whole body: the other fields of the item (for example `paymentMethod`, `reason`) are **not authenticated** - do not base decisions on them.
+- A missing `success` field is treated as **failure**.
+- The webhook result carries `PaymentUniqueId` (`merchantReference`, falling back to `pspReference`) and `ResponseObject` = `[accepted]`.
+- The first item of `notificationItems` is handled (Adyen sends one item per request).
+- What was verified: the implementation reproduces the example in Adyen's documentation (the key, the signed text and the expected signature are in the tests);
+  send a test notification from the Adyen Customer Area before going live.
+- ⚠️ **Known limitation (outside the webhook).** `/sessions` returns `sessionData` for Drop-in/Components, not a redirect address -
+  `RequestPayment` therefore returns no `RedirectUrl` for a plain session.
 
 ---
 
@@ -104,12 +132,17 @@ Provider key: "Adyen"
 
 Sekcja konfiguracji: "Payments:Providers:Adyen"
 
-Wymagane pola: ApiKey, MerchantAccount, ReturnUrl
+Wymagane pola: ApiKey, MerchantAccount, NotificationHmacKey, ReturnUrl
 
-Webhook: HMAC-SHA256, klucz NotificationHmacKey
+Webhook: HMAC-SHA256 over eight fields of the item (pspReference:originalReference:merchantAccountCode:merchantReference:amount.value:amount.currency:eventCode:success), key NotificationHmacKey (hex), signature in additionalData.hmacSignature
 
 Rejestracja: builder.Services.AddPayments().RegisterAdyenProvider();
 
 Środowisko testowe: Environment = "test" (checkout-test.adyen.com)
-- Do not replace VerifyNotificationHmac with a stub returning true - implement Adyen's HMAC scheme (colon-separated fields, additionalData.hmacSignature)
+
+Rules:
+- Pass the raw JSON body in PaymentWebhookRequest.Body; the signature is in additionalData.hmacSignature, not in a header
+- Answer HTTP 200 with the body "[accepted]" (AdyenProvider.Acknowledgement), for ignored events too
+- Base decisions on the signed fields (references, amount, eventCode, success)
+- Do not replace VerifyNotificationHmac with a stub returning true
 ```

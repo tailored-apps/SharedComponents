@@ -166,6 +166,12 @@ var page = await db.Users
     .PagingAsync(request);
 ```
 
+!!! note "PagingAsync"
+    Do wersji 2.0.0-preview `PagingAsync` kończyło się `InvalidOperationException` („The source 'IQueryable' doesn't implement
+    'IAsyncEnumerable'”) dla każdej niepustej strony, bo materializowało opakowanie `PagingQuery<T>` zamiast zapytania EF Core.
+    Poprawione: strona jest pobierana z `PagingQuery<T>.Query`. Tej samej właściwości użyj, gdy sam wywołujesz `ToListAsync`
+    na `PagingQuery<T>`.
+
 ---
 
 ## 🤖 AI Agent Prompt

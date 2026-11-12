@@ -16,6 +16,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="TailoredApps.Shared.MediatR.ML.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\TailoredApps.Shared.MediatR\TailoredApps.Shared.MediatR.csproj" />
 	</ItemGroup>
 
