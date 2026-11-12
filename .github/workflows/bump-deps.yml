@@ -67,8 +67,8 @@ jobs:
       - name: Verify build
         if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'
         run: |
-          dotnet restore TailoredApps.Shared.sln
-          dotnet build TailoredApps.Shared.sln --no-restore --nologo
+          dotnet restore TailoredApps.Shared.slnx
+          dotnet build TailoredApps.Shared.slnx --no-restore --nologo
 
       - name: Create pull request
         if: steps.bump.outputs.bumped == 'true' && env.DRY_RUN != 'true'

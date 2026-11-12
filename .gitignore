@@ -1,8 +1,23 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+﻿# Build output (UseArtifactsOutput, see Directory.Build.props)
+artifacts/
 
-/**/*/obj
-/**/*/bin
-/.vs
+# Legacy per-project output, in case a project is built without Directory.Build.props
+[Bb]in/
+[Oo]bj/
+
+# Per-user IDE state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.DotSettings.user
+
+# Test results and coverage reports
+TestResults/
+coverage.*.xml
+coverage.json
+
+# MkDocs build output and cache
 site/
+.cache/
