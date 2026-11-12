@@ -50,6 +50,8 @@ builder.Services.AddStackExchangeRedisCache(options => options.Configuration = "
 !!! info "Zmiany w 2.0"
     `CachingBehavior` korzysta z `HybridCache`. Interfejs `ICache` i klasa `Cache` zostały usunięte razem z zależnością od Newtonsoft.Json — usuń własną rejestrację `ICache`. Odpowiedzi są serializowane przez System.Text.Json, a `ICachePolicy.SlidingExpiration` nie jest już obsługiwane (wpis żyje do czasu wygaśnięcia). Po aktualizacji wyczyść współdzielony cache lub zmień prefiks kluczy: wpisy zapisane przez 1.x mają inny format.
 
+    Gdy host zarejestruje `IDistributedCache` (np. Redis), odpowiedzi są współdzielone między instancjami aplikacji: instancja, która nie ma wpisu w pamięci, odczytuje go z cache rozproszonego bez wywoływania handlera. Gdy cache rozproszony jest niedostępny, żądanie obsługuje handler — awaria cache nie zatrzymuje żądań.
+
 ---
 
 ## Przykład użycia
