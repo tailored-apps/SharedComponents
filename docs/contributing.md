@@ -34,7 +34,7 @@ mkdocs serve  # http://127.0.0.1:8000
 
 ### Solution i katalog wyjściowy
 
-Repozytorium używa pliku solution w formacie XML — `TailoredApps.Shared.slnx` (wymaga .NET SDK 9.0.200+ lub Visual Studio 2022 17.13+; CI buduje na .NET 10).
+Repozytorium używa pliku solution w formacie XML — `TailoredApps.Shared.slnx` (otwiera go `dotnet` CLI oraz Visual Studio 2022 17.13 lub nowsze).
 
 ```bash
 dotnet build TailoredApps.Shared.slnx

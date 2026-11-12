@@ -65,7 +65,7 @@ The condition is required: setting the flag for `net10.0` fails the build with `
 
 | Scope | How |
 |---|---|
-| Whole build | `dotnet build TailoredApps.Shared.sln -p:UseRuntimeAsync=false` |
+| Whole build | `dotnet build TailoredApps.Shared.slnx -p:UseRuntimeAsync=false` |
 | One library | `<UseRuntimeAsync>false</UseRuntimeAsync>` in its `.csproj` file |
 
 With the switch off, the `net11.0` asset is compiled like the others — with state machines.
@@ -79,8 +79,8 @@ With the switch off, the `net11.0` asset is compiled like the others — with st
 - The CI workflows install the `10.0.x` SDK (runtime for the `net10.0` tests) and `11.0.x` (build).
 
 ```bash
-dotnet build TailoredApps.Shared.sln
-dotnet test TailoredApps.Shared.sln
+dotnet build TailoredApps.Shared.slnx
+dotnet test TailoredApps.Shared.slnx
 ```
 
 ### Adding a new library

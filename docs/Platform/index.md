@@ -65,7 +65,7 @@ Warunek jest konieczny: ustawienie tej flagi dla `net10.0` kończy build błęda
 
 | Zakres | Jak |
 |---|---|
-| Cały build | `dotnet build TailoredApps.Shared.sln -p:UseRuntimeAsync=false` |
+| Cały build | `dotnet build TailoredApps.Shared.slnx -p:UseRuntimeAsync=false` |
 | Jedna biblioteka | `<UseRuntimeAsync>false</UseRuntimeAsync>` w jej pliku `.csproj` |
 
 Po wyłączeniu asset `net11.0` jest kompilowany tak samo jak pozostałe — z maszynami stanów.
@@ -79,8 +79,8 @@ Po wyłączeniu asset `net11.0` jest kompilowany tak samo jak pozostałe — z m
 - Workflowy CI instalują SDK `10.0.x` (runtime dla testów `net10.0`) oraz `11.0.x` (build).
 
 ```bash
-dotnet build TailoredApps.Shared.sln
-dotnet test TailoredApps.Shared.sln
+dotnet build TailoredApps.Shared.slnx
+dotnet test TailoredApps.Shared.slnx
 ```
 
 ### Nowa biblioteka
