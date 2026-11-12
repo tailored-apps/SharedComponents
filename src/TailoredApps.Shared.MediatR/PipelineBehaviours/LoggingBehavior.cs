@@ -1,5 +1,4 @@
 using System;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -11,6 +10,12 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
     /// MediatR pipeline behavior that logs the execution time of every request and captures any
     /// exceptions that occur during handler processing.
     /// </summary>
+    /// <remarks>
+    /// Only the request type name and a correlation id are attached to the logging scope. The request
+    /// payload itself is deliberately not serialized: requests routinely carry passwords, tokens,
+    /// personal data or large binary content, and a logging scope is persisted with every log line
+    /// written while the handler runs. Log payload fields explicitly in the handler when needed.
+    /// </remarks>
     /// <typeparam name="TRequest">The type of the MediatR request.</typeparam>
     /// <typeparam name="TResponse">The type of the response.</typeparam>
     public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
@@ -30,23 +35,24 @@ namespace TailoredApps.Shared.MediatR.PipelineBehaviours
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             var correlationId = Guid.NewGuid();
+            var requestName = typeof(TRequest).Name;
             var timer = new System.Diagnostics.Stopwatch();
-            using (var loggingScope = logger.BeginScope("{MeditatorRequestName} with {MeditatorRequestData}, correlation id {CorrelationId}", typeof(TRequest).Name, JsonSerializer.Serialize(request), correlationId))
+            using (logger.BeginScope("{MeditatorRequestName}, correlation id {CorrelationId}", requestName, correlationId))
             {
                 try
                 {
-                    logger.LogDebug("Handler for {MeditatorRequestName} starting, correlation id {CorrelationId}", typeof(TRequest).Name, correlationId);
+                    logger.LogDebug("Handler for {MeditatorRequestName} starting, correlation id {CorrelationId}", requestName, correlationId);
                     timer.Start();
                     var result = await next();
                     timer.Stop();
-                    logger.LogDebug("Handler for {MeditatorRequestName} finished in {ElapsedMilliseconds}ms, correlation id {CorrelationId}", typeof(TRequest).Name, timer.Elapsed.TotalMilliseconds, correlationId);
+                    logger.LogDebug("Handler for {MeditatorRequestName} finished in {ElapsedMilliseconds}ms, correlation id {CorrelationId}", requestName, timer.Elapsed.TotalMilliseconds, correlationId);
 
                     return result;
                 }
                 catch (Exception e)
                 {
                     timer.Stop();
-                    logger.LogError(e, "Handler for {MeditatorRequestName} failed in {ElapsedMilliseconds}ms, correlation id {CorrelationId}\r\n" + e.StackTrace, typeof(TRequest).Name, timer.Elapsed.TotalMilliseconds, correlationId);
+                    logger.LogError(e, "Handler for {MeditatorRequestName} failed in {ElapsedMilliseconds}ms, correlation id {CorrelationId}", requestName, timer.Elapsed.TotalMilliseconds, correlationId);
                     throw;
                 }
             }

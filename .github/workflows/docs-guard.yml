@@ -2,7 +2,7 @@ name: Docs guard
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, 'release/**']
 
 permissions:
   contents: read
@@ -13,9 +13,10 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-docs') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Fail when src changes ship without docs
         env:
@@ -36,14 +37,16 @@ jobs:
     name: mkdocs build --strict
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: 3.x
 
       - name: Install MkDocs Material
-        run: pip install mkdocs-material
+        run: pip install "mkdocs-material==9.7.7"
 
       - name: Build Polish site (strict)
         run: mkdocs build --config-file mkdocs.yml --strict --site-dir /tmp/site-pl

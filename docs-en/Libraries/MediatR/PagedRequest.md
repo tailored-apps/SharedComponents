@@ -134,6 +134,12 @@ public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query)
 
 ---
 
+## 🔒 Security
+
+`Page`, `Count` and `SortField` come straight from the HTTP request. The EF layer (`PagingQuery<T>`, `ApplySorting`) enforces `Page >= 1`, `1 <= Count <= PagingQuery<T>.MaxPageSize` (default 1000) and a single property name as the sort field; violations throw `ArgumentException`/`ArgumentOutOfRangeException`. For entities with sensitive columns pass an allow-list of sort fields to `ApplySorting`.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -174,4 +180,5 @@ if (request.IsSortingSpecified)
 - TResponse musi implementować IPagedResult<TModel>
 - IsPagingSpecified = Page i Count mają wartość — sprawdzaj przed Skip/Take
 - IsSortBy("Name") — sprawdza case-insensitive
+- Never hand SortField to Dynamic LINQ yourself - use ApplySorting with an allow-list of fields
 ```

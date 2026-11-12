@@ -5,22 +5,29 @@ on:
     branches:
       - master
 
+# Least privilege by default; only the deploy job gets a write token.
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: 3.x
 
       # The 11.0 SDK builds every target framework (net8.0 - net11.0). The tests run on net10.0 and
       # net11.0, so the 10.0 runtime has to be present as well - it comes with the 10.0 SDK.
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: |
             10.0.x
@@ -33,34 +40,50 @@ jobs:
         run: dotnet test TailoredApps.Shared.slnx /p:CollectCoverage=true /p:CoverletOutputFormat="opencover"
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - uses: actions/cache@v6
-        with:
-          key: ${{ github.ref }}
-          path: .cache
-
       - name: Install MkDocs Material
-        run: pip install mkdocs-material
+        run: pip install "mkdocs-material==9.7.7"
 
       # ── Docs build ────────────────────────────────────────────────────────
 
       - name: Build Polish site (root)
-        run: mkdocs build --config-file mkdocs.yml --site-dir site
+        run: mkdocs build --config-file mkdocs.yml --strict --site-dir site
 
       - name: Build English site (/en/)
-        run: mkdocs build --config-file mkdocs-en.yml --site-dir site/en
+        run: mkdocs build --config-file mkdocs-en.yml --strict --site-dir site/en
 
-      # ── Deploy ───────────────────────────────────────────────────────────
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: site
+          path: site
+          retention-days: 1
 
-      - name: Deploy to GitHub Pages
+  # ── Deploy ─────────────────────────────────────────────────────────────
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site
+          path: site
+
+      - name: Push site to gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           cd site
-          git init
+          git init -b deploy
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "docs: deploy PL + EN [skip ci]"
-          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:gh-pages
+          git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPOSITORY}.git" HEAD:gh-pages

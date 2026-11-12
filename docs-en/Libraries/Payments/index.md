@@ -162,20 +162,23 @@ foreach (var provider in providers)
 | `PaymentWebhookRequest` | Klasa | Dane HTTP żądania webhook: `Body`, `Headers`, `QueryParams` |
 | `PaymentWebhookResult` | Enum | `Success`, `Ignored`, `Fail` |
 
-### Security
-
-| Type | Kind | Description |
-|------|------|-------------|
-| `SignatureComparer` | Static class | `FixedTimeEquals(expected, actual, ignoreCase)` — constant-time signature comparison; a missing or empty value is never a match |
-
-Every built-in provider verifies notification signatures through `SignatureComparer`. An ordinary string comparison stops at the first differing character, so the response time reveals how much of a forged signature was correct. The error message of a failed verification does not contain the expected signature.
-
 ### DI Registration
 
 | Metoda | Opis |
 |--------|------|
 | `services.AddPayments()` | Rejestruje `IPaymentService`/`PaymentService` |
 | `builder.RegisterPaymentProvider<T>()` | Dodaje implementację `IPaymentProvider` |
+
+---
+
+## 🔒 Webhook security
+
+- **Fail-closed.** Every provider rejects a notification when its secret (HMAC key, `SignatureKey`, `CrcKey`, `SecurityCode`, `ShopSecretPhrase`, `WebhookSecret`) is not configured or the signature is empty. Previously an empty secret meant a signature computed with an empty key, which anyone could reproduce.
+- **Constant-time comparison.** Signatures are compared with `WebhookSignature.FixedTimeEquals` / `FixedTimeEqualsIgnoreCase` (`TailoredApps.Shared.Payments.Security`), so response timing does not leak the expected value. Use these helpers in custom providers.
+- **Case-insensitive headers and query.** `PaymentWebhookRequest.Headers`/`Query` resolve `stripe-signature` and `Stripe-Signature` alike - HTTP/2 lower-cases header names.
+- **Identifiers in URLs.** `PaymentIdentifier.EnsureSafe` rejects identifiers containing `/`, `?`, `#`, whitespace etc. before they are placed in a gateway request URL (prevents re-targeting an authenticated request to another endpoint).
+- **Error messages never disclose the signature.** `PaymentWebhookResult.ErrorMessage` carries a short description ("Invalid signature.") and never the expected value.
+- **Webhook results identify the payment.** `PaymentResponse.PaymentUniqueId` is populated from the payload (orderId, paymentId, sessionId, merchantReference, order_id, transactionId) - de-duplicate events on it. Non-terminal events (`Processing`) are returned as `Ignore`.
 
 ---
 
@@ -228,6 +231,8 @@ var result = await _payments.HandleWebhookAsync(providerKey, new PaymentWebhookR
 - Zawsze sprawdź PaymentWebhookResult — Ignored to OK, Fail to błąd podpisu/konfiguracji
 - Kwota Amount w walucie bazowej (nie w groszach — chyba że provider wymaga inaczej)
 - Dla webhooków wymagany jest endpoint HTTP POST z raw body
-- Custom provider: compare signatures (HMAC, hash, CRC) only with SignatureComparer.FixedTimeEquals — never with == or string.Equals
-- Never put the expected signature or a secret into ErrorMessage, logs or the HTTP response
+- Never run a provider without its webhook secret configured - verification rejects every notification (fail-closed)
+- In custom providers compare signatures with WebhookSignature.FixedTimeEquals and pass URL identifiers through PaymentIdentifier.EnsureSafe
+- Do not echo the webhook ErrorMessage to the caller - log it server-side
+- De-duplicate events on PaymentUniqueId; the webhook consumer must be idempotent
 ```

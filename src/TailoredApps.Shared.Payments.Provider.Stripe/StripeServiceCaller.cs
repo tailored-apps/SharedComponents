@@ -93,11 +93,21 @@ public class StripeServiceCaller : IStripeServiceCaller
     /// Weryfikacja podpisu HMAC-SHA256 jest zawsze wykonywana.
     /// </remarks>
     public Event ConstructWebhookEvent(string payload, string stripeSignature)
-        => EventUtility.ConstructEvent(
+    {
+        // Fail closed: Stripe.net would otherwise compute the HMAC with an empty key,
+        // which anyone can reproduce.
+        if (string.IsNullOrWhiteSpace(options.WebhookSecret))
+            throw new StripeException("Webhook signature verification failed: Stripe WebhookSecret is not configured.");
+
+        if (string.IsNullOrWhiteSpace(stripeSignature))
+            throw new StripeException("Webhook signature verification failed: Stripe-Signature header is missing.");
+
+        return EventUtility.ConstructEvent(
             payload,
             stripeSignature,
             options.WebhookSecret,
             throwOnApiVersionMismatch: false);
+    }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 

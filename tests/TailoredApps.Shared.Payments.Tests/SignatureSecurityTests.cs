@@ -14,40 +14,41 @@ using TailoredApps.Shared.Payments;
 using TailoredApps.Shared.Payments.Provider.CashBill;
 using TailoredApps.Shared.Payments.Provider.CashBill.Models;
 using TailoredApps.Shared.Payments.Provider.PayU;
+using TailoredApps.Shared.Payments.Security;
 using Xunit;
 
 namespace TailoredApps.Shared.Payments.Tests;
 
-public class SignatureComparerTests
+public class WebhookSignatureComparisonTests
 {
     [Fact]
     public void When_Values_Are_Identical_Should_Return_True()
     {
-        Assert.True(SignatureComparer.FixedTimeEquals("a1B2c3", "a1B2c3"));
+        Assert.True(WebhookSignature.FixedTimeEquals("a1B2c3", "a1B2c3"));
     }
 
     [Fact]
     public void When_Values_Differ_In_One_Character_Should_Return_False()
     {
-        Assert.False(SignatureComparer.FixedTimeEquals("a1b2c3", "a1b2c4"));
+        Assert.False(WebhookSignature.FixedTimeEquals("a1b2c3", "a1b2c4"));
     }
 
     [Fact]
     public void When_Values_Differ_In_Length_Should_Return_False()
     {
-        Assert.False(SignatureComparer.FixedTimeEquals("a1b2c3", "a1b2c"));
+        Assert.False(WebhookSignature.FixedTimeEquals("a1b2c3", "a1b2c"));
     }
 
     [Fact]
     public void When_Values_Differ_Only_By_Case_And_Case_Is_Significant_Should_Return_False()
     {
-        Assert.False(SignatureComparer.FixedTimeEquals("AbCdEf", "abcdef"));
+        Assert.False(WebhookSignature.FixedTimeEquals("AbCdEf", "abcdef"));
     }
 
     [Fact]
     public void When_Values_Differ_Only_By_Case_And_Case_Is_Ignored_Should_Return_True()
     {
-        Assert.True(SignatureComparer.FixedTimeEquals("deadbeef", "DEADBEEF", ignoreCase: true));
+        Assert.True(WebhookSignature.FixedTimeEqualsIgnoreCase("deadbeef", "DEADBEEF"));
     }
 
     [Theory]
@@ -59,8 +60,8 @@ public class SignatureComparerTests
     [InlineData("", "")]
     public void When_Either_Value_Is_Missing_Should_Return_False(string? expected, string? actual)
     {
-        Assert.False(SignatureComparer.FixedTimeEquals(expected, actual));
-        Assert.False(SignatureComparer.FixedTimeEquals(expected, actual, ignoreCase: true));
+        Assert.False(WebhookSignature.FixedTimeEquals(expected, actual));
+        Assert.False(WebhookSignature.FixedTimeEqualsIgnoreCase(expected, actual));
     }
 }
 
@@ -269,5 +270,20 @@ public class PayUCreateOrderRedirectTests
         }
 
         Assert.Equal(3, server.Requests);
+    }
+}
+
+public class RevolutServiceCallerConstructorTests
+{
+    [Fact]
+    public void When_Created_With_The_Original_Two_Argument_Constructor_Should_Verify_Signatures_With_The_System_Clock()
+    {
+        // The constructor that shipped before the security hardening must keep working for code that
+        // creates the caller by hand.
+        var caller = new TailoredApps.Shared.Payments.Provider.Revolut.RevolutServiceCaller(
+            Options.Create(new TailoredApps.Shared.Payments.Provider.Revolut.RevolutServiceOptions { WebhookSecret = "whsec" }),
+            Mock.Of<IHttpClientFactory>());
+
+        Assert.False(caller.VerifyWebhookSignature("{}", "0", "v1=deadbeef"));
     }
 }

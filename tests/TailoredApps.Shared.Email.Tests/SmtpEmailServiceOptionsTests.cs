@@ -26,7 +26,7 @@ namespace TailoredApps.Shared.Email.Tests
             Assert.Null(options.Host);
             Assert.Equal(0, options.Port);
             Assert.Null(options.Password);
-            Assert.False(options.EnableSsl);
+            Assert.True(options.EnableSsl);
             Assert.Null(options.UserName);
             Assert.Null(options.From);
             Assert.False(options.IsProd);

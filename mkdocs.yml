@@ -52,6 +52,7 @@ nav:
       - WebApi: Libraries/WebApi/index.md
   - Platformy docelowe: Platform/index.md
   - Zależności: Dependencies/index.md
+  - Bezpieczeństwo: Security/index.md
   - Contributing: contributing.md
   - Changelog: Libraries/Readme.md
 

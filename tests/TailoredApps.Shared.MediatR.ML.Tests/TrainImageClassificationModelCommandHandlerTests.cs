@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Moq;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands;
 using TailoredApps.Shared.MediatR.ImageClassification.Domain.Handlers.Commands;
+using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
 using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
 using Xunit;
 
@@ -23,9 +25,10 @@ namespace TailoredApps.Shared.MediatR.ML.Tests
         {
             classificationServiceMock = new Mock<IImageClassificationService>();
             modelHelperMock = new Mock<IModelHelper>();
-            sut = new TrainImageClassificationModelCommandHandler(classificationServiceMock.Object, modelHelperMock.Object);
 
             trainingSetFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            var options = Options.Create(new ImageClassificationOptions { TrainingRoot = trainingSetFolder, ModelsRoot = trainingSetFolder });
+            sut = new TrainImageClassificationModelCommandHandler(classificationServiceMock.Object, modelHelperMock.Object, options);
             Directory.CreateDirectory(Path.Combine(trainingSetFolder, "red"));
             Directory.CreateDirectory(Path.Combine(trainingSetFolder, "green"));
             File.WriteAllBytes(Path.Combine(trainingSetFolder, "red", "1.jpg"), new byte[] { 1 });
@@ -120,15 +123,76 @@ namespace TailoredApps.Shared.MediatR.ML.Tests
         public async Task When_Source_Directory_Does_Not_Exist_Should_Throw_DirectoryNotFoundException()
         {
             // arrange
-            var missingFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            var missingFolder = Path.Combine(trainingSetFolder, "missing");
             var request = new TrainImageClassificationModel
             {
                 Source = missingFolder,
-                ModelDestFolderPath = Path.Combine(missingFolder, "model.zip")
+                ModelDestFolderPath = Path.Combine(trainingSetFolder, "model.zip")
             };
 
             // act & assert
             await Assert.ThrowsAsync<DirectoryNotFoundException>(() => sut.Handle(request, CancellationToken.None));
+            classificationServiceMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task When_Source_Escapes_TrainingRoot_Should_Throw_And_Not_Read_Anything()
+        {
+            // arrange
+            var request = new TrainImageClassificationModel
+            {
+                Source = Path.Combine(trainingSetFolder, "..", ".."),
+                ModelDestFolderPath = Path.Combine(trainingSetFolder, "model.zip")
+            };
+
+            // act & assert
+            await Assert.ThrowsAsync<ArgumentException>(() => sut.Handle(request, CancellationToken.None));
+            classificationServiceMock.VerifyNoOtherCalls();
+            modelHelperMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task When_Destination_Escapes_ModelsRoot_Should_Throw_And_Not_Write_Anything()
+        {
+            // arrange
+            var outside = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".zip");
+            var request = new TrainImageClassificationModel { Source = trainingSetFolder, ModelDestFolderPath = outside };
+
+            // act & assert
+            await Assert.ThrowsAsync<ArgumentException>(() => sut.Handle(request, CancellationToken.None));
+            classificationServiceMock.VerifyNoOtherCalls();
+            modelHelperMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task When_Source_Is_Relative_Should_Resolve_Under_TrainingRoot()
+        {
+            // arrange
+            var modelPath = Path.Combine(trainingSetFolder, "model.zip");
+            classificationServiceMock
+                .Setup(s => s.Train(It.IsAny<IEnumerable<ImageData>>(), Path.Combine(trainingSetFolder, "red"), modelPath))
+                .Returns(("info", new[] { "red" }));
+            modelHelperMock.Setup(m => m.AddVersion(modelPath)).Returns("v1");
+            var request = new TrainImageClassificationModel { Source = "red", ModelDestFolderPath = "model.zip" };
+
+            // act
+            var response = await sut.Handle(request, CancellationToken.None);
+
+            // assert
+            Assert.Equal(modelPath, response.ModelPath);
+            classificationServiceMock.Verify(s => s.Train(It.IsAny<IEnumerable<ImageData>>(), Path.Combine(trainingSetFolder, "red"), modelPath), Times.Once);
+        }
+
+        [Fact]
+        public async Task When_Roots_Are_Not_Configured_Should_Throw_InvalidOperationException()
+        {
+            // arrange
+            var unconfigured = new TrainImageClassificationModelCommandHandler(
+                classificationServiceMock.Object, modelHelperMock.Object, Options.Create(new ImageClassificationOptions()));
+            var request = new TrainImageClassificationModel { Source = trainingSetFolder, ModelDestFolderPath = Path.Combine(trainingSetFolder, "m.zip") };
+
+            // act & assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => unconfigured.Handle(request, CancellationToken.None));
             classificationServiceMock.VerifyNoOtherCalls();
         }
     }

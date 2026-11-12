@@ -161,6 +161,16 @@ public class NotificationService
 
 ---
 
+## 🔒 Bezpieczeństwo
+
+- **Zmienne szablonu są kodowane jako HTML.** Treść wiadomości jest wysyłana jako HTML, a wartości `{{token}}` często pochodzą od użytkownika (np. nazwa wyświetlana). `TokenReplacingMailMessageBuilder` i `DefaultMessageBuilder` kodują wartości (`WebUtility.HtmlEncode`), więc `<a href="https://evil">` nie stanie się linkiem phishingowym w mailu z zaufanego nadawcy. Wartości, które celowo zawierają HTML, wstawiaj przez potrójne nawiasy `{{{token}}}`; globalnie wyłącza to `TokenReplacingMailMessageBuilderOptions.HtmlEncodeVariables = false` lub `new DefaultMessageBuilder(htmlEncodeVariables: false)`.
+- **Podmiana w jednym przebiegu.** Wartość zawierająca `{{InnyToken}}` nie jest ponownie rozwijana.
+- **Jeden adresat.** `SmtpEmailProvider.SendMail` przyjmuje dokładnie jeden adres; lista rozdzielona przecinkami lub średnikami kończy się `FormatException` (wcześniej `MailAddressCollection.Add` dopisywał dodatkowych odbiorców).
+- **TLS domyślnie włączone.** `Mail:Providers:Smtp:EnableSsl` ma teraz wartość domyślną `true`.
+- **`CatchAll` wymagany poza produkcją.** Gdy `IsProd = false`, brak `CatchAll` powoduje `InvalidOperationException` zamiast wysyłki „donikąd”.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -207,4 +217,7 @@ await _emailProvider.SendMail(email, subject, body, attachments);
 - Klucz szablonu (`templateKey`) musi być równy nazwie pliku szablonu wraz z rozszerzeniem, np. `template.html`; nieznany klucz → `KeyNotFoundException`
 - Sekcja konfiguracji "Mail:Providers:Smtp" jest wymagana — jej brak powoduje `InvalidOperationException`
 - Załączniki: słownik fileName → byte[]
+- Wartości {{token}} są HTML-encodowane; HTML wstawiaj świadomie przez {{{token}}}
+- SendMail przyjmuje jeden adres — listy odbiorców obsługuj pętlą po stronie aplikacji
+- EnableSsl jest domyślnie true; CatchAll jest wymagany gdy IsProd = false
 ```

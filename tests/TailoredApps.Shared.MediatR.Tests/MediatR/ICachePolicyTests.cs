@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using MediatR;
 using TailoredApps.Shared.MediatR.Interfaces.Caching;
 using Xunit;
 
@@ -23,7 +25,7 @@ namespace TailoredApps.Shared.MediatR.Tests
         }
 
         [Fact]
-        public void Should_Build_Default_Cache_Key_From_Request_Type_FullName_And_Property_Values()
+        public void Should_Build_Default_Cache_Key_From_Request_Type_FullName_And_Content_Hash()
         {
             // arrange
             ICachePolicy<CachedRequest, string> policy = new DefaultCachePolicy();
@@ -32,8 +34,42 @@ namespace TailoredApps.Shared.MediatR.Tests
             // act
             var cacheKey = policy.GetCacheKey(request);
 
-            // assert
-            Assert.Equal($"{typeof(CachedRequest).FullName}{{Id:7}}", cacheKey);
+            // assert - namespaced by type, content represented by a hash (no plain-text property values)
+            Assert.StartsWith($"{typeof(CachedRequest).FullName}:", cacheKey);
+            Assert.Equal(CacheKeyGenerator.Generate(typeof(CachedRequest), request), cacheKey);
+            Assert.DoesNotContain("Id:7", cacheKey);
+            Assert.Equal(cacheKey, policy.GetCacheKey(new CachedRequest { Id = 7 }));
+        }
+
+        [Fact]
+        public void When_Requests_Differ_Only_In_Collection_Contents_Should_Produce_Different_Keys()
+        {
+            // arrange
+            ICachePolicy<CollectionRequest, string> policy = new CollectionCachePolicy();
+
+            // act
+            var first = policy.GetCacheKey(new CollectionRequest { CustomerIds = new List<int> { 1 } });
+            var second = policy.GetCacheKey(new CollectionRequest { CustomerIds = new List<int> { 2 } });
+
+            // assert - the old key used List.ToString(), which made these collide
+            Assert.NotEqual(first, second);
+        }
+
+        [Fact]
+        public void When_Request_Contains_Sensitive_Value_Should_Not_Expose_It_In_Key()
+        {
+            ICachePolicy<CachedRequest, string> policy = new DefaultCachePolicy();
+            var key = policy.GetCacheKey(new CachedRequest { Id = 424242 });
+            Assert.DoesNotContain("424242", key);
+        }
+
+        private sealed class CollectionRequest : IRequest<string>
+        {
+            public List<int> CustomerIds { get; set; }
+        }
+
+        private sealed class CollectionCachePolicy : ICachePolicy<CollectionRequest, string>
+        {
         }
 
         [Fact]

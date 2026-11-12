@@ -39,5 +39,23 @@ namespace TailoredApps.Shared.ExceptionHandling.Tests
             Assert.Equal(400, result.StatusCode);
             Assert.Same(model, result.Value);
         }
+
+        [Theory]
+        [InlineData(404, 404)]
+        [InlineData(422, 422)]
+        [InlineData(500, 500)]
+        [InlineData(200, 400)]
+        [InlineData(0, 400)]
+        public void When_Created_From_ResultModel_With_Explicit_Code_Should_Use_Valid_Error_Codes(int code, int expected)
+        {
+            // arrange
+            var model = new ExceptionHandlingResultModel(code, "failure", new List<ExceptionOrValidationError>());
+
+            // act
+            var result = new ExceptionOccuredResult(model);
+
+            // assert
+            Assert.Equal(expected, result.StatusCode);
+        }
     }
 }

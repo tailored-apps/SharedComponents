@@ -111,6 +111,13 @@ public class MailboxMonitorService
 
 ---
 
+## 🔒 Bezpieczeństwo i poprawność
+
+- Załączniki w `MailMessage.Attachements` są kluczowane **nazwą pliku** (przy duplikatach z sufiksem `(2)`), a treść jest dekodowana z kodowania transferowego MIME przed zakodowaniem do base64 — wcześniej klucz stanowił typ MIME (kolizja dwóch PDF-ów rzucała wyjątek), a dane były base64-z-base64.
+- Uprawnienie `IMAP.AccessAsApp` daje dostęp do **wszystkich** skrzynek w tenancie, o ile nie ograniczy go Application Access Policy w Exchange Online.
+
+---
+
 ## 🤖 AI Agent Prompt
 
 ```markdown
@@ -148,4 +155,5 @@ var messages = await _emailProvider.GetMail(
 - Wymaga uprawnień aplikacyjnych IMAP.AccessAsApp w Azure AD
 - Tokeny OAuth2 są automatycznie cache'owane przez MSAL
 - Sekcja konfiguracji: "Mail:Providers:Office365"
+- Ogranicz aplikację Azure AD polityką Application Access Policy do konkretnych skrzynek
 ```
