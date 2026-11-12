@@ -107,18 +107,6 @@ public class DateTimeProviderOnTimeProviderTests
     }
 
     [Fact]
-    public void When_Misspelled_Member_Is_Used_Should_Return_The_Same_Value_As_UtcTimeOfDay()
-    {
-        var sut = CreateSut();
-        IDateTimeProvider throughInterface = sut;
-
-#pragma warning disable CS0618 // the misspelled member is obsolete; this test pins that it still works
-        Assert.Equal(sut.UtcTimeOfDay, sut.UtcTimeOfDaty);
-        Assert.Equal(sut.UtcTimeOfDay, throughInterface.UtcTimeOfDaty);
-#pragma warning restore CS0618
-    }
-
-    [Fact]
     public void When_Clock_Is_Given_Should_Expose_It_For_Timers_And_Delays()
     {
         var clock = new StoppedClock(Instant, TimeSpan.Zero);
@@ -144,15 +132,14 @@ public class DateTimeProviderOnTimeProviderTests
     }
 
     [Fact]
-    public void When_Types_Are_Inspected_Should_Not_Be_Obsolete_Except_For_The_Misspelled_Member()
+    public void When_Types_Are_Inspected_Should_Have_No_Obsolete_Members()
     {
-        Assert.Empty(typeof(IDateTimeProvider).GetCustomAttributes(typeof(ObsoleteAttribute), inherit: false));
-        Assert.Empty(typeof(DateTimeProvider).GetCustomAttributes(typeof(ObsoleteAttribute), inherit: false));
-
+        // 3.0 removed the misspelled UtcTimeOfDaty; nothing obsolete is left to remove.
         foreach (var type in new[] { typeof(IDateTimeProvider), typeof(DateTimeProvider) })
         {
-            var obsolete = type.GetProperties().Where(p => p.IsDefined(typeof(ObsoleteAttribute), inherit: false)).Select(p => p.Name);
-            Assert.Equal(new[] { "UtcTimeOfDaty" }, obsolete);
+            Assert.Empty(type.GetCustomAttributes(typeof(ObsoleteAttribute), inherit: false));
+            Assert.Empty(type.GetMembers().Where(m => m.IsDefined(typeof(ObsoleteAttribute), inherit: false)).Select(m => m.Name));
+            Assert.Null(type.GetProperty("UtcTimeOfDaty"));
         }
     }
 }
@@ -173,7 +160,9 @@ public class DateTimeProviderDefaultMembersTests
 
         public TimeSpan TimeOfDay => Now.TimeOfDay;
 
-        public TimeSpan UtcTimeOfDaty => new(1, 2, 3);   // the only spelling the 1.x interface had
+        // The only spelling the 1.x interface had. 3.0 removed it from the interface; an implementation that still
+        // declares it keeps compiling, and the property is simply its own.
+        public TimeSpan UtcTimeOfDaty => new(1, 2, 3);
 
         public System.DateTime Today => Now.Date;
 
@@ -201,14 +190,6 @@ public class DateTimeProviderDefaultMembersTests
     public void When_Implementation_Predates_UtcTimeOfDay_Should_Derive_It_From_UtcNow()
     {
         Assert.Equal(new TimeSpan(12, 30, 0), Sut.UtcTimeOfDay);
-    }
-
-    [Fact]
-    public void When_Implementation_Provides_The_Misspelled_Member_Should_Keep_Using_It()
-    {
-#pragma warning disable CS0618
-        Assert.Equal(new TimeSpan(1, 2, 3), Sut.UtcTimeOfDaty);
-#pragma warning restore CS0618
     }
 }
 

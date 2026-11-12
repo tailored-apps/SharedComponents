@@ -188,5 +188,5 @@ public class MyProvider : IExceptionHandlingProvider
 - Map exceptions that are the client's mistake to 4xx in the provider (they are then not logged as Error); leave server errors at 5xx
 - [HandleException] works at both the action AND the controller class level
 - For nested exceptions use GetBaseException() to find the root cause
-- AddExceptionHAndlingFilterAttribute (typo) is [Obsolete] - use AddExceptionHandlingFilterAttribute
+- Use AddExceptionHandlingFilterAttribute; the misspelled AddExceptionHAndlingFilterAttribute was removed in 3.0
 ````

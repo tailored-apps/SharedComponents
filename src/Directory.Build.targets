@@ -54,8 +54,11 @@
     3.0 replaces MediatR with ForkForward.Mediator. Request, handler and pipeline types in the public API of
     the mediator libraries move to another namespace and assembly, which is a breaking change made on
     purpose, so those libraries are left out of the comparison with 2.0.0. The other libraries are still
-    compared: 3.0 may break them too, but only deliberately (add the library here when it does).
-    Once 3.0.0 is published, remove this group and raise PublicApiBaselineVersion to 3.0.0.
+    compared: 3.0 may break them too, but only deliberately. A deliberate removal is recorded member by member
+    in the library's CompatibilitySuppressions.xml (generated with -p:ApiCompatGenerateSuppressionFile=true
+    and reviewed before it is committed), so that the rest of its API stays guarded. 3.0 removed the obsolete
+    members of DateTime, ExceptionHandling, Payments.Provider.PayNow and Payments.Provider.Tpay that way.
+    Once 3.0.0 is published, remove this group and those files and raise PublicApiBaselineVersion to 3.0.0.
   -->
   <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('TailoredApps.Shared.MediatR'))">
     <SkipPublicApiValidation>true</SkipPublicApiValidation>

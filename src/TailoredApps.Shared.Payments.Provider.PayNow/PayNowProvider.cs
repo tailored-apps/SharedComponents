@@ -23,10 +23,6 @@ public class PayNowServiceOptions
     public string SignatureKey { get; set; } = string.Empty;
     /// <summary>Base URL of the PayNow API endpoint.</summary>
     public string ServiceUrl { get; set; } = "https://api.paynow.pl";
-
-    /// <summary>Alias for ServiceUrl — backwards compatibility.</summary>
-    [Obsolete("Use ServiceUrl instead.")]
-    public string ApiUrl { get => ServiceUrl; set => ServiceUrl = value; }
     /// <summary>ReturnUrl.</summary>
     public string ReturnUrl { get; set; } = string.Empty;
     /// <summary>ContinueUrl.</summary>
@@ -316,9 +312,17 @@ public class PayNowConfigureOptions : IConfigureOptions<PayNowServiceOptions>
     /// <summary>Inicjalizuje instancję konfiguracji.</summary>
     public PayNowConfigureOptions(IConfiguration configuration) => this.configuration = configuration;
     /// <inheritdoc/>
+    /// <exception cref="InvalidOperationException">
+    /// The configuration still sets <c>ApiUrl</c>, the key removed in 3.0. Ignoring it would send a sandbox
+    /// setup to the production default of <see cref="PayNowServiceOptions.ServiceUrl"/>, so the host does not start.
+    /// </exception>
     public void Configure(PayNowServiceOptions options)
     {
-        var s = configuration.GetSection(PayNowServiceOptions.ConfigurationKey).Get<PayNowServiceOptions>();
+        var section = configuration.GetSection(PayNowServiceOptions.ConfigurationKey);
+        if (section["ApiUrl"] is not null)
+            throw new InvalidOperationException($"'{PayNowServiceOptions.ConfigurationKey}:ApiUrl' is no longer read (removed in 3.0): rename it to 'ServiceUrl'.");
+
+        var s = section.Get<PayNowServiceOptions>();
         if (s is null) return;
         options.ApiKey = s.ApiKey;
         options.SignatureKey = s.SignatureKey;

@@ -53,7 +53,7 @@ builder.Services
 | `ClientId` | yes | OAuth2 client identifier |
 | `ClientSecret` | yes | OAuth2 client secret |
 | `MerchantId` | no | Merchant identifier - bound from configuration, but not used by the provider |
-| `ServiceUrl` | no | Tpay API URL, default `https://api.tpay.com` (sandbox: `https://openapi.sandbox.tpay.com`) |
+| `ServiceUrl` | no | Tpay API URL, default `https://api.tpay.com` (sandbox: `https://openapi.sandbox.tpay.com`). The old alias `ApiUrl` was removed in 3.0: a configuration that still sets it stops the host from starting instead of silently going to production |
 | `ReturnUrl` | no | Return URL after payment (used for both the success and the error case) |
 | `NotifyUrl` | no | URL for notifications (webhook) |
 | `SecurityCode` | yes | Security code (the notification verification code from the Tpay panel) - the secret of the `md5sum` field |

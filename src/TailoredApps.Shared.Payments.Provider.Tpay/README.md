@@ -49,7 +49,7 @@ Options are bound from the `Payments:Providers:Tpay` section (`TpayServiceOption
 | `ClientId` | yes | OAuth `client_id` | - |
 | `ClientSecret` | yes | OAuth `client_secret` | - |
 | `SecurityCode` | yes | Notification verification code from the Tpay panel; the secret of the `md5sum` field | - |
-| `ServiceUrl` | no | Base URL of the Tpay API (`ApiUrl` is an obsolete alias of this key) | `https://api.tpay.com` |
+| `ServiceUrl` | no | Base URL of the Tpay API. The old alias `ApiUrl` was removed in 3.0; a configuration that still sets it stops the host from starting, instead of silently falling back to production | `https://api.tpay.com` |
 | `ReturnUrl` | no | Payer return address, sent for both the success and the error case | empty |
 | `NotifyUrl` | no | Address Tpay posts notifications to | empty |
 | `JwsCertificateBaseUrl` | no, but must be an absolute https address | Origin Tpay serves its signing certificates from | `https://secure.tpay.com` |

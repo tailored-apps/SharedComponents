@@ -185,7 +185,10 @@ dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true
 - The baseline version is set by `PublicApiBaselineVersion` in `src/Directory.Build.targets`.
 - A new library: until its first release add `<SkipPublicApiValidation>true</SkipPublicApiValidation>` to its csproj,
   and after the release replace it with `<PublicApiBaselineVersion>` holding the first version it was published in.
-- A breaking change is possible only in the next major version (3.0). Instead of removing a member, mark it `[Obsolete]` and add a new one.
+- On the 2.x line, instead of removing a member, mark it `[Obsolete]` and add a new one; the removal waits for a major version.
+- A deliberate removal on the 3.0 line is recorded in the library's `CompatibilitySuppressions.xml` - member by member, so the rest of its API
+  stays guarded. `dotnet build src/<Library>/<Library>.csproj -c Release -p:ValidatePublicApi=true -p:ApiCompatGenerateSuppressionFile=true`
+  generates the file; review it before committing - it must hold only what you remove on purpose.
 
 ---
 
