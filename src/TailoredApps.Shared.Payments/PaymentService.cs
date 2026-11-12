@@ -51,6 +51,15 @@ public class PaymentService : IPaymentService
     /// <inheritdoc/>
     public async Task<PaymentResponse> RegisterPayment(PaymentRequest request, CancellationToken cancellationToken = default)
     {
+        // "required" makes an initializer set these members; it cannot stop a blank or non-positive value.
+        ArgumentNullException.ThrowIfNull(request);
+        if (string.IsNullOrWhiteSpace(request.PaymentProvider))
+            throw new ArgumentException("PaymentRequest.PaymentProvider is required.", nameof(request));
+        if (string.IsNullOrWhiteSpace(request.Currency))
+            throw new ArgumentException("PaymentRequest.Currency is required.", nameof(request));
+        if (request.Amount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(request), request.Amount, "PaymentRequest.Amount must be greater than zero.");
+
         var provider = paymentService.Single(x => x.Key == request.PaymentProvider);
         return await provider.RequestPayment(request, cancellationToken);
     }

@@ -88,6 +88,13 @@ public class CheckoutService
 }
 ```
 
+`PaymentProvider`, `Amount` and `Currency` are `required` members: an object initializer that leaves one out does not compile
+(CS9035), and `System.Text.Json` refuses a document without them (`JsonException`, a 400 response in an API controller). The shorter form is
+the constructor `new PaymentRequest("Stripe", cart.TotalAmount, "PLN") { Title = "…" }`. `RegisterPayment` also refuses a blank provider key
+or currency (`ArgumentException`) and an amount of zero or less (`ArgumentOutOfRangeException`) before it calls the gateway.
+
+**Breaking change (2.0):** code that creates a `PaymentRequest` without one of these three members no longer compiles.
+
 ### Obsługa webhooków
 
 ```csharp
@@ -154,7 +161,7 @@ foreach (var provider in providers)
 
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
-| `PaymentRequest` | Klasa | Dane płatności: provider, kanał, kwota, waluta, dane płatnika |
+| `PaymentRequest` | Class | Payment data. Required (`required`): `PaymentProvider`, `Amount`, `Currency`; optional: channel, title, description, payer details, `AdditionalData`. Constructor `PaymentRequest(paymentProvider, amount, currency)` |
 | `PaymentResponse` | Klasa | Wynik: `RedirectUrl`, `PaymentUniqueId`, `PaymentStatus` |
 | `PaymentStatusEnum` | Enum | `Created`, `Processing`, `Finished`, `Rejected` |
 | `PaymentModel` | Enum | `OneTime`, `Subscription` |
@@ -297,6 +304,7 @@ var response = result switch
 
 ### Zasady
 - Każdy provider ma unikalny Key (np. "Stripe", "PayU", "CashBill")
+- PaymentRequest: always set PaymentProvider, Amount (greater than zero) and Currency - they are required; leaving one out is compile error CS9035
 - Catch HttpRequestException (covers PaymentGatewayException) around RegisterPayment and GetStatus: a failing gateway means an unknown state - do not cancel the order, check again later
 - Treat Rejected as a refusal only when the call returned without an exception
 - A webhook result is always one of three records: PaymentWebhookProcessed (act on Payment), PaymentWebhookIgnored (answer 2xx, do nothing), PaymentWebhookRejected (trust nothing in the request)

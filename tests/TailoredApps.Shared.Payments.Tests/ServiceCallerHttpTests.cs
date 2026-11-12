@@ -92,6 +92,7 @@ public class TpayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.CreateTransactionAsync("tok", new PaymentRequest
         {
+            PaymentProvider = "Tpay",
             Amount = 9.99m,
             Currency = "PLN",
             Email = "test@example.com",
@@ -111,6 +112,7 @@ public class TpayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, _) = await caller.CreateTransactionAsync("tok", new PaymentRequest
         {
+            PaymentProvider = "Tpay",
             Amount = 1m,
             Currency = "PLN",
         });
@@ -186,6 +188,7 @@ public class PayNowServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.CreatePaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "PayNow",
             Amount = 9.99m,
             Currency = "PLN",
             Email = "test@example.com",
@@ -203,6 +206,7 @@ public class PayNowServiceCallerHttpTests
         var caller = Build(factory);
         var (id, _) = await caller.CreatePaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "PayNow",
             Amount = 1m,
             Currency = "PLN",
         });
@@ -396,6 +400,7 @@ public class RevolutServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.CreateOrderAsync(new PaymentRequest
         {
+            PaymentProvider = "Revolut",
             Amount = 9.99m,
             Currency = "PLN",
             Title = "Test",
@@ -411,7 +416,7 @@ public class RevolutServiceCallerHttpTests
     {
         var factory = HttpFactory.Create("""{"id":"rev_xyz","checkout_url":"https://checkout.revolut.com/pay/xyz"}""");
         var caller = Build(factory);
-        var (id, _) = await caller.CreateOrderAsync(new PaymentRequest { Amount = 1m, Currency = "EUR" });
+        var (id, _) = await caller.CreateOrderAsync(new PaymentRequest { PaymentProvider = "Revolut", Amount = 1m, Currency = "EUR" });
         Assert.Equal("rev_xyz", id);
     }
 
@@ -450,6 +455,7 @@ public class AdyenServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url, error) = await caller.CreateSessionAsync(new PaymentRequest
         {
+            PaymentProvider = "Adyen",
             Amount = 9.99m,
             Currency = "PLN",
             Email = "x@e.com",
@@ -468,6 +474,7 @@ public class AdyenServiceCallerHttpTests
         var caller = Build(factory);
         var (id, _, error) = await caller.CreateSessionAsync(new PaymentRequest
         {
+            PaymentProvider = "Adyen",
             Amount = 1m,
             Currency = "EUR",
         });
@@ -480,7 +487,7 @@ public class AdyenServiceCallerHttpTests
     {
         var factory = HttpFactory.Create("""{"status":401,"message":"Unauthorized"}""", HttpStatusCode.Unauthorized);
         var caller = Build(factory);
-        var (id, url, error) = await caller.CreateSessionAsync(new PaymentRequest { Amount = 1m, Currency = "PLN" });
+        var (id, url, error) = await caller.CreateSessionAsync(new PaymentRequest { PaymentProvider = "Adyen", Amount = 1m, Currency = "PLN" });
         Assert.Null(id);
         Assert.Null(url);
         Assert.NotNull(error);
@@ -566,6 +573,7 @@ public class Przelewy24ServiceCallerHttpTests
         var caller = Build(factory);
         var (token, error) = await caller.RegisterTransactionAsync(new PaymentRequest
         {
+            PaymentProvider = "Przelewy24",
             Amount = 10m,
             Currency = "PLN",
             Email = "x@example.com",
@@ -583,6 +591,7 @@ public class Przelewy24ServiceCallerHttpTests
         var caller = Build(factory);
         var (token, error) = await caller.RegisterTransactionAsync(new PaymentRequest
         {
+            PaymentProvider = "Przelewy24",
             Amount = 1m,
             Currency = "PLN",
         }, "sess_1");
@@ -631,6 +640,7 @@ public class HotPayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.InitPaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "HotPay",
             Amount = 9.99m,
             Currency = "PLN",
             Title = "Test",
@@ -647,6 +657,7 @@ public class HotPayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, url) = await caller.InitPaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "HotPay",
             Amount = 1m,
             Currency = "PLN",
             Description = "Desc",
@@ -662,6 +673,7 @@ public class HotPayServiceCallerHttpTests
         var caller = Build(factory);
         var (id, _) = await caller.InitPaymentAsync(new PaymentRequest
         {
+            PaymentProvider = "HotPay", Currency = "PLN",
             Amount = 5m,
             Title = "Service",
             Email = "user@test.com",

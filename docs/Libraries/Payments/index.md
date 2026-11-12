@@ -88,6 +88,13 @@ public class CheckoutService
 }
 ```
 
+`PaymentProvider`, `Amount` i `Currency` są składowymi `required`: inicjalizator obiektu, który pominie którąś z nich, nie skompiluje się
+(CS9035), a `System.Text.Json` odrzuci dokument bez nich (`JsonException`, w kontrolerze API odpowiedź 400). Krótsza forma to konstruktor
+`new PaymentRequest("Stripe", cart.TotalAmount, "PLN") { Title = "…" }`. `RegisterPayment` dodatkowo odrzuca pusty klucz providera lub
+pustą walutę (`ArgumentException`) oraz kwotę mniejszą lub równą zero (`ArgumentOutOfRangeException`), zanim wywoła bramkę.
+
+**Zmiana niekompatybilna (2.0):** kod tworzący `PaymentRequest` bez którejś z tych trzech składowych przestaje się kompilować.
+
 ### Obsługa webhooków
 
 ```csharp
@@ -154,7 +161,7 @@ foreach (var provider in providers)
 
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
-| `PaymentRequest` | Klasa | Dane płatności: provider, kanał, kwota, waluta, dane płatnika |
+| `PaymentRequest` | Klasa | Dane płatności. Wymagane (`required`): `PaymentProvider`, `Amount`, `Currency`; opcjonalne: kanał, tytuł, opis, dane płatnika, `AdditionalData`. Konstruktor `PaymentRequest(paymentProvider, amount, currency)` |
 | `PaymentResponse` | Klasa | Wynik: `RedirectUrl`, `PaymentUniqueId`, `PaymentStatus` |
 | `PaymentStatusEnum` | Enum | `Created`, `Processing`, `Finished`, `Rejected` |
 | `PaymentModel` | Enum | `OneTime`, `Subscription` |
@@ -297,6 +304,7 @@ var response = result switch
 
 ### Zasady
 - Każdy provider ma unikalny Key (np. "Stripe", "PayU", "CashBill")
+- PaymentRequest: zawsze ustaw PaymentProvider, Amount (większe od zera) i Currency — są required; brak którejś to błąd kompilacji CS9035
 - Łap HttpRequestException (obejmuje PaymentGatewayException) wokół RegisterPayment i GetStatus: awaria bramki oznacza stan nieznany — nie anuluj zamówienia, sprawdź ponownie później
 - Status Rejected traktuj jako odmowę tylko wtedy, gdy wywołanie zakończyło się bez wyjątku
 - Wynik webhooka to zawsze jeden z trzech rekordów: PaymentWebhookProcessed (działaj na Payment), PaymentWebhookIgnored (odpowiedz 2xx, nic nie rób), PaymentWebhookRejected (nie ufaj niczemu z żądania)

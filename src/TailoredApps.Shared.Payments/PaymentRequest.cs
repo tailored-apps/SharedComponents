@@ -1,13 +1,42 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace TailoredApps.Shared.Payments;
 
 /// <summary>
 /// Encapsulates all information required to initiate a payment transaction
 /// through a specific provider and channel.
 /// </summary>
+/// <remarks>
+/// <see cref="PaymentProvider"/>, <see cref="Amount"/> and <see cref="Currency"/> are <c>required</c>: an
+/// object initializer that leaves one out does not compile, and System.Text.Json refuses a document
+/// without them.
+/// </remarks>
 public class PaymentRequest
 {
+    /// <summary>
+    /// Initializes a new instance of <see cref="PaymentRequest"/>. The required members are set with an
+    /// object initializer.
+    /// </summary>
+    public PaymentRequest()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="PaymentRequest"/> with its required members.
+    /// </summary>
+    /// <param name="paymentProvider">The key of the payment provider to use (e.g. "Stripe", "PayU").</param>
+    /// <param name="amount">The payment amount in <paramref name="currency"/>.</param>
+    /// <param name="currency">The ISO 4217 currency code (e.g. "PLN", "EUR").</param>
+    [SetsRequiredMembers]
+    public PaymentRequest(string paymentProvider, decimal amount, string currency)
+    {
+        PaymentProvider = paymentProvider;
+        Amount = amount;
+        Currency = currency;
+    }
+
     /// <summary>Gets or sets the key of the payment provider to use (e.g. "Stripe", "PayU").</summary>
-    public string? PaymentProvider { get; set; }
+    public required string PaymentProvider { get; set; }
 
     /// <summary>Gets or sets the identifier of the specific payment channel within the provider.</summary>
     public string? PaymentChannel { get; set; }
@@ -22,10 +51,10 @@ public class PaymentRequest
     public string? Description { get; set; }
 
     /// <summary>Gets or sets the ISO 4217 currency code (e.g. "PLN", "EUR").</summary>
-    public string? Currency { get; set; }
+    public required string Currency { get; set; }
 
     /// <summary>Gets or sets the payment amount in the specified currency.</summary>
-    public decimal Amount { get; set; }
+    public required decimal Amount { get; set; }
 
     /// <summary>Gets or sets the payer's e-mail address.</summary>
     public string? Email { get; set; }

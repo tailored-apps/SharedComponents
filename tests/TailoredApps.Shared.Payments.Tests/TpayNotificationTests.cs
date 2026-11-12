@@ -729,7 +729,7 @@ public class TpayRegistrationTests
         var caller = new TpayServiceCaller(Options.Create(new TpayServiceOptions { ServiceUrl = "https://api.tpay.test" }), factory.Object);
 
         // act
-        var (transactionId, paymentUrl) = await caller.CreateTransactionAsync("token", new PaymentRequest { Amount = 10m, Title = "Order", AdditionalData = additionalData });
+        var (transactionId, paymentUrl) = await caller.CreateTransactionAsync("token", new PaymentRequest { PaymentProvider = "Tpay", Currency = "PLN", Amount = 10m, Title = "Order", AdditionalData = additionalData });
 
         // assert
         Assert.Equal("01HZX", transactionId);
