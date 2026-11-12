@@ -142,7 +142,6 @@ await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilde
 | `IDateTimeProvider.Today` | Właściwość | Aktualna data w lokalnej strefie zegara |
 | `IDateTimeProvider.UtcTimeOfDay` | Właściwość | Pora dnia UTC jako `TimeSpan` |
 | `IDateTimeProvider.TimeOfDay` | Właściwość | Pora dnia (lokalnie) jako `TimeSpan` |
-| `IDateTimeProvider.UtcTimeOfDaty` | Właściwość (przestarzała) | Błędnie zapisana nazwa `UtcTimeOfDay`; działa, ale kompilator podpowiada poprawną |
 | `DateTimeProvider.TimeProvider` | Właściwość | Zegar, z którego czytane są wszystkie wartości |
 
 **Zgodność z 1.x:** `OffsetNow`, `OffsetUtcNow` i `UtcTimeOfDay` mają w interfejsie implementacje domyślne, więc własne implementacje
@@ -175,7 +174,7 @@ builder.Services.AddDateTimeProvider();
 - Wstrzykuj IDateTimeProvider, gdy potrzebna jest wartość daty lub czasu; TimeProvider, gdy potrzebny jest timer, opóźnienie lub pomiar czasu
 - Dla wartości zapisywanych w bazie lub wysyłanych dalej używaj OffsetUtcNow (DateTimeOffset), nie UtcNow (DateTime)
 - Now / Today / OffsetNow tylko tam, gdzie potrzebny jest czas lokalny (np. do wyświetlania)
-- Używaj UtcTimeOfDay, nie błędnie zapisanego UtcTimeOfDaty
+- Używaj UtcTimeOfDay; błędnie zapisane UtcTimeOfDaty usunięto w 3.0
 - W testach: new DateTimeProvider(new FakeTimeProvider(...)) z pakietu Microsoft.Extensions.TimeProvider.Testing; przesuwaj czas przez Advance
 - Nie rejestruj drugiego, niezależnego zegara obok TimeProvider — aplikacja ma mieć jedno źródło czasu
 ```

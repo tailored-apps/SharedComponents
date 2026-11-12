@@ -85,8 +85,8 @@ An error tied to a field also carries `"field"`; the property is left out when t
 - `ExceptionHandlingResultModel(message, errors)` and `ExceptionHandlingResultModel(modelState)` use code 400;
   the latter has the message `Validation Failed` and one error per model-state entry.
 - The middleware needs `AddExceptionHandlingForWebApi`: it resolves `IExceptionHandlingService` and throws
-  when the service is not registered. `AddExceptionHAndlingFilterAttribute` is the obsolete, misspelled name
-  of `AddExceptionHandlingFilterAttribute`.
+  when the service is not registered. `AddExceptionHAndlingFilterAttribute`, the misspelled name of
+  `AddExceptionHandlingFilterAttribute`, was removed in 3.0.
 
 ## Documentation
 

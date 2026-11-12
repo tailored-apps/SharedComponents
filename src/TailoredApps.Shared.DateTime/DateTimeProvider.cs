@@ -57,13 +57,6 @@ public class DateTimeProvider : IDateTimeProvider
     /// </summary>
     public System.TimeSpan UtcTimeOfDay => TimeProvider.GetUtcNow().TimeOfDay;
 
-    /// <summary>
-    /// Gets the time that has passed since midnight in UTC. Misspelled name of <see cref="UtcTimeOfDay"/>,
-    /// kept so that existing code compiles.
-    /// </summary>
-    [System.Obsolete("Use UtcTimeOfDay.")]
-    public System.TimeSpan UtcTimeOfDaty => UtcTimeOfDay;
-
     /// <inheritdoc/>
     public System.DateTime Today => Now.Date;
 

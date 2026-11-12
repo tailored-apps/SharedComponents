@@ -142,7 +142,6 @@ await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilde
 | `IDateTimeProvider.Today` | Property | Current date in the local time zone of the clock |
 | `IDateTimeProvider.UtcTimeOfDay` | Property | Time of day in UTC as a `TimeSpan` |
 | `IDateTimeProvider.TimeOfDay` | Property | Time of day (local) as a `TimeSpan` |
-| `IDateTimeProvider.UtcTimeOfDaty` | Property (obsolete) | Misspelled name of `UtcTimeOfDay`; it works, and the compiler points at the correct one |
 | `DateTimeProvider.TimeProvider` | Property | The clock every value is read from |
 
 **Compatibility with 1.x:** `OffsetNow`, `OffsetUtcNow` and `UtcTimeOfDay` have default implementations in the interface, so your own
@@ -175,7 +174,7 @@ builder.Services.AddDateTimeProvider();
 - Inject IDateTimeProvider when a date or time value is needed; TimeProvider when a timer, a delay or a time measurement is needed
 - For values stored in a database or sent on use OffsetUtcNow (DateTimeOffset), not UtcNow (DateTime)
 - Now / Today / OffsetNow only where local time is needed (for display, for example)
-- Use UtcTimeOfDay, not the misspelled UtcTimeOfDaty
+- Use UtcTimeOfDay; the misspelled UtcTimeOfDaty was removed in 3.0
 - In tests: new DateTimeProvider(new FakeTimeProvider(...)) from the Microsoft.Extensions.TimeProvider.Testing package; move time with Advance
 - Do not register a second, independent clock next to TimeProvider - the application must have one source of time
 ```

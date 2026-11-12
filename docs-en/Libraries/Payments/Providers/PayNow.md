@@ -49,7 +49,7 @@ builder.Services
 |-------|------|------|
 | `ApiKey` | yes | API key for authorizing requests (`Api-Key` header) |
 | `SignatureKey` | yes | Key for verifying webhook signatures |
-| `ServiceUrl` | no | PayNow API URL, default `https://api.paynow.pl` (sandbox: `https://api.sandbox.paynow.pl`) |
+| `ServiceUrl` | no | PayNow API URL, default `https://api.paynow.pl` (sandbox: `https://api.sandbox.paynow.pl`). The old alias `ApiUrl` was removed in 3.0: a configuration that still sets it stops the host from starting instead of silently going to production |
 | `ReturnUrl` | no | Return URL after payment |
 | `ContinueUrl` | no | Continuation URL after returning from the PayNow page |
 

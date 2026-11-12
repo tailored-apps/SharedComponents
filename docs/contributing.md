@@ -184,7 +184,10 @@ dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true
 - Wersję bazową ustawia `PublicApiBaselineVersion` w `src/Directory.Build.targets`.
 - Nowa biblioteka: do pierwszego wydania dodaj w jej csproj `<SkipPublicApiValidation>true</SkipPublicApiValidation>`,
   a po wydaniu zastąp to przez `<PublicApiBaselineVersion>` z numerem pierwszej wersji, w której się ukazała.
-- Zmiana niekompatybilna jest możliwa dopiero w kolejnej wersji głównej (3.0). Zamiast usuwać składową, oznacz ją `[Obsolete]` i dodaj nową.
+- Na linii 2.x zamiast usuwać składową oznacz ją `[Obsolete]` i dodaj nową; usunięcie czeka na wersję główną.
+- Zamierzone usunięcie na linii 3.0 zapisz w `CompatibilitySuppressions.xml` biblioteki — składowa po składowej, żeby reszta jej API dalej była
+  pilnowana. Plik generuje `dotnet build src/<Biblioteka>/<Biblioteka>.csproj -c Release -p:ValidatePublicApi=true -p:ApiCompatGenerateSuppressionFile=true`;
+  przejrzyj go przed commitem — ma zawierać tylko to, co usuwasz celowo.
 
 ---
 

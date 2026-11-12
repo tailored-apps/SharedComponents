@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,19 +67,14 @@ public class ExceptionHandlingConfigurationTests
     }
 
     [Fact]
-    public void When_Obsolete_Misspelled_Overload_Is_Called_Should_Add_Same_Filter()
+    public void When_The_Library_Is_Inspected_Should_Have_No_Obsolete_Public_Members()
     {
-        // arrange
-        var filters = new FilterCollection();
+        // 3.0 removed the misspelled AddExceptionHAndlingFilterAttribute; nothing obsolete is left to remove.
+        var obsolete = typeof(ExceptionHandlingConfiguration).Assembly.GetExportedTypes()
+            .SelectMany(type => type.GetMembers().Prepend(type))
+            .Where(member => member.IsDefined(typeof(ObsoleteAttribute), inherit: false))
+            .Select(member => $"{member.DeclaringType?.Name}.{member.Name}");
 
-        // act
-#pragma warning disable CS0618 // kept for backward compatibility until the next major version
-        filters.AddExceptionHAndlingFilterAttribute();
-#pragma warning restore CS0618
-
-        // assert
-        var filter = Assert.Single(filters);
-        var typeFilter = Assert.IsType<TypeFilterAttribute>(filter);
-        Assert.Equal(typeof(HandleExceptionFilterAttribute), typeFilter.ImplementationType);
+        Assert.Empty(obsolete);
     }
 }

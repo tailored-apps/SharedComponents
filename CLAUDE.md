@@ -33,8 +33,10 @@ runtime has to be installed as well for the `net10.0` test runs.
   package at the baseline version on nuget.org (`PublicApiBaselineVersion` in `src/Directory.Build.targets`, currently `2.0.0`) and fails
   on a breaking change (`CP0001`, `CP0002`, ...). Adding API passes. The *Build & Test PR* workflow builds with the switch on.
 - On `master` (3.0) the `TailoredApps.Shared.MediatR*` libraries are left out of the comparison (a group in `src/Directory.Build.targets`):
-  their public API changed on purpose. A deliberate break in another library adds that library to the same group. When `3.0.0` is
-  published, remove the group and raise the baseline to `3.0.0`.
+  their public API changed on purpose. A deliberate break in another library is recorded member by member in that library's
+  `CompatibilitySuppressions.xml` (build it with `-p:ValidatePublicApi=true -p:ApiCompatGenerateSuppressionFile=true`, review it), so the rest
+  of its API stays guarded; DateTime, ExceptionHandling, PayNow and Tpay have one for the obsolete members 3.0 removed. When `3.0.0` is
+  published, remove the group and the suppression files and raise the baseline to `3.0.0`.
 - A library that did not exist in the baseline sets `<PublicApiBaselineVersion>` in its csproj to the first version it was published in,
   and `<SkipPublicApiValidation>true</SkipPublicApiValidation>` until it has been published at all.
 - On `release/1.x` (no such switch there) run per library:

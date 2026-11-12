@@ -32,14 +32,6 @@ public class TpayServiceOptions
     public string MerchantId { get; set; } = string.Empty;
     /// <summary>Base URL of the Tpay API endpoint.</summary>
     public string ServiceUrl { get; set; } = "https://api.tpay.com";
-
-    /// <summary>Alias for <see cref="ServiceUrl"/> — kept for backwards compatibility.</summary>
-    [Obsolete("Use ServiceUrl instead.")]
-    public string ApiUrl
-    {
-        get => ServiceUrl;
-        set => ServiceUrl = value;
-    }
     /// <summary>ReturnUrl.</summary>
     public string ReturnUrl { get; set; } = string.Empty;
     /// <summary>NotifyUrl.</summary>
@@ -619,9 +611,17 @@ public class TpayConfigureOptions : IConfigureOptions<TpayServiceOptions>
     /// <summary>Inicjalizuje instancję konfiguracji.</summary>
     public TpayConfigureOptions(IConfiguration configuration) => this.configuration = configuration;
     /// <inheritdoc/>
+    /// <exception cref="InvalidOperationException">
+    /// The configuration still sets <c>ApiUrl</c>, the key removed in 3.0. Ignoring it would send a sandbox
+    /// setup to the production default of <see cref="TpayServiceOptions.ServiceUrl"/>, so the host does not start.
+    /// </exception>
     public void Configure(TpayServiceOptions options)
     {
-        var s = configuration.GetSection(TpayServiceOptions.ConfigurationKey).Get<TpayServiceOptions>();
+        var section = configuration.GetSection(TpayServiceOptions.ConfigurationKey);
+        if (section["ApiUrl"] is not null)
+            throw new InvalidOperationException($"'{TpayServiceOptions.ConfigurationKey}:ApiUrl' is no longer read (removed in 3.0): rename it to 'ServiceUrl'.");
+
+        var s = section.Get<TpayServiceOptions>();
         if (s is null) return;
         options.ClientId = s.ClientId;
         options.ClientSecret = s.ClientSecret;

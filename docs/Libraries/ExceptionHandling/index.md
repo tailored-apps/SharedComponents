@@ -188,5 +188,5 @@ public class MyProvider : IExceptionHandlingProvider
 - Wyjątki, które są błędem klienta, mapuj w providerze na 4xx (nie trafiają wtedy do logu jako Error); błędy serwera zostawiaj jako 5xx
 - [HandleException] działa na poziomie akcji ORAZ klasy kontrolera
 - Dla zagnieżdżonych wyjątków użyj GetBaseException(), by znaleźć pierwotną przyczynę
-- AddExceptionHAndlingFilterAttribute (literówka) jest [Obsolete] — używaj AddExceptionHandlingFilterAttribute
+- Używaj AddExceptionHandlingFilterAttribute; błędnie zapisane AddExceptionHAndlingFilterAttribute usunięto w 3.0
 ````

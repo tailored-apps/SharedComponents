@@ -55,13 +55,6 @@ public interface IDateTimeProvider
     System.TimeSpan UtcTimeOfDay => UtcNow.TimeOfDay;
 
     /// <summary>
-    /// Gets the time that has passed since midnight in UTC. Misspelled name of <see cref="UtcTimeOfDay"/>,
-    /// kept so that existing code compiles.
-    /// </summary>
-    [System.Obsolete("Use UtcTimeOfDay.")]
-    System.TimeSpan UtcTimeOfDaty => UtcTimeOfDay;
-
-    /// <summary>
     /// Gets the current date in the local time zone of the clock, with the time set to midnight.
     /// </summary>
     System.DateTime Today { get; }

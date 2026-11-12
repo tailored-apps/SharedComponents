@@ -66,7 +66,7 @@ Assert.True(service.IsExpired(order));
   from UTC, a `DateTime` only hints at it through `Kind`.
 - `OffsetNow`, `OffsetUtcNow` and `UtcTimeOfDay` have default implementations in the interface, so your own
   implementation or a mock only has to provide `Now`, `UtcNow`, `TimeOfDay`, `Today` and `UtcToday`.
-- `UtcTimeOfDaty` is the misspelled, obsolete name of `UtcTimeOfDay`; it still works.
+- `UtcTimeOfDaty`, the misspelled name of `UtcTimeOfDay`, was removed in 3.0.
 - `new DateTimeProvider()` reads the system clock. `DateTimeProvider.TimeProvider` exposes the clock in use.
 
 ## Documentation

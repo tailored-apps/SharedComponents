@@ -45,7 +45,7 @@ Options are bound from the `Payments:Providers:PayNow` section (`PayNowServiceOp
 | --- | --- | --- | --- |
 | `ApiKey` | yes | Sent with every call in the `Api-Key` header | - |
 | `SignatureKey` | yes | Key of the HMAC that verifies notifications | - |
-| `ServiceUrl` | no | Base URL of the PayNow API (`ApiUrl` is an obsolete alias of this key) | `https://api.paynow.pl` |
+| `ServiceUrl` | no | Base URL of the PayNow API. The old alias `ApiUrl` was removed in 3.0; a configuration that still sets it stops the host from starting, instead of silently falling back to production | `https://api.paynow.pl` |
 | `ReturnUrl` | no | Sent as `returnUrl` of the payment | empty |
 | `ContinueUrl` | no | Sent as `continueUrl` of the payment | empty |
 
