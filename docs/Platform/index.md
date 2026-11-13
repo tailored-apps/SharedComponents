@@ -88,8 +88,7 @@ a ich kod działa po skompilowaniu do kodu natywnego.
 |---|---|
 | `DateTime`, `Querying`, `Email.Models`, `Payments`, `Payments.Provider.Adyen`, `.CashBill`, `.HotPay`, `.PayNow`, `.PayU`, `.Przelewy24`, `.Revolut`, `.Tpay` | **Zgodne.** Sprawdzane natywnie w CI na `net10.0` i `net11.0`, na Linuksie i Windows |
 | `Email`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `WebApi` | **Zgodne** w aplikacji na minimal API (zob. niżej). Filtr MVC z `ExceptionHandling` nie ma zastosowania: ASP.NET Core nie obsługuje kontrolerów w NativeAOT |
-| `MediatR.Caching` | Kod biblioteki nie zgłasza ostrzeżeń, ale biblioteka ma sens tylko razem z `MediatR` |
-| `MediatR`, `MediatR.Email`, `MediatR.PagedRequest` | Niezgodne: mediator tworzy typy generyczne handlerów w czasie działania, rejestracja skanuje assembly, a domyślny klucz cache serializuje żądanie przez refleksję |
+| `MediatR`, `MediatR.Caching`, `MediatR.Email`, `MediatR.PagedRequest` | **Zgodne** (na ForkForward.Mediator 13), gdy handlery, behaviory i polityki są rejestrowane po nazwie, a nie skanowaniem — zob. [MediatR: Trimming i NativeAOT](../Libraries/MediatR/index.md#trimming-i-nativeaot). Aplikacja, która cache'uje odpowiedzi, dostaje ostrzeżenia z samego `Microsoft.Extensions.Caching.Hybrid`; cache działa natywnie |
 | `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore`, `EntityFramework.UnitOfWork.MinimalApi` | Niezgodne: EF Core buduje model i zapytania w czasie działania; audyt zmian tworzy typy przez `MakeGenericType` |
 | `Email.Office365`, `MediatR.ML`, `Payments.Provider.Stripe` | Niezgodne: zależności (Microsoft.Identity.Web, ML.NET, Stripe.net) opierają się na refleksji |
 
@@ -131,17 +130,25 @@ Dla minimal API są osobne paczki z odpowiednikami filtrów MVC: [ExceptionHandl
   są identyczne co do bajta. To samo dotyczy odpowiedzi błędu w `ExceptionHandling`.
 - **Rejestracje w kontenerze** z parametrem generycznym (`RegisterPaymentProvider<T>()`, `AddPayments<,>()`, `AddExceptionHandlingForWebApi<,>()`)
   mają adnotacje, dzięki którym trimmer zachowuje konstruktory wywoływane przez dependency injection.
+- **MediatR** ma rejestrację bez skanowania (`AddPipelineBehaviors<,>()`, `AddCachePolicy<,,>()`, `AddFallbackHandler<,,>()`,
+  `AddRetryPolicy<,,>()`), serializację odpowiedzi w cache generowanymi metadanymi (`AddCacheSerialization`) i klucz cache liczony
+  z `JsonTypeInfo`. Skanowanie assembly zostaje dla zwykłych aplikacji i jest oznaczone `RequiresUnreferencedCode`.
 
 ### Jak to jest pilnowane
 
 - W bibliotece z `<IsAotCompatible>true</IsAotCompatible>` każde ostrzeżenie analizatorów trimmingu, AOT i single-file jest **błędem
   kompilacji** (`eng/AotCompatible.globalconfig`, podłączany w `src/Directory.Build.targets`).
 - `tests/TailoredApps.Shared.AotSmoke` to aplikacja konsolowa, która używa tych bibliotek tak jak aplikacja: kontener, opcje z konfiguracji,
-  płatność w każdej bramce HTTP (przez tę samą podstawioną bramkę co [aplikacja demo](../Demo/index.md)), powiadomienia, podpisy.
+  płatność w każdej bramce HTTP (przez tę samą podstawioną bramkę co [aplikacja demo](../Demo/index.md)), powiadomienia, podpisy,
+  a także mediator z behaviorami: walidacja, odpowiedź typu wartościowego, retry i fallback, request stronicowany, `SendMail`.
   `tests/TailoredApps.Shared.AotSmoke.Web` to Web API na minimal API: uruchamia się na wolnym porcie i woła własne endpointy — zdrowie,
   odpowiedzi błędów, szablon e-mail i SMTP, `[Authorize]` z JWT, klient HTTP z odpornością. Zadanie *NativeAOT smoke test* w sprawdzeniach PR
   publikuje obie z NativeAOT dla `net10.0` i `net11.0`, na Linuksie i Windows, i uruchamia; w tych projektach każde ostrzeżenie trim/AOT —
   także z zależności — jest błędem. Analizatory widzą kod jednej biblioteki, kompilator AOT całe drzewo zależności.
+- `tests/TailoredApps.Shared.AotSmoke.Caching` sprawdza natywnie cache odpowiedzi: obiekt i typ wartościowy, serializowane generowanymi
+  metadanymi. Jest osobną aplikacją, bo `Microsoft.Extensions.Caching.Hybrid` wciąż zgłasza ostrzeżenia trim/AOT dla swojego zapasowego
+  serializatora JSON. Tylko tutaj są one przepuszczane, a to samo zadanie CI kończy się błędem, gdy ostrzeżenie tego rodzaju wskazuje
+  jakiekolwiek inne assembly.
 
 ```bash
 dotnet publish tests/TailoredApps.Shared.AotSmoke -c Release -f net11.0 -r linux-x64   # wymaga clang i zlib; na Windows: -r win-x64 i narzędzi C++
@@ -219,12 +226,14 @@ Pracujesz z paczkami TailoredApps.Shared.* albo z repozytorium SharedComponents.
   warunkowych: 10.* i 11.*); projekt testów w tests/.
 - Do budowania repozytorium używaj .NET SDK 11.0.100 lub nowszego.
 - Zgodne z trimmingiem i NativeAOT (IsAotCompatible) są: DateTime, Querying, Email, Email.Models, ExceptionHandling,
-  ExceptionHandling.MinimalApi, WebApi,
+  ExceptionHandling.MinimalApi, WebApi, MediatR, MediatR.Caching, MediatR.Email, MediatR.PagedRequest,
   Payments oraz providerzy Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut, Tpay.
 - NativeAOT w ASP.NET Core to minimal API: kontrolery MVC nie działają natywnie (trasy odpowiadają 404). [Authorize] i JWT działają.
 - Blazor WebAssembly na net11.0 nie wykonuje metod runtime async (PlatformNotSupportedException): nie wywołuj tam asynchronicznych
   metod bibliotek z assetu net11.0. W nich ostrzeżenia IL2xxx/IL3xxx są błędami kompilacji:
   nie używaj refleksji, JsonSerializer bez JsonTypeInfo ani ConfigurationBinder poza generatorem.
-- Biblioteki MediatR*, EntityFramework*, Email.Office365, MediatR.ML i Payments.Provider.Stripe nie są zgodne z NativeAOT -
+- Biblioteki EntityFramework*, Email.Office365, MediatR.ML i Payments.Provider.Stripe nie są zgodne z NativeAOT -
   nie proponuj ich w aplikacji publikowanej z PublishAot.
+- MediatR w aplikacji z PublishAot: bez skanowania - cfg.AddRequestHandler<,,>() dla handlerów, AddPipelineBehaviors<,>() dla każdego
+  requestu, AddCachePolicy / AddFallbackHandler / AddRetryPolicy, AddCacheSerialization(context) i własny GetCacheKey.
 ```

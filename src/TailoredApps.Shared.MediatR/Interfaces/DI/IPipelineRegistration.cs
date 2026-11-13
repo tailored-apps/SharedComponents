@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace TailoredApps.Shared.MediatR.Interfaces.DI;
@@ -17,5 +18,7 @@ public interface IPipelineRegistration
     /// for implementations of cache policies, fallback handlers, and retryable request configurations.
     /// </summary>
     /// <param name="assembly">The assembly to scan for policy and handler implementations.</param>
+    [RequiresUnreferencedCode("Cache policies, fallback handlers and retry settings are found by scanning the assembly with reflection, which trimming breaks. Register them one by one with AddCachePolicy, AddFallbackHandler and AddRetryPolicy on PipelineRegistration.")]
+    [RequiresDynamicCode("Cache policies, fallback handlers and retry settings are found by scanning the assembly with reflection, which trimming breaks. Register them one by one with AddCachePolicy, AddFallbackHandler and AddRetryPolicy on PipelineRegistration.")]
     void RegisterPipelineBehaviors(Assembly assembly);
 }

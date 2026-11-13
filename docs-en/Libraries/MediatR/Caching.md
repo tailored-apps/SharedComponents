@@ -67,6 +67,11 @@ public class GetUserProfileQueryCachePolicy : ICachePolicy<GetUserProfileQuery, 
 !!! note "Integration with CachingBehavior"
     `ICachableRequest` is a marker interface — on its own it does not trigger caching, and `CachingBehavior` from the `TailoredApps.Shared.MediatR` package does not look at it. A request is cached only when an `ICachePolicy<TRequest, TResponse>` is registered for it (`PipelineRegistration.RegisterPipelineBehaviors(assembly)` scans for policies). Without a policy the request above runs its handler every time.
 
+!!! info "Trimming and NativeAOT"
+    The package holds a contract only and is safe for trimming and NativeAOT. In such an application a policy that returns
+    `request.GetCacheKey()` is also the simplest way to a cache key: the default key of `ICachePolicy` needs reflection. The policy is
+    registered by name (`AddCachePolicy<,,>()`) - see [MediatR: Trimming and NativeAOT](index.md#trimming-and-nativeaot).
+
 ---
 
 ## API Reference
@@ -108,4 +113,5 @@ public class GetProductQueryCachePolicy : ICachePolicy<GetProductQuery, ProductD
 - GetCacheKey() must return a unique key for this combination of parameters
 - The interface alone does not cache, and CachingBehavior from TailoredApps.Shared.MediatR does not read it
 - CachingBehavior caches only requests that have a registered ICachePolicy<TRequest, TResponse> — add a policy that returns request.GetCacheKey()
+- An application with PublishAot: register the policy by name - new PipelineRegistration(services).AddCachePolicy<TRequest, TResponse, TPolicy>() - scanning is not available there
 ````

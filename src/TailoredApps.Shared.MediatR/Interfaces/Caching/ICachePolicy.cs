@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using ForkForward.Mediator;
 
 namespace TailoredApps.Shared.MediatR.Interfaces.Caching;
@@ -78,16 +80,58 @@ public static class CacheKeyGenerator
     /// <summary>
     /// Returns <c>{RequestType.FullName}:{SHA-256 hex of the request JSON}</c>.
     /// </summary>
+    /// <remarks>
+    /// The request is serialized by reflection over its runtime type. In an application that is trimmed or
+    /// published with NativeAOT reflection-based JSON is switched off, so this method throws there instead of
+    /// producing a key from whatever members survived trimming. Such an application overrides
+    /// <see cref="ICachePolicy{TRequest, TResponse}.GetCacheKey"/> in the cache policy, or builds the key with
+    /// <see cref="Generate{TRequest}(TRequest, JsonTypeInfo{TRequest})"/>.
+    /// </remarks>
     /// <param name="requestType">The declared request type (used as the key namespace).</param>
     /// <param name="request">The request instance whose public state identifies the cache entry.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Reflection-based JSON serialization is not available in this application.
+    /// </exception>
     public static string Generate(Type requestType, object request)
     {
         if (requestType == null) throw new ArgumentNullException(nameof(requestType));
 
-        var json = request is null
-            ? "null"
-            : JsonSerializer.Serialize(request, request.GetType(), SerializerOptions);
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(json)));
-        return $"{requestType.FullName}:{hash}";
+        if (request is null)
+            return Key(requestType, "null");
+
+        if (!JsonSerializer.IsReflectionEnabledByDefault)
+        {
+            throw new InvalidOperationException(
+                $"A content-based cache key for '{requestType}' needs reflection-based JSON serialization, which is switched off in this " +
+                "application (it is trimmed or published with NativeAOT). Override GetCacheKey in the cache policy of this request, or " +
+                "build the key with CacheKeyGenerator.Generate(request, jsonTypeInfo).");
+        }
+
+        return Key(requestType, SerializeByReflection(request));
     }
+
+    // Reached only when JsonSerializer.IsReflectionEnabledByDefault is true (checked by the caller). In a trimmed
+    // or NativeAOT application that switch is off, Generate throws before this call, and nothing here runs. The
+    // analyzers have no guard they recognise for reflection-based JSON, hence the explicit justification.
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Called only when reflection-based JSON is enabled; see the comment above.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Called only when reflection-based JSON is enabled; see the comment above.")]
+    private static string SerializeByReflection(object request)
+        => JsonSerializer.Serialize(request, request.GetType(), SerializerOptions);
+
+    /// <summary>
+    /// Returns <c>{RequestType.FullName}:{SHA-256 hex of the request JSON}</c>, with the request serialized
+    /// through <paramref name="jsonTypeInfo"/> - metadata generated at compile time by a
+    /// <c>JsonSerializerContext</c>. It uses no reflection, so it works in a trimmed or NativeAOT application.
+    /// </summary>
+    /// <typeparam name="TRequest">The request type.</typeparam>
+    /// <param name="request">The request instance whose state identifies the cache entry.</param>
+    /// <param name="jsonTypeInfo">The JSON metadata of <typeparamref name="TRequest"/>.</param>
+    public static string Generate<TRequest>(TRequest request, JsonTypeInfo<TRequest> jsonTypeInfo)
+    {
+        ArgumentNullException.ThrowIfNull(jsonTypeInfo);
+        return Key(typeof(TRequest), request is null ? "null" : JsonSerializer.Serialize(request, jsonTypeInfo));
+    }
+
+    private static string Key(Type requestType, string json)
+        => $"{requestType.FullName}:{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(json)))}";
 }

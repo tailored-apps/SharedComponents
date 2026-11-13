@@ -50,6 +50,7 @@ MediatR request.
 
 - The key is all that identifies a cached response. Put every value that changes the response into it,
   including the user or tenant when the data is per user.
+- Safe for trimming and NativeAOT. A policy that returns `request.GetCacheKey()` needs no reflection, unlike the default cache key.
 
 ## Documentation
 

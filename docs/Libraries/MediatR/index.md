@@ -54,7 +54,7 @@ builder.Services.AddStackExchangeRedisCache(options => options.Configuration = "
 ```
 
 !!! info "Zmiany w 3.0 (wersja testowa)"
-    Biblioteki `TailoredApps.Shared.MediatR*` korzystają z [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator) — forka MediatR 12.5.0 na licencji Apache-2.0 — zamiast pakietu MediatR. Typy i zachowanie są te same; w aplikacji zamień `using MediatR;` na `using ForkForward.Mediator;` oraz `AddMediatR(...)` na `AddMediator(...)`. Szczegóły: [Aktualizacja do 3.0](../../Migration/v3.md).
+    Biblioteki `TailoredApps.Shared.MediatR*` korzystają z [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator) — forka MediatR 12.5.0 na licencji Apache-2.0 — zamiast pakietu MediatR. Typy i zachowanie są te same; w aplikacji zamień `using MediatR;` na `using ForkForward.Mediator;` oraz `AddMediatR(...)` na `AddMediator(...)`. Szczegóły: [Aktualizacja do 3.0](../../Migration/v3.md). Od ForkForward.Mediator 13 biblioteka działa także w aplikacji publikowanej z NativeAOT — zob. [Trimming i NativeAOT](#trimming-i-nativeaot).
 
 !!! info "Zmiany w 2.0"
     `CachingBehavior` korzysta z `HybridCache`. Interfejs `ICache` i klasa `Cache` zostały usunięte razem z zależnością od Newtonsoft.Json — usuń własną rejestrację `ICache`. Odpowiedzi są serializowane przez System.Text.Json, a `ICachePolicy.SlidingExpiration` nie jest już obsługiwane (wpis żyje do czasu wygaśnięcia). Po aktualizacji wyczyść współdzielony cache lub zmień prefiks kluczy: wpisy zapisane przez 1.x mają inny format.
@@ -137,6 +137,60 @@ public class GetProductQueryRetry : IRetryableRequest<GetProductQuery, ProductDt
 }
 ```
 
+### Trimming i NativeAOT
+
+Od wersji **3.0** biblioteka deklaruje zgodność z trimmingiem i NativeAOT (na ForkForward.Mediator 13). W aplikacji publikowanej z
+`<PublishAot>true</PublishAot>` albo `<PublishTrimmed>true</PublishTrimmed>` niczego nie da się odnaleźć skanowaniem assembly, więc handlery,
+behaviory i polityki rejestruje się po nazwie:
+
+```csharp
+// Program.cs
+builder.Services.AddMediator(cfg =>
+{
+    cfg.AddRequestHandler<GetProductQuery, ProductDto, GetProductQueryHandler>();
+    cfg.AddRequestHandler<CountProductsQuery, int, CountProductsQueryHandler>();
+});
+
+new PipelineRegistration(builder.Services)
+    .AddPipelineBehaviors<GetProductQuery, ProductDto>()              // pięć behaviorów, zamkniętych dla tego requestu
+    .AddPipelineBehaviorsWithoutCaching<CountProductsQuery, int>()    // cztery, bez cache
+    .AddCachePolicy<GetProductQuery, ProductDto, GetProductQueryCachePolicy>()
+    .AddFallbackHandler<GetProductQuery, ProductDto, GetProductQueryFallback>()
+    .AddRetryPolicy<GetProductQuery, ProductDto, GetProductQueryRetry>()
+    .AddCacheSerialization(AppJsonContext.Default);
+
+builder.Services.AddTransient<IValidator<GetProductQuery>, GetProductQueryValidator>();
+
+[JsonSerializable(typeof(ProductDto))]         // odpowiedzi trzymane w cache
+[JsonSerializable(typeof(GetProductQuery))]    // żądania, z których liczony jest klucz cache
+internal sealed partial class AppJsonContext : JsonSerializerContext;
+```
+
+| Zwykła aplikacja (JIT) | Aplikacja trimowana lub NativeAOT |
+|---|---|
+| `cfg.RegisterServicesFromAssembly(...)` | `cfg.AddRequestHandler<TRequest, TResponse, THandler>()` dla każdego handlera |
+| `RegisterPipelineBehaviors()` | `AddPipelineBehaviors<TRequest, TResponse>()` dla każdego requestu; `AddPipelineBehaviorsWithoutCaching<,>()` dla requestu, który nigdy nie jest cache'owany |
+| `RegisterPipelineBehaviors(assembly)` | `AddCachePolicy<,,>()`, `AddFallbackHandler<,,>()`, `AddRetryPolicy<,,>()` |
+| Domyślny klucz cache (hash JSON żądania, liczony refleksją) | Własny `GetCacheKey` w polityce albo `CacheKeyGenerator.Generate(request, AppJsonContext.Default.GetProductQuery)` |
+| Odpowiedzi w cache serializowane refleksją | `AddCacheSerialization(AppJsonContext.Default)`, typy odpowiedzi w `[JsonSerializable]` |
+
+- **Otwarte behaviory a typy wartościowe.** `RegisterPipelineBehaviors()` działa natywnie dla requestów z odpowiedzią typu referencyjnego.
+  Dla odpowiedzi będącej typem wartościowym (`int`, `bool`, `Guid`, struktura) kontener zgłasza natywnie `InvalidOperationException`:
+  *Unable to create a generic service for type 'IPipelineBehavior`2[…,System.Int32]' because 'System.Int32' is a ValueType*. Dlatego
+  w takiej aplikacji behaviory rejestruje się zamknięte, per request. Wybierz jedną formę dla całej aplikacji: `RegisterPipelineBehaviors()`
+  razem z `AddPipelineBehaviors<,>()` uruchomiłyby behaviory dwukrotnie.
+- **Skanowanie jest oznaczone.** `RegisterPipelineBehaviors(assembly)` ma adnotacje `RequiresUnreferencedCode` i `RequiresDynamicCode`:
+  analizator zgłasza `IL2026` / `IL3050` w miejscu wywołania zamiast pozwolić, by polityki zniknęły po cichu przy trimmingu.
+- **Klucz cache.** Domyślny klucz serializuje żądanie refleksją. Gdy JSON oparty na refleksji jest wyłączony, `CacheKeyGenerator.Generate(Type, object)`
+  zgłasza `InvalidOperationException` zamiast liczyć klucz z tego, co przetrwało trimming. Nadpisz `GetCacheKey` w polityce albo użyj
+  przeciążenia z `JsonTypeInfo`. Nie zakładaj, że oba przeciążenia dają ten sam klucz dla tego samego żądania.
+- **HybridCache.** Publikacja aplikacji, która cache'uje odpowiedzi, wypisuje ostrzeżenia `IL2026` / `IL3050` z assembly
+  `Microsoft.Extensions.Caching.Hybrid`: dotyczą jego zapasowego serializatora JSON, który dla typów z `AddCacheSerialization` nie jest
+  używany. Sam cache działa natywnie — sprawdza to w CI osobna aplikacja (`tests/TailoredApps.Shared.AotSmoke.Caching`). Aplikacja, która
+  niczego nie cache'uje i każdy request rejestruje przez `AddPipelineBehaviorsWithoutCaching<,>()`, publikuje się bez ostrzeżeń.
+- **Request bez odpowiedzi** (`IRequest`) nie przechodzi przez behaviory tej biblioteki (wymagają `IRequest<TResponse>`); rejestruje się
+  tylko jego handler: `cfg.AddRequestHandler<TRequest, THandler>()`.
+
 ---
 
 ## API Reference
@@ -150,6 +204,9 @@ public class GetProductQueryRetry : IRetryableRequest<GetProductQuery, ProductDt
 | `RetryBehavior<TRequest, TResponse>` | Pipeline Behavior | Ponawia request zgodnie z `IRetryableRequest<TRequest, TResponse>`; po `ExceptionsAllowedBeforeCircuitTrip` kolejnych nieudanych requestach otwiera circuit breaker (współdzielony per typ requestu) i przez 5 s odrzuca wywołania wyjątkiem `CircuitBreakerOpenException` (`RequestType`, `RetryAfter`); potem jedno żądanie próbne zamyka lub ponownie otwiera obwód. Bez zewnętrznych bibliotek |
 | `PipelineRegistration` | Klasa | `RegisterPipelineBehaviors()` rejestruje pięć behaviorów i `HybridCache`; `RegisterPipelineBehaviors(assembly)` tylko skanuje assembly w poszukiwaniu polityk cache, handlerów fallbacku i konfiguracji retry |
 | `IPipelineRegistration` | Interfejs | Kontrakt PipelineRegistration |
+| `PipelineRegistration` — rejestracja bez skanowania | Klasa | `AddPipelineBehaviors<TRequest, TResponse>()` — pięć behaviorów zamkniętych dla jednego requestu (i `HybridCache`); `AddPipelineBehaviorsWithoutCaching<,>()` — cztery, bez cache; `AddCachePolicy<,,>()`, `AddFallbackHandler<,,>()`, `AddRetryPolicy<,,>()` — polityki po nazwie; `AddCacheSerialization(JsonSerializerContext)` — odpowiedzi w cache serializowane generowanymi metadanymi. Każda zwraca `PipelineRegistration`, więc wywołania łączy się w łańcuch |
+| `JsonContextCacheSerializerFactory` | Klasa | `IHybridCacheSerializerFactory` na metadanych `JsonSerializerContext`; odpowiada za typy znane kontekstowi, resztę zostawia pozostałym fabrykom. Rejestruje ją `AddCacheSerialization` |
+| `CacheKeyGenerator` | Klasa statyczna | `Generate(Type, object)` — klucz `{typ}:{SHA-256 z JSON żądania}` liczony refleksją (w aplikacji trimowanej zgłasza `InvalidOperationException`); `Generate<TRequest>(request, JsonTypeInfo<TRequest>)` — to samo na generowanych metadanych |
 | `ICachePolicy<TRequest, TResponse>` | Interfejs | Konfiguracja cache: klucz, czas życia (`AbsoluteExpirationRelativeToNow`, domyślnie 5 min, lub `AbsoluteExpiration`), `LocalCacheExpiration`, `Tags` |
 | `IFallbackHandler<TRequest, TResponse>` | Interfejs | Handler fallbacku przy wyjątku: `HandleFallback(request, cancellationToken)` |
 | `IRetryableRequest<TRequest, TResponse>` | Interfejs | Konfiguracja retry dla requestu: `RetryAttempts` (1), `RetryDelay` w ms (250), `RetryWithExponentialBackoff` (false), `ExceptionsAllowedBeforeCircuitTrip` (1) |
@@ -239,4 +296,7 @@ public class MyRetry : IRetryableRequest<MyQuery, MyResponse>
 - Żądanie anulowane przez wywołującego nie jest ponawiane, nie otwiera circuit breakera i nie trafia do fallbacku
 - Otwarty obwód zgłasza CircuitBreakerOpenException (w 1.x: BrokenCircuitException z Polly); odpowiedz 503 i nagłówkiem Retry-After z właściwości RetryAfter
 - Biblioteka nie zależy od Polly ani Newtonsoft.Json — nie dodawaj ich, by skonfigurować retry lub cache
+- Aplikacja z PublishAot lub PublishTrimmed: niczego nie skanuj — cfg.AddRequestHandler<TRequest, TResponse, THandler>() dla handlerów, AddPipelineBehaviors<TRequest, TResponse>() (albo AddPipelineBehaviorsWithoutCaching) dla każdego requestu zamiast RegisterPipelineBehaviors(), AddCachePolicy / AddFallbackHandler / AddRetryPolicy zamiast RegisterPipelineBehaviors(assembly)
+- W takiej aplikacji nadpisz GetCacheKey (albo użyj CacheKeyGenerator.Generate(request, jsonTypeInfo)) i wywołaj AddCacheSerialization(context) z typami odpowiedzi w [JsonSerializable]; domyślny klucz zgłasza tam InvalidOperationException
+- Nie łącz RegisterPipelineBehaviors() z AddPipelineBehaviors<,>() w jednej aplikacji — behaviory uruchomią się dwa razy
 ````

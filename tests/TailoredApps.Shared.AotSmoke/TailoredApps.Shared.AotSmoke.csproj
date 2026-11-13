@@ -3,8 +3,8 @@
 	<!--
 		Not a unit-test project: a console application that is published with NativeAOT and then run. It uses
 		the libraries that declare themselves AOT-compatible the way an application does - container, options
-		from configuration, a payment at every HTTP gateway, signatures - and exits with a non-zero code when
-		a check fails. The analyzers only see the code of one library; the AOT compiler sees the whole
+		from configuration, a payment at every HTTP gateway, signatures, the mediator with its behaviors - and
+		exits with a non-zero code when a check fails. The analyzers only see the code of one library; the AOT compiler sees the whole
 		dependency closure, and running the result shows what trimming removed.
 
 			dotnet publish tests/TailoredApps.Shared.AotSmoke -c Release -f net11.0 -r linux-x64
@@ -13,7 +13,9 @@
 		The "NativeAOT smoke test" job of the PR workflow does this for net10.0 and net11.0. Publishing needs a
 		native toolchain: clang and zlib on Linux, the C++ build tools on Windows (-r win-x64).
 
-		A library reference is added here when the library sets IsAotCompatible.
+		A library reference is added here when the library sets IsAotCompatible. The response cache of the
+		MediatR libraries is the exception: it is checked by TailoredApps.Shared.AotSmoke.Caching, because
+		HybridCache still reports trim warnings and this project allows none.
 	-->
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -37,6 +39,11 @@
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.DateTime\TailoredApps.Shared.DateTime.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Querying\TailoredApps.Shared.Querying.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Email.Models\TailoredApps.Shared.Email.Models.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Email\TailoredApps.Shared.Email.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR\TailoredApps.Shared.MediatR.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.Caching\TailoredApps.Shared.MediatR.Caching.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.Email\TailoredApps.Shared.MediatR.Email.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.PagedRequest\TailoredApps.Shared.MediatR.PagedRequest.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments\TailoredApps.Shared.Payments.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.Adyen\TailoredApps.Shared.Payments.Provider.Adyen.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments.Provider.CashBill\TailoredApps.Shared.Payments.Provider.CashBill.csproj" />
