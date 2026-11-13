@@ -19,7 +19,8 @@ these tests with the rest of the solution, so a library change that breaks how t
 dotnet run --project samples/TailoredApps.Shared.Demo -f net10.0
 ```
 
-The `http` profile in `Properties/launchSettings.json` listens on `http://localhost:5080` in the Development environment.
+The `http` profile in `Properties/launchSettings.json` listens on `http://localhost:5080` in the Development environment. For `net11.0` the
+demo is compiled with runtime async, as the libraries are ([Target frameworks](../Platform/index.md#runtime-async-net-11)).
 
 The integration tests:
 

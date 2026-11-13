@@ -1,4 +1,4 @@
-# Platformy docelowe i runtime async
+# Platformy docelowe, runtime async i NativeAOT
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tailored-apps/SharedComponents/blob/master/LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-SharedComponents-181717?logo=github)](https://github.com/tailored-apps/SharedComponents)
@@ -52,7 +52,7 @@ Biblioteki z tego repozytorium korzystają z tego mechanizmu w assetach `net11.0
 
 ### Jak to jest włączone w repozytorium
 
-Jedno miejsce: `src/Directory.Build.targets`. Plik dopisuje `runtime-async=on` do właściwości `Features` kompilatora wyłącznie dla platform zgodnych z `net11.0`:
+Jedno miejsce: `eng/RuntimeAsync.targets`, importowany przez `src/Directory.Build.targets` (wszystkie biblioteki) i `samples/Directory.Build.targets` ([aplikacja demo](../Demo/index.md)). Plik dopisuje `runtime-async=on` do właściwości `Features` kompilatora wyłącznie dla platform zgodnych z `net11.0`:
 
 ```xml
 <PropertyGroup Condition="'$(UseRuntimeAsync)' != 'false' and '$(TargetFramework)' != '' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0'))">
@@ -62,14 +62,58 @@ Jedno miejsce: `src/Directory.Build.targets`. Plik dopisuje `runtime-async=on` d
 
 Warunek jest konieczny: ustawienie tej flagi dla `net10.0` kończy build błędami `SYSLIB5007` / `CA2252`, a na starszych platformach flaga jest po cichu ignorowana.
 
+Projekty testów są celowo kompilowane klasycznie, więc na `net11.0` każdy test przechodzi z kodu z maszynami stanów do kodu runtime async
+i z powrotem. Test `RuntimeAsyncTests` sprawdza refleksją, że w assetach `net11.0` bibliotek i demo nie ma maszyn stanów, a w `net10.0` nie
+ma metod runtime async — gdyby flaga przestała docierać do kompilatora, nic innego by tego nie zauważyło. Runtime async pod NativeAOT
+sprawdza aplikacja kontrolna opisana w sekcji [Trimming i NativeAOT](#trimming-i-nativeaot).
+
 ### Wyłączanie
 
 | Zakres | Jak |
 |---|---|
 | Cały build | `dotnet build TailoredApps.Shared.slnx -p:UseRuntimeAsync=false` |
-| Jedna biblioteka | `<UseRuntimeAsync>false</UseRuntimeAsync>` w jej pliku `.csproj` |
+| Jedna biblioteka lub aplikacja | `<UseRuntimeAsync>false</UseRuntimeAsync>` w jej pliku `.csproj` |
 
 Po wyłączeniu asset `net11.0` jest kompilowany tak samo jak pozostałe — z maszynami stanów.
+
+---
+
+## Trimming i NativeAOT
+
+Od wersji **3.0** część bibliotek deklaruje zgodność z trimmingiem i NativeAOT (`IsAotCompatible`). Aplikacja publikowana z
+`<PublishAot>true</PublishAot>` albo `<PublishTrimmed>true</PublishTrimmed>` nie dostaje z nich żadnych ostrzeżeń `IL2xxx` / `IL3xxx`,
+a ich kod działa po skompilowaniu do kodu natywnego.
+
+| Biblioteki | Stan |
+|---|---|
+| `DateTime`, `Querying`, `Email.Models`, `Payments`, `Payments.Provider.Adyen`, `.CashBill`, `.HotPay`, `.PayNow`, `.PayU`, `.Przelewy24`, `.Revolut`, `.Tpay` | **Zgodne.** Sprawdzane natywnie w CI na `net10.0` i `net11.0` |
+| `Email`, `ExceptionHandling`, `WebApi`, `MediatR.Caching` | Kod biblioteki nie zgłasza ostrzeżeń analizatorów, ale zgodność nie jest jeszcze zadeklarowana: nie ma dla nich testu natywnego (zależności: MailKit, ASP.NET Core MVC, OpenTelemetry) |
+| `MediatR`, `MediatR.Email`, `MediatR.PagedRequest` | Niezgodne: mediator tworzy typy generyczne handlerów w czasie działania, rejestracja skanuje assembly, a domyślny klucz cache serializuje żądanie przez refleksję |
+| `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore` | Niezgodne: EF Core buduje model i zapytania w czasie działania; audyt zmian tworzy typy przez `MakeGenericType` |
+| `Email.Office365`, `MediatR.ML`, `Payments.Provider.Stripe` | Niezgodne: zależności (Microsoft.Identity.Web, ML.NET, Stripe.net) opierają się na refleksji |
+
+### Co zostało zrobione
+
+- **Opcje z konfiguracji** wiąże kod generowany w czasie kompilacji (generator bindera konfiguracji), a nie refleksja. Wyjątkiem jest
+  `Email.Office365`, gdzie generator nie potrafi powiązać opisu certyfikatu.
+- **JSON bramek płatności** jest serializowany przez metadane generowane w czasie kompilacji (`JsonSerializerContext`); treść żądań i podpisy
+  są identyczne co do bajta. To samo dotyczy odpowiedzi błędu w `ExceptionHandling`.
+- **Rejestracje w kontenerze** z parametrem generycznym (`RegisterPaymentProvider<T>()`, `AddPayments<,>()`, `AddExceptionHandlingForWebApi<,>()`)
+  mają adnotacje, dzięki którym trimmer zachowuje konstruktory wywoływane przez dependency injection.
+
+### Jak to jest pilnowane
+
+- W bibliotece z `<IsAotCompatible>true</IsAotCompatible>` każde ostrzeżenie analizatorów trimmingu, AOT i single-file jest **błędem
+  kompilacji** (`eng/AotCompatible.globalconfig`, podłączany w `src/Directory.Build.targets`).
+- `tests/TailoredApps.Shared.AotSmoke` to aplikacja konsolowa, która używa tych bibliotek tak jak aplikacja: kontener, opcje z konfiguracji,
+  płatność w każdej bramce HTTP (przez tę samą podstawioną bramkę co [aplikacja demo](../Demo/index.md)), powiadomienia, podpisy. Zadanie
+  *NativeAOT smoke test* w sprawdzeniach PR publikuje ją z NativeAOT dla `net10.0` i `net11.0` i uruchamia; w tym projekcie każde ostrzeżenie
+  trim/AOT — także z zależności — jest błędem. Analizatory widzą kod jednej biblioteki, kompilator AOT całe drzewo zależności.
+
+```bash
+dotnet publish tests/TailoredApps.Shared.AotSmoke -c Release -f net11.0 -r linux-x64   # wymaga clang i zlib; na Windows: narzędzi C++
+./artifacts/publish/TailoredApps.Shared.AotSmoke/release_net11.0_linux-x64/TailoredApps.Shared.AotSmoke
+```
 
 ---
 
@@ -100,7 +144,8 @@ dotnet test TailoredApps.Shared.slnx
 
 - Nie ustawiaj `TargetFrameworks`, autora, licencji ani wersji języka w pliku `.csproj` — są dziedziczone z `Directory.Build.props` i `src/Directory.Build.props`. Plik projektu zawiera tylko to, co własne: `PackageId`, `Title`, `Description`, `PackageTags`, referencje.
 - Paczki dodawaj jako `<PackageReference Include="Nazwa" />` bez wersji; wersję dopisz w `Directory.Packages.props`. Paczkę powiązaną z wersją runtime'u dopisz do obu grup warunkowych (`10.*` dla `net10.0`, `11.*` dla `net11.0`).
-- Nie ustawiaj `Features` w pliku `.csproj` — runtime async jest dziedziczony z `src/Directory.Build.targets`.
+- Nie ustawiaj `Features` w pliku `.csproj` — runtime async jest dziedziczony z `eng/RuntimeAsync.targets`.
+- Jeśli biblioteka ma być zgodna z NativeAOT: ustaw `<IsAotCompatible>true</IsAotCompatible>`, dodaj ją do `tests/TailoredApps.Shared.AotSmoke` razem ze sprawdzeniem jej scenariusza i dopisz do tabeli w sekcji [Trimming i NativeAOT](#trimming-i-nativeaot).
 - Projekt testów umieść w `tests/` — dziedziczy te same platformy docelowe, więc asset `net11.0` jest faktycznie testowany.
 
 ---
@@ -125,7 +170,7 @@ Pracujesz z paczkami TailoredApps.Shared.* albo z repozytorium SharedComponents.
 
 ### Konfiguracja
 - W repozytorium: właściwość MSBuild UseRuntimeAsync (domyślnie włączona dla net11.0+),
-  obsługiwana w src/Directory.Build.targets. Wyłączenie: -p:UseRuntimeAsync=false albo
+  obsługiwana w eng/RuntimeAsync.targets (biblioteki i aplikacja demo). Wyłączenie: -p:UseRuntimeAsync=false albo
   <UseRuntimeAsync>false</UseRuntimeAsync> w csproj biblioteki.
 - W aplikacji konsumującej paczki: brak ustawień.
 
@@ -140,4 +185,9 @@ Pracujesz z paczkami TailoredApps.Shared.* albo z repozytorium SharedComponents.
   PackageReference bez wersji, wersje w Directory.Packages.props (paczki runtime'owe w obu grupach
   warunkowych: 10.* i 11.*); projekt testów w tests/.
 - Do budowania repozytorium używaj .NET SDK 11.0.100 lub nowszego.
+- Zgodne z trimmingiem i NativeAOT (IsAotCompatible) są: DateTime, Querying, Email.Models, Payments oraz providerzy
+  Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut, Tpay. W nich ostrzeżenia IL2xxx/IL3xxx są błędami kompilacji:
+  nie używaj refleksji, JsonSerializer bez JsonTypeInfo ani ConfigurationBinder poza generatorem.
+- Biblioteki MediatR*, EntityFramework*, Email.Office365, MediatR.ML i Payments.Provider.Stripe nie są zgodne z NativeAOT -
+  nie proponuj ich w aplikacji publikowanej z PublishAot.
 ```

@@ -1,0 +1,9 @@
+<Project>
+
+	<!--
+		The demo application is compiled the way the libraries are: runtime async for net11.0 and newer
+		(see eng/RuntimeAsync.targets). An application opts in with the same compiler feature flag.
+	-->
+	<Import Project="$(MSBuildThisFileDirectory)../eng/RuntimeAsync.targets" />
+
+</Project>

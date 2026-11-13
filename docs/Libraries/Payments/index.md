@@ -250,6 +250,8 @@ catch (HttpRequestException exception)   // obejmuje PaymentGatewayException
 `StripeException` z SDK na `PaymentGatewayException` (oryginał w `InnerException`), a odmowę 4xx zwraca jako `Rejected`; w 2.x przepuszczał
 `StripeException`. CashBill do wersji 2.0.1 zgłaszał `WebException`.
 
+`Payments` i dostawcy HTTP (wszyscy poza Stripe) są zgodni z trimmingiem i NativeAOT — zob. [Trimming i NativeAOT](../../Platform/index.md#trimming-i-nativeaot).
+
 Przelewy24: gdy w trakcie webhooka nie da się zweryfikować transakcji, wynikiem jest `PaymentWebhookRejected` (`ProcessingFailed`),
 a nie przetworzona płatność odrzucona — odpowiedz kodem spoza 2xx, a Przelewy24 ponowi powiadomienie.
 

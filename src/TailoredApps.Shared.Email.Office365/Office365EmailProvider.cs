@@ -221,10 +221,8 @@ public class Office365EmailProvider : IEmailProvider
     /// <param name="messageBody">The body content of the message.</param>
     /// <param name="attachments">A dictionary of attachment file names mapped to their byte content.</param>
     /// <returns>A string result or identifier for the sent message.</returns>
-    public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]>? attachments)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]>? attachments)
+        => Task.FromException<string>(new NotImplementedException());
 }
 /// <summary>Extension methods for registering the Office 365 email provider with the DI container.</summary>
 public static class Office365EmailProviderExtensions

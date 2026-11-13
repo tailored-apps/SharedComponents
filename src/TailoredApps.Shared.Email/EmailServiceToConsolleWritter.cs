@@ -20,10 +20,8 @@ public class EmailServiceToConsolleWritter : IEmailProvider
     /// <param name="recipent">Filter by recipient email address (ignored).</param>
     /// <param name="fromLast">Time span to filter messages received within that period (ignored).</param>
     /// <returns>A task that resolves to an empty collection of <see cref="MailMessage"/>.</returns>
-    public async Task<ICollection<MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
-    {
-        return new List<MailMessage>();
-    }
+    public Task<ICollection<MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
+        => Task.FromResult<ICollection<MailMessage>>(new List<MailMessage>());
 
     /// <summary>
     /// Writes the email details to the standard console output and returns the formatted message string.
@@ -37,10 +35,10 @@ public class EmailServiceToConsolleWritter : IEmailProvider
     /// A task that resolves to a formatted string containing the recipient address, topic, and message body
     /// that was written to the console.
     /// </returns>
-    public async Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]>? attachments)
+    public Task<string> SendMail(string recipnet, string topic, string messageBody, Dictionary<string, byte[]>? attachments)
     {
         var message = $"recipent: {recipnet}; topic: {topic}; message: {messageBody}";
         Console.WriteLine(message);
-        return message;
+        return Task.FromResult(message);
     }
 }

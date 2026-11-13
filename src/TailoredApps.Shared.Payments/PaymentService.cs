@@ -27,9 +27,14 @@ public class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task<ICollection<PaymentProvider>> GetProviders(CancellationToken cancellationToken = default)
+    public Task<ICollection<PaymentProvider>> GetProviders(CancellationToken cancellationToken = default)
     {
-        return await Task.Run(() => paymentService.Select(x => new PaymentProvider { Id = x.Key, Name = x.Name }).ToList(), cancellationToken);
+        // The providers are already in memory: nothing to wait for, and no reason to borrow a thread-pool thread.
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromCanceled<ICollection<PaymentProvider>>(cancellationToken);
+
+        ICollection<PaymentProvider> providers = paymentService.Select(x => new PaymentProvider { Id = x.Key, Name = x.Name }).ToList();
+        return Task.FromResult(providers);
     }
 
     /// <inheritdoc/>

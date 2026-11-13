@@ -250,6 +250,8 @@ catch (HttpRequestException exception)   // covers PaymentGatewayException
 SDK's `StripeException` into `PaymentGatewayException` (the original in `InnerException`) and returns a 4xx refusal as `Rejected`; in 2.x it let
 `StripeException` through. CashBill threw `WebException` up to 2.0.1.
 
+`Payments` and the HTTP providers (all but Stripe) are safe for trimming and NativeAOT - see [Trimming and NativeAOT](../../Platform/index.md#trimming-and-nativeaot).
+
 Przelewy24: when a transaction cannot be verified during a webhook, the result is `PaymentWebhookRejected` (`ProcessingFailed`),
 not a processed payment that was rejected - answer with a status outside 2xx and Przelewy24 sends the notification again.
 

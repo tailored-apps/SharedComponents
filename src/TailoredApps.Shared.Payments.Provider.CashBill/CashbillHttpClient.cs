@@ -63,9 +63,10 @@ public class CashbillHttpClient : ICashbillHttpClient
     /// <inheritdoc/>
     /// <exception cref="PaymentGatewayException">CashBill answered with a status outside 200-299.</exception>
     /// <exception cref="NotSupportedException">
-    /// <typeparamref name="T"/> is not one of the CashBill response models. They are read with JSON metadata
-    /// generated at compile time, with no reflection, so that the client works in a trimmed or NativeAOT
-    /// application; the request is not sent for any other type.
+    /// <typeparamref name="T"/> is a type this library has no JSON metadata for. CashBill answers are read
+    /// with metadata generated at compile time, with no reflection, so that the client works in a trimmed or
+    /// NativeAOT application: it covers the CashBill response models (and built-in types such as
+    /// <see cref="System.Text.Json.JsonElement"/>). The request is not sent for any other type.
     /// </exception>
     public async Task<T> MakeFormRequest<T>(string url, string method, FormUrlEncodedContent? requestFormData, CancellationToken cancellationToken = default)
     {
@@ -92,7 +93,7 @@ public class CashbillHttpClient : ICashbillHttpClient
     private static JsonTypeInfo<T> ResponseType<T>()
         => CashBillJsonContext.Default.GetTypeInfo(typeof(T)) as JsonTypeInfo<T>
             ?? throw new NotSupportedException(
-                $"CashBill answers are read as {nameof(Payment)}, {nameof(PaymentStatus)} or List<{nameof(PaymentChannels)}>; '{typeof(T)}' is not one of them.");
+                $"There is no JSON metadata for '{typeof(T)}': CashBill answers are read as {nameof(Payment)}, {nameof(PaymentStatus)} or List<{nameof(PaymentChannels)}>.");
 
     /// <inheritdoc/>
     /// <exception cref="PaymentGatewayException">CashBill answered with a status outside 200-299.</exception>

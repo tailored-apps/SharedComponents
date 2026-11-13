@@ -36,10 +36,8 @@ public class SmtpEmailProvider : IEmailProvider
     /// <param name="fromLast">Time span to filter messages received within that period.</param>
     /// <returns>A task that retrieves a collection of <see cref="Models.MailMessage"/> objects.</returns>
     /// <exception cref="System.NotImplementedException">Always thrown; this method is not implemented.</exception>
-    public async Task<ICollection<Models.MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
-    {
-        throw new System.NotImplementedException();
-    }
+    public Task<ICollection<Models.MailMessage>> GetMail(string folder = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
+        => Task.FromException<ICollection<Models.MailMessage>>(new System.NotImplementedException());
 
     /// <summary>
     /// Sends an email message via the configured SMTP server.

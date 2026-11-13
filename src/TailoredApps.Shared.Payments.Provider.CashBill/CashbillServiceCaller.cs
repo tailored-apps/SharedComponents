@@ -161,20 +161,21 @@ public class CashbillServiceCaller : ICashbillServiceCaller
         return status;
     }
     /// <inheritdoc/>
-    public async Task<string> GetSignForNotificationService(TransactionStatusChanged transactionStatusChanged, CancellationToken cancellationToken = default)
+    public Task<string> GetSignForNotificationService(TransactionStatusChanged transactionStatusChanged, CancellationToken cancellationToken = default)
     {
-        return await Task.Run(() =>
-        {
-            var secretPhrase = options.Value.ShopSecretPhrase;
-            if (!WebhookSignature.IsSecretConfigured(secretPhrase))
-                throw new InvalidOperationException("CashBill ShopSecretPhrase is not configured; notification signatures cannot be verified.");
+        // Hashing a short string is not worth a thread-pool hop. The result, a cancellation and a failure are
+        // still reported through the task, as they were.
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromCanceled<string>(cancellationToken);
 
-            var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
-            // BUG FIX: CashBill wysyła sign MD5(cmd + args + secret), nie SHA1.
-            // Zweryfikowane empirycznie na podstawie rzeczywistych webhook logów (2026-03-20).
-            var signStatus = HashMd5(toCalc);
-            return signStatus;
-        });
+        var secretPhrase = options.Value.ShopSecretPhrase;
+        if (!WebhookSignature.IsSecretConfigured(secretPhrase))
+            return Task.FromException<string>(new InvalidOperationException("CashBill ShopSecretPhrase is not configured; notification signatures cannot be verified."));
+
+        var toCalc = (transactionStatusChanged.Command + transactionStatusChanged.TransactionId + secretPhrase).Trim();
+        // BUG FIX: CashBill wysyła sign MD5(cmd + args + secret), nie SHA1.
+        // Zweryfikowane empirycznie na podstawie rzeczywistych webhook logów (2026-03-20).
+        return Task.FromResult(HashMd5(toCalc));
     }
 
 
