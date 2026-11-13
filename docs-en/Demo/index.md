@@ -4,8 +4,8 @@
     The sample is in the repository from the 3.0 line (`master`) and uses the MediatR libraries on **ForkForward.Mediator**
     (see [Upgrading to 3.0](../Migration/v3.md)). It is not a NuGet package and is never published to nuget.org.
 
-`samples/` holds a small shop built the way a real service of ours is built: three projects - the contract, the logic and the HTTP
-host - that use **all 26 libraries together** with [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator) and
+`samples/` holds a small shop built the way a real service of ours is built: the contract, the logic and the HTTP host, with a browser
+client (Blazor WebAssembly) and a .NET Aspire host around them. Together they use **all 26 libraries together** with [ForkForward.Mediator](https://www.nuget.org/packages/ForkForward.Mediator) and
 [ForkForward.Mapper](https://www.nuget.org/packages/ForkForward.Mapper). It has a product catalogue, orders, payments through nine
 gateways, gateway notifications and a confirmation e-mail. It runs with no account and no network: the payment gateways are faked,
 e-mail goes to the console, and the database is SQLite in memory.
@@ -21,8 +21,16 @@ these tests with the rest of the solution, so a library change that breaks how t
 dotnet run --project samples/TailoredApps.Shared.Demo.WebApi -f net10.0
 ```
 
-The `http` profile in `Properties/launchSettings.json` listens on `http://localhost:5080` in the Development environment. For `net11.0` the
-sample is compiled with runtime async, as the libraries are ([Target frameworks](../Platform/index.md#runtime-async-net-11)).
+The `http` profile in `Properties/launchSettings.json` listens on `http://localhost:5080` in the Development environment: the browser
+client is at that address, the API under `/api`. For `net11.0` the sample is compiled with runtime async, as the libraries are
+([Target frameworks](../Platform/index.md#runtime-async-net-11)).
+
+With the Aspire dashboard (logs, traces and metrics of the service) - the same shop at the same address, the dashboard at
+`http://localhost:15080`:
+
+```bash
+dotnet run --project samples/TailoredApps.Shared.Demo.AppHost
+```
 
 The integration tests:
 
@@ -32,13 +40,15 @@ dotnet test tests/TailoredApps.Shared.IntegrationTests/TailoredApps.Shared.Integ
 
 ---
 
-## The three projects
+## The projects
 
 | Project | What it holds | Depends on |
 |---|---|---|
 | `TailoredApps.Shared.Demo.DataModel` | The contract. Per feature (`Catalog`, `Orders`): `Messages/Commands`, `Messages/Queries`, `Messages/Notifications`, `Responses/…`, `Model` | the mediator contracts, `MediatR.PagedRequest`, `MediatR.Caching`, `Payments` - no EF Core, no handlers |
 | `TailoredApps.Shared.Demo.Services` | The logic. Per feature: `Entities`, `Handlers` (one interface each under `Interfaces/Handlers`), `Infrastructure` (repositories over the unit of work, behind `Interfaces/Infrastructure`), `Validation`, `Policies` (cache, retry, fallback), `Processing` (pre/post-processors, exception action and handler, stream behavior), `Exceptions`, the EF mapping (`IModelBuilder`) and the mapper profile. `ShopDataContext` at the root | `DataModel`, EF Core, the libraries - nothing of ASP.NET Core |
-| `TailoredApps.Shared.Demo.WebApi` | The host. `Program` (builds, seeds, runs) and `Startup` (`ConfigureServices`, `Configure`), `Controllers`, `Endpoints` (minimal API), `Authentication`, `ExceptionHandling` | both, and every library |
+| `TailoredApps.Shared.Demo.WebApi` | The host. `Program` (builds, seeds, runs) and `Startup` (`ConfigureServices`, `Configure`), `Controllers`, `Endpoints` (minimal API), `Authentication`, `ExceptionHandling`. It also serves the client's files | both, and every library |
+| `TailoredApps.Shared.Demo.Client` | The browser client: Blazor WebAssembly with MudBlazor, no JavaScript of its own. `Pages` (catalogue, product, basket, order), `Services` (`ShopApi`, `Session`, `Basket`) | `DataModel` only - the messages and responses are the server's own types |
+| `TailoredApps.Shared.Demo.AppHost` | .NET Aspire: starts the Web API and the dashboard | the WebApi project |
 
 A request travels one way: a **controller** turns HTTP into a message and sends it; the **mediator pipeline** validates, caches, retries;
 a **handler** decides; a **repository** reads and writes through the unit of work and maps entities to the model; the **transaction
@@ -95,6 +105,40 @@ The service accepts JWT bearer tokens with its own issuer and audience, signed w
 start). Changing the catalogue needs the `CatalogAdmin` role; orders are open. The key is in `appsettings.Development.json` - a placeholder
 for local work; another environment brings its own as a secret. In a deployment the tokens come from the organisation's auth service; in
 the Development environment only, `POST /api/dev/token` stands in for it.
+
+---
+
+## The browser client
+
+Open `http://localhost:5080`. The client is a Blazor WebAssembly application served by the Web API itself, so the page and the API
+share one origin and nothing needs CORS or a proxy.
+
+- **One contract.** The client references `Demo.DataModel` and nothing else of the service. `ShopApi` sends `CreateOrder` and reads
+  `GetProductsResponse` - the classes the controller receives and the handler returns. There is no generated client to keep in step.
+- **The service does the work.** The catalogue table asks for a page, a sort order and a filter; paging and sorting happen in the
+  database. A form shows the messages of the service's validators; the client has no validation rules of its own.
+- **Signing in** is one button, *Sign in as catalogue administrator*: it takes a token from `POST /api/dev/token` and then the
+  "Add a product" form appears. A deployed client would use the organisation's auth service (OIDC) instead.
+- **Paying.** After *Start the payment* the order waits for the gateway. For Revolut the page has *Play the gateway: payment
+  completed*: the service builds the notification Revolut would send, signs it with the configured secret and passes it through the
+  same handler as the real webhook - signature check included. The order becomes paid and the confirmation is printed on the console.
+- **One target framework, `net10.0`.** The browser runs on the Mono runtime, which in .NET 11 does not execute runtime-async methods,
+  and the `net11.0` assets of this repository are compiled that way. The Web API that serves the client can be either framework.
+
+---
+
+## Aspire
+
+`Demo.AppHost` starts the Web API and the Aspire dashboard with one command. `AddTailoredWebApiDefaults()` already exports logs,
+traces and metrics over OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set; Aspire sets it, so the dashboard shows every request with its
+spans, the structured log of the mediator's `LoggingBehavior`, and the metrics - among them the sample's own counters
+(`demo.payments.started`, `demo.payments.gateway_outages`, `demo.orders.paid`, `demo.catalog.products_exported`).
+
+- No container is started and nothing needs Docker: the database stays SQLite in memory.
+- The Web API targets two frameworks, and `dotnet run` - what Aspire's `AddProject` uses - refuses such a project unless it is told
+  which one. The AppHost therefore starts it as an executable with the framework named (`net11.0`; the other one with
+  `-- --Shop:Framework net10.0`).
+- The AppHost itself is a single-framework project (`net10.0`): the Aspire SDK does not support a cross-targeting build.
 
 ---
 
@@ -157,6 +201,8 @@ The notification timestamp has to be current: Revolut rejects signatures older t
 - **Notification signatures** are verified for real, with the placeholder keys of `appsettings.json`.
 - **E-mail** - the console provider of the Email library; the tests replace it with a provider that records the messages.
 - **The auth service** - `POST /api/dev/token`, mapped in the Development environment only.
+- **The gateway's confirmation** - `POST /api/dev/gateway/revolut/orders/{number}/complete`, in the Development environment only: a
+  correctly signed notification, delivered in process instead of over the network.
 - **Database** - SQLite in memory on one open connection, seeded at start. SQLite has no `decimal` type, so amounts are stored in minor
   units and times in UTC ticks - exact, and sortable in SQL.
 
@@ -172,6 +218,7 @@ The notification timestamp has to be current: Revolut rejects signatures older t
 | `WebhookTests` | a signed notification → the order is paid and one e-mail is sent from the template (also when the notification is repeated), a declined payment, a wrong signature and an old timestamp → 400 |
 | `MinimalApiTests` | the minimal-API endpoints: a commit without `SaveChanges` in the endpoint, 400 with the validator's fields, 409 for a duplicate, 404 from the provider |
 | `MediatorFeaturesTests` | 401 / 403 / a token signed with another key; the stream and its behavior; the mapper configuration, flattening and the computed member; the pre-processor; the post-processor and the exception action; a request without a response and the exception handler; both notification handlers, also when the mail cannot be sent; no signing key → the service does not start |
+| `ClientHostingTests` | the Web API serves the client: its host page for the client's addresses, its files as files, every assembly named in the client's boot configuration; an unknown address under `/api` stays 404; the Development gateway endpoint pays an order through the signed notification; outside Development neither that endpoint nor the token endpoint exists |
 | `ApplicationTests` | the providers and channels, 501 for ML and Office365 when they are not configured |
 | `RuntimeAsyncTests` | how the async methods of the three sample assemblies and of the libraries were compiled |
 
@@ -197,6 +244,10 @@ else is the service's own configuration.
 - A validator checks the paging and sorting parameters (400 naming the field), and the request has a default page and sort order,
   because without them the query extensions return the whole table in no particular order.
 - Requests are validated in one place (FluentValidation in the pipeline); MVC's implicit "required" for non-nullable strings is off.
+- A client written in .NET shares the contract project instead of generating a client from OpenAPI; it shows the service's error
+  messages and keeps no rules of its own.
+- When the host serves a Blazor WebAssembly client, the static files come before routing, and the client's fallback route must not
+  swallow unknown API addresses.
 
 ---
 
@@ -211,6 +262,10 @@ Structure:
 - Services: entities, the data context, repositories on IUnitOfWork<IMyDataContext>, handlers, validators, policies, mapper profiles.
   No ASP.NET Core.
 - WebApi: Program (BuildApp, database preparation), Startup (ConfigureServices, Configure), controllers, the exception provider.
+- Client (optional): Blazor WebAssembly on net10.0 referencing DataModel only, served by the WebApi (UseBlazorFrameworkFiles,
+  UseStaticFiles, then UseRouting; MapFallbackToFile("index.html") plus MapFallback("/api/{**path}", 404)).
+- AppHost (optional): .NET Aspire, single target framework; a multi-targeted Web API is started with
+  AddExecutable("dotnet", "run", "--project", path, "--framework", tfm) and WithOtlpExporter().
 
 Registration (Startup.ConfigureServices, in this order):
 - builder.AddTailoredWebApiDefaults() in Program; services.AddDateTimeProvider();
@@ -250,4 +305,6 @@ Rules:
 - Validate paging and sorting parameters with FluentValidation and give paged requests a default page and sort order.
 - Use `using ForkForward.Mediator;` / AddMediator and `using ForkForward.Mapper;` / AddAutoMapper, never the MediatR or AutoMapper packages.
 - Never put a signing key in appsettings.json; fail at start when it is missing.
+- Map endpoints that stand in for outside systems (token issuing, gateway confirmation) in the Development environment only.
+- Do not reference net11.0 assets compiled with runtime async from a Blazor WebAssembly project: target net10.0 there.
 ````

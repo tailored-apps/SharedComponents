@@ -1,0 +1,85 @@
+@page "/basket"
+@inject ShopApi Api
+@inject Basket Basket
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Basket</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Basket</MudText>
+
+@if (Basket.Lines.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">The basket is empty. <MudLink Href="/">Back to the catalogue</MudLink></MudAlert>
+}
+else
+{
+    <MudSimpleTable Elevation="1" Dense="true">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th style="text-align: right">Price</th>
+                <th style="text-align: right">Quantity</th>
+                <th style="text-align: right">Total</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Basket.Lines)
+            {
+                <tr>
+                    <td>@line.Product.Name</td>
+                    <td style="text-align: right">@Money.Format(line.Product.Price)</td>
+                    <td style="text-align: right">@line.Quantity</td>
+                    <td style="text-align: right">@Money.Format(line.Product.Price * line.Quantity)</td>
+                    <td style="text-align: right"><MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" aria-label="Remove" OnClick="() => Basket.Remove(line)" /></td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" style="text-align: right"><strong>To pay</strong></td>
+                <td style="text-align: right"><strong>@Money.Format(Basket.Total)</strong></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </MudSimpleTable>
+
+    <MudPaper Class="pa-4 mt-6" Elevation="1">
+        <MudTextField @bind-Value="email" Label="Your e-mail address" HelperText="The confirmation is sent here once the order is paid." />
+        @foreach (var error in errors)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@error</MudAlert>
+        }
+        <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" Disabled="sending" OnClick="OrderAsync">Order</MudButton>
+    </MudPaper>
+}
+
+@code {
+    private string email = string.Empty;
+    private List<string> errors = [];
+    private bool sending;
+
+    private async Task OrderAsync()
+    {
+        errors = [];
+        sending = true;
+        try
+        {
+            var order = await Api.CreateOrderAsync(new CreateOrder { CustomerEmail = email, ProductIds = Basket.ProductIds });
+            Basket.Clear();
+            Snackbar.Add($"Order {order.Number} created.", Severity.Success);
+            Navigation.NavigateTo($"/orders/{order.Number}");
+        }
+        catch (ApiException exception)
+        {
+            errors = exception.Error.Errors.Count > 0
+                ? exception.Error.Errors.Select(error => error.Message).ToList()
+                : [exception.Summary];
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+}

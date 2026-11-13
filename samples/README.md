@@ -9,13 +9,15 @@ payment gateways are faked, e-mail goes to the console, and the database is SQLi
 It is not a NuGet package. `tests/TailoredApps.Shared.IntegrationTests` starts it in memory and drives it over HTTP; CI runs
 those tests with the rest of the solution.
 
-## The three projects
+## The projects
 
 | Project | Holds |
 |---|---|
 | `TailoredApps.Shared.Demo.DataModel` | The contract: messages (`Messages/Commands`, `Queries`, `Notifications`), `Responses`, `Model`, per feature. No EF Core, no handlers |
 | `TailoredApps.Shared.Demo.Services` | The logic: `Entities`, `Handlers` and their interfaces, repositories over the unit of work, `Validation`, `Policies`, `Processing`, `Exceptions`, EF and mapper mappings, `ShopDataContext`. No ASP.NET Core |
-| `TailoredApps.Shared.Demo.WebApi` | The host: `Program`, `Startup`, `Controllers`, `Endpoints` (minimal API), `Authentication`, `ExceptionHandling` |
+| `TailoredApps.Shared.Demo.WebApi` | The host: `Program`, `Startup`, `Controllers`, `Endpoints` (minimal API), `Authentication`, `ExceptionHandling`. Serves the client |
+| `TailoredApps.Shared.Demo.Client` | The browser client: Blazor WebAssembly with MudBlazor, no JavaScript of its own. References `DataModel` only, so it sends and reads the server's own types |
+| `TailoredApps.Shared.Demo.AppHost` | .NET Aspire: starts the Web API and the dashboard (logs, traces, metrics) |
 
 A controller turns HTTP into a message and sends it; the mediator pipeline validates, caches and retries; a handler decides; a
 repository reads and writes through the unit of work and maps entities to the model; the transaction filter commits or rolls back;
@@ -27,7 +29,14 @@ the exception provider shapes the error.
 dotnet run --project samples/TailoredApps.Shared.Demo.WebApi -f net10.0
 ```
 
-The `http` launch profile listens on `http://localhost:5080` in the Development environment.
+The `http` launch profile listens on `http://localhost:5080` in the Development environment: open it in a browser for the client;
+the API is under `/api`.
+
+With the Aspire dashboard at `http://localhost:15080` (no Docker needed):
+
+```bash
+dotnet run --project samples/TailoredApps.Shared.Demo.AppHost
+```
 
 ```bash
 curl "http://localhost:5080/api/products?count=3&sortField=Price&sortDir=Desc"
@@ -64,5 +73,7 @@ curl -X POST http://localhost:5080/api/products -H "Authorization: Bearer $token
 - **Gateway notifications** are verified for real, with the placeholder secrets of `appsettings.json`.
 - **E-mail** - the console provider prints the message.
 - **The auth service** - `POST /api/dev/token`, in the Development environment only.
+- **The gateway's confirmation** - the client's *Play the gateway* button calls
+  `POST /api/dev/gateway/revolut/orders/{number}/complete` (Development only): a correctly signed notification, delivered in process.
 
 Documentation: <https://shared.tailoredapps.pl/en/Demo/>

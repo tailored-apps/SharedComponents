@@ -208,15 +208,30 @@ public class Startup(IConfiguration configuration, IWebHostEnvironment environme
     {
         app.ConfigureExceptionHandler();     // ExceptionHandling middleware: whatever the filters did not answer
 
+        // The browser client (Demo.Client, Blazor WebAssembly) is served from here: its runtime files, then its
+        // static files. Routing comes after them on purpose: once routing has picked an endpoint (the
+        // client's fallback below matches almost any address) the static file middleware steps aside.
+        app.UseBlazorFrameworkFiles();
+        app.UseStaticFiles();
+        app.UseRouting();
+
         app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllers();
         app.MapProductEndpoints();           // minimal APIs: the same messages through endpoint filters
 
-        // Tokens come from the organisation's auth service. Locally this endpoint stands in for it.
+        // An address that is neither a file nor part of the API belongs to the client's router. An unknown
+        // address under /api stays a 404 instead of answering with the page: of two fallbacks the more
+        // specific pattern wins.
+        app.MapFallbackToFile("index.html");
+        app.MapFallback("/api/{**path}", () => Results.NotFound());
+
+        // Tokens come from the organisation's auth service and payment confirmations from the gateways.
+        // Locally these endpoints stand in for both.
         if (environment.IsDevelopment())
         {
+            app.MapDevelopmentGatewayEndpoint();
             app.MapDevelopmentTokenEndpoint();
         }
     }

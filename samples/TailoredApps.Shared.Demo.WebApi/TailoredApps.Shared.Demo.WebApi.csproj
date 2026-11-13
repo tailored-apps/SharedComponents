@@ -15,11 +15,14 @@
 	<ItemGroup>
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\TailoredApps.Shared.Demo.DataModel\TailoredApps.Shared.Demo.DataModel.csproj" />
 		<ProjectReference Include="..\TailoredApps.Shared.Demo.Services\TailoredApps.Shared.Demo.Services.csproj" />
+		<!-- The browser client: this host serves its files, so the page and the API share one origin. -->
+		<ProjectReference Include="..\TailoredApps.Shared.Demo.Client\TailoredApps.Shared.Demo.Client.csproj" />
 	</ItemGroup>
 
 	<!-- Every library in src/, by project reference: the sample always runs against the current source. -->

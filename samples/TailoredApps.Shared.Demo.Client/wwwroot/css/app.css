@@ -1,0 +1,25 @@
+/* MudBlazor styles the application; this file only covers what is shown before it starts and when it fails. */
+
+.loading {
+    margin: 4rem auto;
+    text-align: center;
+    font-family: Roboto, Helvetica, Arial, sans-serif;
+    color: #555;
+}
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    background: #fff3cd;
+    box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.25);
+    font-family: Roboto, Helvetica, Arial, sans-serif;
+    z-index: 2000;
+}
+
+#blazor-error-ui .reload {
+    margin-left: 0.75rem;
+}
