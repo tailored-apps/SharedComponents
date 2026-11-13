@@ -103,6 +103,7 @@ public class MailboxMonitorService
 | Type | Kind | Description |
 |-----|--------|------|
 | `Office365EmailProvider` | Class | `IEmailProvider` implementation over IMAP + OAuth2 |
+| `Office365EmailProvider.GetMail(folder, sender, recipent, fromLast, cancellationToken)` | Method | The same as the interface's `GetMail`, but cancellable: the token covers acquiring the OAuth2 token and every IMAP round trip. On the provider class (the `IEmailProvider` interface has no token) |
 | `AuthenticationConfig` | Class | Azure AD configuration (tenant, clientId, secret/cert) |
 | `AuthenticationConfig.Instance` | Property | AAD instance URL (Azure Public by default) |
 | `AuthenticationConfig.ApiUrl` | Property | Bound from configuration (default `https://graph.microsoft.com/`) but not used by the provider |
@@ -159,6 +160,7 @@ var messages = await _emailProvider.GetMail(
 - folder is a sub-folder of the Inbox - never pass "Inbox"; leave it empty to read the Inbox
 - ApiUrl is bound but unused; the IMAP host (outlook.office365.com:993) is not configurable
 - GetMail is asynchronous end to end (from 3.0 also opening the folder, searching and downloading the messages): always await it, never .Result or .Wait(); it downloads whole messages, so narrow the query with folder, sender and fromLast
+- When the caller can give up (an aborted HTTP request, a host shutting down), inject Office365EmailProvider and use the GetMail(folder, sender, recipent, fromLast, cancellationToken) overload
 - Requires the IMAP.AccessAsApp application permission in Azure AD
 - OAuth2 tokens are cached automatically by MSAL
 - Configuration section: "Mail:Providers:Office365"

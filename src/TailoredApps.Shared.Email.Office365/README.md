@@ -74,6 +74,8 @@ The `Mail:Providers:Office365` section, bound to `AuthenticationConfig`:
   now minus that time span. With no filters, every message in the folder is downloaded.
 - `GetMail` is asynchronous end to end: connecting, opening the folder, searching and downloading each message are
   awaited, so no thread is blocked while the mailbox answers (from 3.0; before, only connecting was).
+- `Office365EmailProvider.GetMail(folder, sender, recipent, fromLast, cancellationToken)` is the cancellable overload; the
+  `IEmailProvider` interface has none, so inject the provider class to use it.
 - Each matching message is downloaded whole. Attachments are decoded and returned as Base64, keyed by file name;
   a repeated name gets a ` (2)` suffix and a part without a name is called `attachment-N`.
 - A missing configuration section throws `InvalidOperationException`; with neither `ClientSecret` nor
