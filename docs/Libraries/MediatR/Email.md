@@ -54,6 +54,16 @@ Pakiet nie ma własnej metody rejestrującej. MediatR rozwiązuje handler jako `
 builder.Services.AddTransient<IRequestHandler<SendMail, SendMailResponse>, SendMailCommandHandler>();
 ```
 
+W aplikacji trimowanej lub publikowanej z NativeAOT skanowanie nie jest dostępne — handler rejestruje się po nazwie:
+
+```csharp
+builder.Services.AddMediator(cfg =>
+    cfg.AddRequestHandler<SendMail, SendMailResponse, SendMailCommandHandler>());
+```
+
+Biblioteka jest zgodna z NativeAOT razem z providerem SMTP i konsolowym z `TailoredApps.Shared.Email`; provider `Email.Office365` nie jest.
+Pozostałe zasady: [MediatR: Trimming i NativeAOT](index.md#trimming-i-nativeaot).
+
 ---
 
 ## Przykład użycia
@@ -162,4 +172,5 @@ var result = await _mediator.Send(new SendMail
 - TemplateVariables zastępują {{token}} w szablonie
 - Podaj Templates (Dictionary<string,string>) gdy szablony są inline, nie z pliku
 - SendMail rzuci jeśli template nie zostanie znaleziony w IMailMessageBuilder
+- Aplikacja z PublishAot: zamiast skanowania cfg.AddRequestHandler<SendMail, SendMailResponse, SendMailCommandHandler>(); provider Email.Office365 nie jest zgodny z NativeAOT
 ````

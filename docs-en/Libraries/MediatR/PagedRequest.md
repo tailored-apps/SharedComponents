@@ -110,6 +110,11 @@ public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query)
 }
 ```
 
+!!! info "Trimming and NativeAOT"
+    The types of this package (`PagedAndSortedRequest<,,>`, `IPagedResult<>`) are safe for trimming and NativeAOT; the handler is then
+    registered by name - see [MediatR: Trimming and NativeAOT](index.md#trimming-and-nativeaot). The paging and sorting extensions
+    used in the example come from `TailoredApps.Shared.EntityFramework`, which is not NativeAOT-compatible (EF Core).
+
 ---
 
 ## API Reference
@@ -175,4 +180,5 @@ var page = await query
 - IsPagingSpecified = Page and Count have a value — PagingAsync pages only then; if you call Skip/Take yourself, check it and cap Count
 - IsSortBy("Name") — the check is case-insensitive
 - Never hand SortField to Dynamic LINQ yourself - use ApplySorting with an allow-list of fields
+- An application with PublishAot: the types of the package work, register the handler with cfg.AddRequestHandler<,,>(); the extensions of TailoredApps.Shared.EntityFramework (EF Core) are not NativeAOT-compatible
 ````

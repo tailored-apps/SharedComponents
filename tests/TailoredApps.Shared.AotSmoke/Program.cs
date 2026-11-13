@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TailoredApps.AotSmoke;
 using TailoredApps.Demo.Payments;
 using TailoredApps.Shared.DateTime;
 using TailoredApps.Shared.Email.Models;
@@ -250,6 +251,9 @@ catch (InvalidOperationException exception)
     Check("contracts: Email.Models and Querying types are usable",
         message.Topic == "Order 42" && Enum.GetName(SortDirection.Desc) == "Desc");
 }
+
+// The MediatR libraries on the mediator's reflection-free registration.
+await MediatorChecks.RunAsync(Check);
 
 Console.WriteLine(failures == 0 ? "All checks passed." : $"{failures} check(s) failed.");
 return failures == 0 ? 0 : 1;

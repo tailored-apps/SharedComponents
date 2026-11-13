@@ -88,8 +88,7 @@ and their code works once compiled to native code.
 |---|---|
 | `DateTime`, `Querying`, `Email.Models`, `Payments`, `Payments.Provider.Adyen`, `.CashBill`, `.HotPay`, `.PayNow`, `.PayU`, `.Przelewy24`, `.Revolut`, `.Tpay` | **Compatible.** Checked natively in CI on `net10.0` and `net11.0`, on Linux and Windows |
 | `Email`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `WebApi` | **Compatible** in a minimal-API application (see below). The MVC filter of `ExceptionHandling` does not apply: ASP.NET Core does not support controllers under NativeAOT |
-| `MediatR.Caching` | The library's own code raises no warnings, but it is only useful together with `MediatR` |
-| `MediatR`, `MediatR.Email`, `MediatR.PagedRequest` | Not compatible: the mediator creates generic handler types at run time, registration scans assemblies, and the default cache key serializes the request with reflection |
+| `MediatR`, `MediatR.Caching`, `MediatR.Email`, `MediatR.PagedRequest` | **Compatible** (on ForkForward.Mediator 13) when handlers, behaviors and policies are registered by name instead of by scanning - see [MediatR: Trimming and NativeAOT](../Libraries/MediatR/index.md#trimming-and-nativeaot). An application that caches responses gets warnings from `Microsoft.Extensions.Caching.Hybrid` itself; the cache works natively |
 | `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore`, `EntityFramework.UnitOfWork.MinimalApi` | Not compatible: EF Core builds its model and queries at run time; change auditing creates types with `MakeGenericType` |
 | `Email.Office365`, `MediatR.ML`, `Payments.Provider.Stripe` | Not compatible: their dependencies (Microsoft.Identity.Web, ML.NET, Stripe.net) rely on reflection |
 
@@ -131,6 +130,9 @@ Minimal APIs have packages of their own with the counterparts of the MVC filters
   signatures are identical byte for byte. The same goes for the error response of `ExceptionHandling`.
 - **Container registrations** with a generic parameter (`RegisterPaymentProvider<T>()`, `AddPayments<,>()`, `AddExceptionHandlingForWebApi<,>()`)
   carry annotations that make the trimmer keep the constructors dependency injection calls.
+- **MediatR** has registration without scanning (`AddPipelineBehaviors<,>()`, `AddCachePolicy<,,>()`, `AddFallbackHandler<,,>()`,
+  `AddRetryPolicy<,,>()`), cached responses serialized with generated metadata (`AddCacheSerialization`) and a cache key built from a
+  `JsonTypeInfo`. Assembly scanning stays for ordinary applications and is marked `RequiresUnreferencedCode`.
 
 ### How it is kept that way
 
@@ -138,11 +140,16 @@ Minimal APIs have packages of their own with the counterparts of the MVC filters
   error** (`eng/AotCompatible.globalconfig`, wired up in `src/Directory.Build.targets`).
 - `tests/TailoredApps.Shared.AotSmoke` is a console application that uses these libraries the way an application does: container, options
   from configuration, a payment at every HTTP gateway (through the same gateway fake as the [demo application](../Demo/index.md)),
-  notifications, signatures. `tests/TailoredApps.Shared.AotSmoke.Web` is a minimal-API Web API: it starts on a free port and calls its own
+  notifications, signatures, and the mediator with its behaviors: validation, a value-type response, retry and fallback, a paged
+  request, `SendMail`. `tests/TailoredApps.Shared.AotSmoke.Web` is a minimal-API Web API: it starts on a free port and calls its own
   endpoints - health, error responses, an e-mail template and SMTP, `[Authorize]` with a JWT, an HTTP client with resilience. The
   *NativeAOT smoke test* job of the PR checks publishes both with NativeAOT for `net10.0` and `net11.0`, on Linux and Windows, and runs
   them; in those projects every trim/AOT warning - from dependencies too - is an error. The analyzers see the code of one library, the
   AOT compiler the whole dependency closure.
+- `tests/TailoredApps.Shared.AotSmoke.Caching` checks the response cache natively: an object and a value type, serialized with generated
+  metadata. It is an application of its own because `Microsoft.Extensions.Caching.Hybrid` still reports trim/AOT warnings for its
+  fallback JSON serializer. Only here are they let through, and the same CI job fails when a warning of that kind names any other
+  assembly.
 
 ```bash
 dotnet publish tests/TailoredApps.Shared.AotSmoke -c Release -f net11.0 -r linux-x64   # needs clang and zlib; on Windows: -r win-x64 and the C++ build tools
@@ -220,12 +227,14 @@ You are working with TailoredApps.Shared.* packages or with the SharedComponents
   in both conditional groups: 10.* and 11.*); test project under tests/.
 - Build the repository with .NET SDK 11.0.100 or newer.
 - Safe for trimming and NativeAOT (IsAotCompatible): DateTime, Querying, Email, Email.Models, ExceptionHandling,
-  ExceptionHandling.MinimalApi, WebApi,
+  ExceptionHandling.MinimalApi, WebApi, MediatR, MediatR.Caching, MediatR.Email, MediatR.PagedRequest,
   Payments and the providers Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut, Tpay.
 - NativeAOT in ASP.NET Core means minimal APIs: MVC controllers do not work natively (their routes answer 404). [Authorize] and JWT do.
 - Blazor WebAssembly on net11.0 does not execute runtime-async methods (PlatformNotSupportedException): do not call the async
   methods of the libraries from the net11.0 asset there. IL2xxx/IL3xxx warnings are compile errors there:
   no reflection, no JsonSerializer without a JsonTypeInfo, no ConfigurationBinder outside the generator.
-- The MediatR*, EntityFramework*, Email.Office365, MediatR.ML and Payments.Provider.Stripe libraries are not
+- The EntityFramework*, Email.Office365, MediatR.ML and Payments.Provider.Stripe libraries are not
   NativeAOT-compatible - do not suggest them for an application published with PublishAot.
+- MediatR in an application with PublishAot: no scanning - cfg.AddRequestHandler<,,>() for handlers, AddPipelineBehaviors<,>() for
+  every request, AddCachePolicy / AddFallbackHandler / AddRetryPolicy, AddCacheSerialization(context) and your own GetCacheKey.
 ```

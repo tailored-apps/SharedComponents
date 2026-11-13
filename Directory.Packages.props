@@ -69,6 +69,7 @@
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.*" />
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.*" />
 		<PackageVersion Include="Microsoft.Extensions.Http" Version="10.*" />
+		<PackageVersion Include="Microsoft.Extensions.Logging" Version="10.*" />
 		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
 		<PackageVersion Include="Microsoft.Extensions.Options" Version="10.*" />
 		<PackageVersion Include="Microsoft.Extensions.Primitives" Version="10.*" />
@@ -92,6 +93,7 @@
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.*" />
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.*" />
 		<PackageVersion Include="Microsoft.Extensions.Http" Version="11.*" />
+		<PackageVersion Include="Microsoft.Extensions.Logging" Version="11.*" />
 		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="11.*" />
 		<PackageVersion Include="Microsoft.Extensions.Options" Version="11.*" />
 		<PackageVersion Include="Microsoft.Extensions.Primitives" Version="11.*" />

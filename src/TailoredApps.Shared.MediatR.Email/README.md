@@ -69,6 +69,8 @@ var result = await mediator.Send(new SendMail
 - Delivery follows the registered `IEmailProvider`. With the SMTP provider that means one recipient per message
   and redirection to the `CatchAll` address while `IsProd` is `false`. The Office 365 provider cannot send.
 - The cancellation token is not passed on to the mail provider: `IEmailProvider.SendMail` does not take one.
+- Safe for trimming and NativeAOT with the SMTP and console providers; there the handler is registered by name:
+  `cfg.AddRequestHandler<SendMail, SendMailResponse, SendMailCommandHandler>()`.
 
 ## Documentation
 

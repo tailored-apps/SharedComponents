@@ -82,6 +82,29 @@ public class GetProductFallback : IFallbackHandler<GetProduct, ProductDto>
   correlation id. A request refused by validation is logged at Information with the names of the invalid properties
   (never their values), and so is a request its caller cancelled. The request object itself is never logged.
 
+## Trimming and NativeAOT
+
+The library is safe for trimming and NativeAOT when nothing is found by scanning: register handlers with the mediator and behaviors and
+policies by name.
+
+```csharp
+builder.Services.AddMediator(cfg => cfg.AddRequestHandler<GetProduct, ProductDto, GetProductHandler>());
+
+new PipelineRegistration(builder.Services)
+    .AddPipelineBehaviors<GetProduct, ProductDto>()          // or AddPipelineBehaviorsWithoutCaching<,>() for a request that is never cached
+    .AddCachePolicy<GetProduct, ProductDto, GetProductCachePolicy>()
+    .AddRetryPolicy<GetProduct, ProductDto, GetProductRetryPolicy>()
+    .AddFallbackHandler<GetProduct, ProductDto, GetProductFallback>()
+    .AddCacheSerialization(AppJsonContext.Default);          // [JsonSerializable(typeof(ProductDto))]
+```
+
+- `RegisterPipelineBehaviors(assembly)` scans by reflection and is marked `RequiresUnreferencedCode`. The open
+  `RegisterPipelineBehaviors()` works natively only for reference-type responses; do not combine it with `AddPipelineBehaviors<,>()`.
+- The default cache key needs reflection-based JSON and throws without it: override `GetCacheKey` in the policy, or use
+  `CacheKeyGenerator.Generate(request, AppJsonContext.Default.GetProduct)`.
+- Publishing an application that caches prints trim/AOT warnings from `Microsoft.Extensions.Caching.Hybrid` (its fallback JSON
+  serializer); the cache itself works natively.
+
 ## Documentation
 
 https://shared.tailoredapps.pl/en/Libraries/MediatR/

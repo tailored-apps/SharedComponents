@@ -75,6 +75,7 @@ public class GetProductsHandler(ShopDbContext db) : IRequestHandler<GetProducts,
   single property name, optionally from an allow-list. Violations throw `ArgumentOutOfRangeException` or
   `ArgumentException`.
 - `IsSortingSpecified` is also `true` for `SortDirection.Undefined`.
+- The types of this package are safe for trimming and NativeAOT; the EntityFramework extensions used in the handler above are not (EF Core).
 
 ## Documentation
 

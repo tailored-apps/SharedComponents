@@ -105,3 +105,17 @@ jobs:
 
       - name: Running the native Web API application
         run: ./artifacts/publish/TailoredApps.Shared.AotSmoke.Web/release_${FRAMEWORK}_${RID}/TailoredApps.Shared.AotSmoke.Web${EXE}
+
+      # The response cache has its own application: Microsoft.Extensions.Caching.Hybrid still reports trim and
+      # AOT warnings for a JSON fallback the application does not use. Those are let through as warnings, and
+      # this step fails when a warning of that kind names anything else - a library of this repository above all.
+      - name: Publishing the response cache application with NativeAOT
+        run: |
+          dotnet publish tests/TailoredApps.Shared.AotSmoke.Caching -c Release -f "$FRAMEWORK" -r "$RID" | tee aot-caching-publish.log
+          if grep -E 'warning IL[0-9]+' aot-caching-publish.log | grep -v 'Microsoft\.Extensions\.Caching\.Hybrid'; then
+            echo '::error::A trim or AOT warning outside Microsoft.Extensions.Caching.Hybrid (listed above).'
+            exit 1
+          fi
+
+      - name: Running the native response cache application
+        run: ./artifacts/publish/TailoredApps.Shared.AotSmoke.Caching/release_${FRAMEWORK}_${RID}/TailoredApps.Shared.AotSmoke.Caching${EXE}
