@@ -158,6 +158,7 @@ var messages = await _emailProvider.GetMail(
 - SendMail() is not implemented — use SmtpEmailProvider for sending
 - folder is a sub-folder of the Inbox - never pass "Inbox"; leave it empty to read the Inbox
 - ApiUrl is bound but unused; the IMAP host (outlook.office365.com:993) is not configurable
+- GetMail is asynchronous end to end (from 3.0 also opening the folder, searching and downloading the messages): always await it, never .Result or .Wait(); it downloads whole messages, so narrow the query with folder, sender and fromLast
 - Requires the IMAP.AccessAsApp application permission in Azure AD
 - OAuth2 tokens are cached automatically by MSAL
 - Configuration section: "Mail:Providers:Office365"
