@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Title>Shared.ExceptionHandling.MinimalApi</Title>
+		<PackageId>TailoredApps.Shared.ExceptionHandling.MinimalApi</PackageId>
+		<Description>Exception handling and request validation for ASP.NET Core minimal APIs as endpoint filters, on top of TailoredApps.Shared.ExceptionHandling: the same provider and the same JSON error model as the MVC filter and the middleware.</Description>
+		<PackageTags>aspnetcore;minimal-api;exception-handling;validation;fluentvalidation;endpoint-filter;nativeaot</PackageTags>
+
+		<!-- Safe for trimming and NativeAOT: the analyzers are on and their warnings are errors; tests/TailoredApps.Shared.AotSmoke.Web proves it natively. -->
+		<IsAotCompatible>true</IsAotCompatible>
+
+		<!-- Not published yet: there is no baseline to compare the public API with. Replace with PublicApiBaselineVersion after the first release. -->
+		<SkipPublicApiValidation>true</SkipPublicApiValidation>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FluentValidation" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TailoredApps.Shared.ExceptionHandling\TailoredApps.Shared.ExceptionHandling.csproj" />
+	</ItemGroup>
+
+</Project>

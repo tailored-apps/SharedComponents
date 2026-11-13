@@ -4,7 +4,7 @@
     The demo is in the repository from the 3.0 line (`master`) and uses the MediatR libraries on **ForkForward.Mediator**
     (see [Upgrading to 3.0](../Migration/v3.md)). It is not a NuGet package and is never published to nuget.org.
 
-`samples/TailoredApps.Shared.Demo` is a small shop built as an ASP.NET Core Web API that uses **all 24 libraries together**: a product
+`samples/TailoredApps.Shared.Demo` is a small shop built as an ASP.NET Core Web API that uses **all 26 libraries together**: a product
 catalogue, orders, payments through nine gateways, gateway notifications and a confirmation e-mail. It runs with no account and no
 network: the payment gateways are faked, e-mail goes to the console, and the database is SQLite in memory.
 
@@ -38,6 +38,7 @@ dotnet test tests/TailoredApps.Shared.IntegrationTests/TailoredApps.Shared.Integ
 | [DateTime](../Libraries/DateTime/index.md) | `AddDateTimeProvider()`; the order number, `CreatedAt`, `PaidAt` | the tests replace `TimeProvider` and check the times to the tick |
 | [ExceptionHandling](../Libraries/ExceptionHandling/index.md) | `DemoExceptionHandlingProvider` (missing order or product: 404), `ConfigureExceptionHandler()` | `GET /api/products/999` |
 | [EntityFramework](../Libraries/EntityFramework/index.md), [UnitOfWork.WebApiCore](../Libraries/EntityFramework/UnitOfWork.WebApiCore.md) | `ShopDbContext`, `AddUnitOfWorkForWebApi<,>()`, the transaction filter - no action calls `SaveChanges` | `POST /api/orders` with a missing product: 400, and nothing is left in the database |
+| [UnitOfWork.MinimalApi](../Libraries/EntityFramework/UnitOfWork.MinimalApi.md), [ExceptionHandling.MinimalApi](../Libraries/ExceptionHandling/MinimalApi.md) | `Catalog/ProductEndpoints.cs`: a minimal-API group with `WithExceptionHandling()`, `WithUnitOfWorkTransaction()` and `WithValidation<NewProduct>()` | `POST /api/minimal/products` (201; an invalid body 400; a duplicate 409 and a rollback), `GET /api/minimal/products/{name}` |
 | [Querying](../Libraries/Querying/index.md), [MediatR.PagedRequest](../Libraries/MediatR/PagedRequest.md) | `GetProducts` with `ProductFilter`, `ApplySorting` with an allow-list, `PagingAsync` | `GET /api/products?page=1&count=3&sortField=Price&sortDir=Desc&filter.category=tea` |
 | [MediatR](../Libraries/MediatR/index.md), [MediatR.Caching](../Libraries/MediatR/Caching.md) | `GetProduct` (validation, HybridCache), `GetRecommendations` (retry, fallback) | `GET /api/products/1`, `GET /api/products/0`, `GET /api/products/1/recommendations` |
 | [Payments](../Libraries/Payments/index.md) + 9 providers | `AddPayments().Register…Provider()`, `OrdersController.Checkout`, `WebhooksController` | `POST /api/orders/{number}/checkout`, `POST /api/webhooks/{provider}`, `GET /api/payments/providers` |
@@ -105,6 +106,7 @@ The notification timestamp has to be current: Revolut rejects signatures older t
 | `CatalogTests` | paging, sorting, the filter, parameter validation (400 naming the field; one Information entry without field values in the log, no Error), the cache (a second read does not run the handler), 404, retry and fallback |
 | `OrdersTests` | saving and committing through the filter, rollback after 400, 404, checkout at all 9 gateways (with the HTTP request to the gateway), a gateway outage (503) and a refusal (422) - Stripe included - with the order unchanged |
 | `WebhookTests` | a signed notification → the order is paid and one e-mail is sent from the template (also when the notification is repeated), a declined payment, a wrong signature and an old timestamp → 400 |
+| `MinimalApiTests` | the minimal-API endpoints: a commit without `SaveChanges`, 400 with the validator's fields, a rollback after 409, 404 from the provider |
 | `ApplicationTests` | the providers and channels, 501 for ML and Office365 when they are not configured |
 
 The tests change two things in the application: the clock (`TimeProvider`, frozen at a fixed instant) and the e-mail provider. Everything

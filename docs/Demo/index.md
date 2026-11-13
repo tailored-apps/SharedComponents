@@ -4,7 +4,7 @@
     Demo jest w repozytorium od linii 3.0 (`master`) i korzysta z bibliotek MediatR na **ForkForward.Mediator**
     (zob. [Aktualizacja do 3.0](../Migration/v3.md)). Nie jest paczką NuGet — nie trafia na nuget.org.
 
-`samples/TailoredApps.Shared.Demo` to mały sklep w ASP.NET Core Web API, który używa **wszystkich 24 bibliotek naraz**: katalog
+`samples/TailoredApps.Shared.Demo` to mały sklep w ASP.NET Core Web API, który używa **wszystkich 26 bibliotek naraz**: katalog
 produktów, zamówienia, płatności przez dziewięć bramek, powiadomienia z bramek i mail z potwierdzeniem. Działa bez kont i bez sieci:
 bramki płatności są podstawione, poczta trafia na konsolę, a baza to SQLite w pamięci.
 
@@ -38,6 +38,7 @@ dotnet test tests/TailoredApps.Shared.IntegrationTests/TailoredApps.Shared.Integ
 | [DateTime](../Libraries/DateTime/index.md) | `AddDateTimeProvider()`; numer zamówienia, `CreatedAt`, `PaidAt` | testy podmieniają `TimeProvider` i sprawdzają czasy co do ticka |
 | [ExceptionHandling](../Libraries/ExceptionHandling/index.md) | `DemoExceptionHandlingProvider` (brak zamówienia lub produktu → 404), `ConfigureExceptionHandler()` | `GET /api/products/999` |
 | [EntityFramework](../Libraries/EntityFramework/index.md), [UnitOfWork.WebApiCore](../Libraries/EntityFramework/UnitOfWork.WebApiCore.md) | `ShopDbContext`, `AddUnitOfWorkForWebApi<,>()`, filtr transakcji — żadna akcja nie woła `SaveChanges` | `POST /api/orders` z nieistniejącym produktem: 400 i nic nie zostaje w bazie |
+| [UnitOfWork.MinimalApi](../Libraries/EntityFramework/UnitOfWork.MinimalApi.md), [ExceptionHandling.MinimalApi](../Libraries/ExceptionHandling/MinimalApi.md) | `Catalog/ProductEndpoints.cs`: grupa minimal API z `WithExceptionHandling()`, `WithUnitOfWorkTransaction()` i `WithValidation<NewProduct>()` | `POST /api/minimal/products` (201; błędne body 400; duplikat 409 i rollback), `GET /api/minimal/products/{nazwa}` |
 | [Querying](../Libraries/Querying/index.md), [MediatR.PagedRequest](../Libraries/MediatR/PagedRequest.md) | `GetProducts` z `ProductFilter`, `ApplySorting` z listą dozwolonych pól, `PagingAsync` | `GET /api/products?page=1&count=3&sortField=Price&sortDir=Desc&filter.category=tea` |
 | [MediatR](../Libraries/MediatR/index.md), [MediatR.Caching](../Libraries/MediatR/Caching.md) | `GetProduct` (walidacja, HybridCache), `GetRecommendations` (retry, fallback) | `GET /api/products/1`, `GET /api/products/0`, `GET /api/products/1/recommendations` |
 | [Payments](../Libraries/Payments/index.md) + 9 dostawców | `AddPayments().Register…Provider()`, `OrdersController.Checkout`, `WebhooksController` | `POST /api/orders/{numer}/checkout`, `POST /api/webhooks/{dostawca}`, `GET /api/payments/providers` |
@@ -106,6 +107,7 @@ Znacznik czasu powiadomienia musi być aktualny: Revolut odrzuca podpisy starsze
 | `CatalogTests` | stronicowanie, sortowanie, filtr, walidację parametrów (400 z nazwą pola; w logu wpis Information bez wartości pól, żadnego Error), cache (drugi odczyt nie uruchamia handlera), 404, retry i fallback |
 | `OrdersTests` | zapis i commit przez filtr, rollback po 400, 404, checkout we wszystkich 9 bramkach (z żądaniem HTTP do bramki), awarię bramki (503) i odmowę (422) — także dla Stripe — z zamówieniem bez zmian |
 | `WebhookTests` | podpisane powiadomienie → zamówienie opłacone i jeden mail z szablonu (także przy powtórzonym powiadomieniu), płatność odrzucona, zły podpis i stary znacznik czasu → 400 |
+| `MinimalApiTests` | endpointy minimal API: commit bez `SaveChanges`, 400 z polami z walidatora, rollback po 409, 404 z providera |
 | `ApplicationTests` | lista dostawców i kanałów, 501 dla nieskonfigurowanych ML i Office365 |
 
 Testy zmieniają w aplikacji dwie rzeczy: zegar (`TimeProvider`, zamrożony na stałej chwili) i dostawcę poczty. Wszystko inne to

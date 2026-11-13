@@ -29,7 +29,10 @@ nav:
       - EntityFramework:
           - Overview: Libraries/EntityFramework/index.md
           - UnitOfWork.WebApiCore: Libraries/EntityFramework/UnitOfWork.WebApiCore.md
-      - ExceptionHandling: Libraries/ExceptionHandling/index.md
+          - UnitOfWork.MinimalApi: Libraries/EntityFramework/UnitOfWork.MinimalApi.md
+      - ExceptionHandling:
+          - Overview: Libraries/ExceptionHandling/index.md
+          - MinimalApi: Libraries/ExceptionHandling/MinimalApi.md
       - MediatR:
           - Overview: Libraries/MediatR/index.md
           - Caching: Libraries/MediatR/Caching.md

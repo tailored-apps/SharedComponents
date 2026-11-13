@@ -16,6 +16,7 @@ using TailoredApps.Shared.DateTime;
 using TailoredApps.Shared.Email;
 using TailoredApps.Shared.Email.MailMessageBuilder;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
+using TailoredApps.Shared.ExceptionHandling.MinimalApi;
 using TailoredApps.Shared.ExceptionHandling.Model;
 using TailoredApps.Shared.ExceptionHandling.Providers;
 using TailoredApps.Shared.ExceptionHandling.WebApiCore;
@@ -44,7 +45,8 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 
 builder.AddTailoredWebApiDefaults();
 builder.Services.AddDateTimeProvider();
-builder.Services.AddExceptionHandlingForWebApi<IExceptionHandlingProvider, SmokeExceptionProvider>();
+builder.Services.AddExceptionHandlingForMinimalApi<IExceptionHandlingProvider, SmokeExceptionProvider>();
+builder.Services.AddTransient<IValidator<NewProduct>, NewProductValidator>();
 builder.Services.RegisterConsoleProvider();
 builder.Services.AddTransient<SmtpEmailProvider>();   // by its own type, next to the console provider
 builder.Services.AddTransient<IMailMessageBuilder, TokenReplacingMailMessageBuilder>();
@@ -74,6 +76,11 @@ app.MapGet("/orders", [Authorize(Policy = "orders")] (ClaimsPrincipal user) => n
 app.MapGet("/missing", Answer () => throw new KeyNotFoundException("Order 7 does not exist."));
 app.MapGet("/invalid", Answer () => throw new ValidationException([new FluentValidation.Results.ValidationFailure("Id", "'Id' must be greater than '0'.")]));
 app.MapGet("/boom", Answer () => throw new InvalidOperationException("Server=db;Password=secret"));
+// ExceptionHandling.MinimalApi: the same answers from endpoint filters, with a real FluentValidation validator.
+var filtered = app.MapGroup("/filtered").WithExceptionHandling();
+filtered.MapGet("/missing", Answer () => throw new KeyNotFoundException("Product 7 does not exist."));
+filtered.MapPost("/products", (NewProduct product) => new Answer(product.Name, 1)).WithValidation<NewProduct>();
+
 app.MapPost("/mail", async (IEmailProvider email, IMailMessageBuilder messages) =>
 {
     var body = messages.Build(
@@ -159,6 +166,15 @@ await Expect("errors: a validation failure is 400 with the field", Get("/invalid
     Check("errors: an unexpected exception is a generic 500", response.StatusCode == HttpStatusCode.InternalServerError && !body.Contains("secret", StringComparison.Ordinal), body);
 }
 
+// ExceptionHandling.MinimalApi: endpoint filters.
+await Expect("filters: an exception in the group is answered by the filter", Get("/filtered/missing"), HttpStatusCode.NotFound, "Product 7 does not exist.");
+await Expect("filters: an invalid body is 400 with every invalid field",
+    new HttpRequestMessage(HttpMethod.Post, "/filtered/products") { Content = new StringContent("""{"name":"","price":-1}""", Encoding.UTF8, "application/json") },
+    HttpStatusCode.BadRequest, "\"field\": \"Name\"", "\"field\": \"Price\"");
+await Expect("filters: a valid body reaches the endpoint",
+    new HttpRequestMessage(HttpMethod.Post, "/filtered/products") { Content = new StringContent("""{"name":"Teapot","price":129}""", Encoding.UTF8, "application/json") },
+    HttpStatusCode.OK, "\"name\":\"Teapot\"");
+
 // Email: a template with an HTML-encoded variable, sent through the console provider.
 await Expect("email: the template is rendered and the variable encoded", new HttpRequestMessage(HttpMethod.Post, "/mail"), HttpStatusCode.OK, "Order ORD-42 &lt;b&gt; is paid.");
 
@@ -198,8 +214,20 @@ namespace TailoredApps.AotSmoke.Web
 {
     public record Answer(string Name, int Value);
 
+    public record NewProduct(string Name, decimal Price);
+
+    public sealed class NewProductValidator : AbstractValidator<NewProduct>
+    {
+        public NewProductValidator()
+        {
+            RuleFor(p => p.Name).NotEmpty();
+            RuleFor(p => p.Price).GreaterThan(0);
+        }
+    }
+
     /// <summary>The answers of the endpoints, serialized without reflection as NativeAOT requires.</summary>
     [JsonSerializable(typeof(Answer))]
+    [JsonSerializable(typeof(NewProduct))]
     internal sealed partial class SmokeJsonContext : JsonSerializerContext;
 
     /// <summary>The defaults of ExceptionHandling, plus the 404 mapping an application typically adds.</summary>

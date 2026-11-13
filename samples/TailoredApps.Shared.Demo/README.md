@@ -1,6 +1,6 @@
 # TailoredApps.Shared.Demo
 
-A small shop Web API that uses all 24 `TailoredApps.Shared.*` libraries together: a product catalogue, orders, payments
+A small shop Web API that uses all 26 `TailoredApps.Shared.*` libraries together: a product catalogue, orders, payments
 through nine gateways, gateway notifications and a confirmation e-mail. It runs with no account and no network: the
 payment gateways are faked, e-mail goes to the console, and the database is SQLite in memory.
 
@@ -31,6 +31,7 @@ curl -X POST http://localhost:5080/api/orders/<number>/checkout -H "Content-Type
 | DateTime | `AddDateTimeProvider()`; order numbers, `CreatedAt`, `PaidAt` |
 | ExceptionHandling | `DemoExceptionHandlingProvider` (missing order or product: 404), `ConfigureExceptionHandler()` |
 | EntityFramework, EntityFramework.UnitOfWork.WebApiCore | `ShopDbContext`, `AddUnitOfWorkForWebApi<,>()`, the transaction filter: no action calls `SaveChanges` |
+| EntityFramework.UnitOfWork.MinimalApi, ExceptionHandling.MinimalApi | `Catalog/ProductEndpoints.cs`: minimal-API endpoints with the transaction, validation and exception filters |
 | Querying, MediatR.PagedRequest | `GetProducts` with `ProductFilter`, sorted and paged by the EntityFramework query extensions |
 | MediatR, MediatR.Caching | `GetProduct` (validation, HybridCache), `GetRecommendations` (retry, fallback) |
 | Payments + 9 providers | `AddPayments().Register…Provider()`, `OrdersController.Checkout`, `WebhooksController` |

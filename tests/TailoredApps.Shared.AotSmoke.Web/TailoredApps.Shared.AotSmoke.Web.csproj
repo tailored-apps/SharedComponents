@@ -4,7 +4,8 @@
 		The web half of the NativeAOT smoke test (see ../TailoredApps.Shared.AotSmoke): a minimal-API application
 		that is published with NativeAOT, starts itself on a free port and calls its own endpoints. It covers what
 		a Web API needs natively - WebApi defaults (OpenTelemetry, health checks, HTTP client resilience),
-		ExceptionHandling as middleware, Email with a template, and endpoints behind [Authorize] with a JWT.
+		ExceptionHandling as middleware and as endpoint filters (with a FluentValidation validator), Email with a
+		template, and endpoints behind [Authorize] with a JWT.
 
 		Minimal APIs on purpose: ASP.NET Core does not support MVC controllers under NativeAOT.
 
@@ -30,6 +31,7 @@
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.DateTime\TailoredApps.Shared.DateTime.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Email\TailoredApps.Shared.Email.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.ExceptionHandling\TailoredApps.Shared.ExceptionHandling.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.ExceptionHandling.MinimalApi\TailoredApps.Shared.ExceptionHandling.MinimalApi.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.WebApi\TailoredApps.Shared.WebApi.csproj" />
 	</ItemGroup>
 

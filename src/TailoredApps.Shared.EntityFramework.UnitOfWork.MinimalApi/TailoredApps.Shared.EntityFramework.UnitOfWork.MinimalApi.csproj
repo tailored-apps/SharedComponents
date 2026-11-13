@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Title>Shared.EntityFramework.UnitOfWork.MinimalApi</Title>
+		<PackageId>TailoredApps.Shared.EntityFramework.UnitOfWork.MinimalApi</PackageId>
+		<Description>Per-request transactions for ASP.NET Core minimal APIs: an endpoint filter that commits the unit of work of TailoredApps.Shared.EntityFramework after a successful endpoint and rolls it back after an error result or an exception.</Description>
+		<PackageTags>aspnetcore;minimal-api;entityframework;efcore;unit-of-work;transaction;endpoint-filter</PackageTags>
+
+		<!-- Not published yet: there is no baseline to compare the public API with. Replace with PublicApiBaselineVersion after the first release. -->
+		<SkipPublicApiValidation>true</SkipPublicApiValidation>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TailoredApps.Shared.EntityFramework\TailoredApps.Shared.EntityFramework.csproj" />
+	</ItemGroup>
+
+</Project>
