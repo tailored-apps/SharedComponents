@@ -86,11 +86,38 @@ and their code works once compiled to native code.
 
 | Libraries | State |
 |---|---|
-| `DateTime`, `Querying`, `Email.Models`, `Payments`, `Payments.Provider.Adyen`, `.CashBill`, `.HotPay`, `.PayNow`, `.PayU`, `.Przelewy24`, `.Revolut`, `.Tpay` | **Compatible.** Checked natively in CI on `net10.0` and `net11.0` |
-| `Email`, `ExceptionHandling`, `WebApi`, `MediatR.Caching` | The library's own code raises no analyzer warnings, but compatibility is not declared yet: there is no native test for them (dependencies: MailKit, ASP.NET Core MVC, OpenTelemetry) |
+| `DateTime`, `Querying`, `Email.Models`, `Payments`, `Payments.Provider.Adyen`, `.CashBill`, `.HotPay`, `.PayNow`, `.PayU`, `.Przelewy24`, `.Revolut`, `.Tpay` | **Compatible.** Checked natively in CI on `net10.0` and `net11.0`, on Linux and Windows |
+| `Email`, `ExceptionHandling`, `WebApi` | **Compatible** in a minimal-API application (see below). The MVC filter of `ExceptionHandling` does not apply: ASP.NET Core does not support controllers under NativeAOT |
+| `MediatR.Caching` | The library's own code raises no warnings, but it is only useful together with `MediatR` |
 | `MediatR`, `MediatR.Email`, `MediatR.PagedRequest` | Not compatible: the mediator creates generic handler types at run time, registration scans assemblies, and the default cache key serializes the request with reflection |
 | `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore` | Not compatible: EF Core builds its model and queries at run time; change auditing creates types with `MakeGenericType` |
 | `Email.Office365`, `MediatR.ML`, `Payments.Provider.Stripe` | Not compatible: their dependencies (Microsoft.Identity.Web, ML.NET, Stripe.net) rely on reflection |
+
+### Web API: minimal APIs yes, controllers no
+
+NativeAOT in ASP.NET Core covers minimal APIs, not MVC. Checked on .NET 11 in this repository:
+
+| Scenario | Result after `PublishAot` |
+|---|---|
+| Minimal API + `WebApi` + `ExceptionHandling` (middleware) + `Email` + `[Authorize]` with a JWT (401 / 403 / 200) | No warnings, works natively - this is what `tests/TailoredApps.Shared.AotSmoke.Web` does |
+| Controllers (`AddControllers`, `[ApiController]`, `[Authorize]`) | About 160 warnings from MVC alone; the application starts, but **every controller route answers 404** - the controllers are not discovered |
+| Controllers + EF Core + the transaction filter | Several hundred warnings from EF Core; the application dies at startup |
+
+Authorization is not the obstacle: `[Authorize]`, policies and JWT work natively on minimal-API endpoints. Controllers and EF Core are.
+An application with controllers therefore keeps using the libraries as before (JIT, ReadyToRun if wanted), and NativeAOT requires its
+endpoints rewritten as minimal APIs and data access without EF Core.
+
+### Blazor
+
+- **Blazor Server / a Blazor Web App rendered on the server** runs on the regular CoreCLR: the libraries work without restrictions and
+  NativeAOT does not apply.
+- **Blazor WebAssembly** runs on the Mono runtime, which in .NET 11 **does not execute runtime-async methods**. Checked: calling an async
+  method of a library from its `net11.0` asset fails with `PlatformNotSupportedException: Runtime Async is not supported on this platform`.
+  Code without `async` (`DateTime`, `Querying`, `Email.Models`, for example) works. Until packages with a separate asset for the browser are
+  published, a WebAssembly application on `net11.0` cannot use the async methods of these libraries; one on `net10.0` gets the asset with
+  state machines and works.
+- What matters in the browser is **trimming** (always on when publishing), not NativeAOT - the libraries in the "Compatible" rows raise no
+  trimmer warnings.
 
 ### What was done
 
@@ -107,12 +134,14 @@ and their code works once compiled to native code.
   error** (`eng/AotCompatible.globalconfig`, wired up in `src/Directory.Build.targets`).
 - `tests/TailoredApps.Shared.AotSmoke` is a console application that uses these libraries the way an application does: container, options
   from configuration, a payment at every HTTP gateway (through the same gateway fake as the [demo application](../Demo/index.md)),
-  notifications, signatures. The *NativeAOT smoke test* job of the PR checks publishes it with NativeAOT for `net10.0` and `net11.0` and runs
-  it; in that project every trim/AOT warning - from dependencies too - is an error. The analyzers see the code of one library, the AOT
-  compiler the whole dependency closure.
+  notifications, signatures. `tests/TailoredApps.Shared.AotSmoke.Web` is a minimal-API Web API: it starts on a free port and calls its own
+  endpoints - health, error responses, an e-mail template and SMTP, `[Authorize]` with a JWT, an HTTP client with resilience. The
+  *NativeAOT smoke test* job of the PR checks publishes both with NativeAOT for `net10.0` and `net11.0`, on Linux and Windows, and runs
+  them; in those projects every trim/AOT warning - from dependencies too - is an error. The analyzers see the code of one library, the
+  AOT compiler the whole dependency closure.
 
 ```bash
-dotnet publish tests/TailoredApps.Shared.AotSmoke -c Release -f net11.0 -r linux-x64   # needs clang and zlib; on Windows: the C++ build tools
+dotnet publish tests/TailoredApps.Shared.AotSmoke -c Release -f net11.0 -r linux-x64   # needs clang and zlib; on Windows: -r win-x64 and the C++ build tools
 ./artifacts/publish/TailoredApps.Shared.AotSmoke/release_net11.0_linux-x64/TailoredApps.Shared.AotSmoke
 ```
 
@@ -186,8 +215,11 @@ You are working with TailoredApps.Shared.* packages or with the SharedComponents
   PackageReference without a version, versions in Directory.Packages.props (runtime-aligned packages
   in both conditional groups: 10.* and 11.*); test project under tests/.
 - Build the repository with .NET SDK 11.0.100 or newer.
-- Safe for trimming and NativeAOT (IsAotCompatible): DateTime, Querying, Email.Models, Payments and the providers
-  Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut, Tpay. IL2xxx/IL3xxx warnings are compile errors there:
+- Safe for trimming and NativeAOT (IsAotCompatible): DateTime, Querying, Email, Email.Models, ExceptionHandling, WebApi,
+  Payments and the providers Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut, Tpay.
+- NativeAOT in ASP.NET Core means minimal APIs: MVC controllers do not work natively (their routes answer 404). [Authorize] and JWT do.
+- Blazor WebAssembly on net11.0 does not execute runtime-async methods (PlatformNotSupportedException): do not call the async
+  methods of the libraries from the net11.0 asset there. IL2xxx/IL3xxx warnings are compile errors there:
   no reflection, no JsonSerializer without a JsonTypeInfo, no ConfigurationBinder outside the generator.
 - The MediatR*, EntityFramework*, Email.Office365, MediatR.ML and Payments.Provider.Stripe libraries are not
   NativeAOT-compatible - do not suggest them for an application published with PublishAot.

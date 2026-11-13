@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<!--
+		The web half of the NativeAOT smoke test (see ../TailoredApps.Shared.AotSmoke): a minimal-API application
+		that is published with NativeAOT, starts itself on a free port and calls its own endpoints. It covers what
+		a Web API needs natively - WebApi defaults (OpenTelemetry, health checks, HTTP client resilience),
+		ExceptionHandling as middleware, Email with a template, and endpoints behind [Authorize] with a JWT.
+
+		Minimal APIs on purpose: ASP.NET Core does not support MVC controllers under NativeAOT.
+
+			dotnet publish tests/TailoredApps.Shared.AotSmoke.Web -c Release -f net11.0 -r linux-x64
+			./artifacts/publish/TailoredApps.Shared.AotSmoke.Web/release_net11.0_linux-x64/TailoredApps.Shared.AotSmoke.Web
+	-->
+	<PropertyGroup>
+		<RootNamespace>TailoredApps.AotSmoke.Web</RootNamespace>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<PublishAot>true</PublishAot>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<!-- Every trim and AOT warning of the application and of its dependencies, one by one, as an error. -->
+		<TrimmerSingleWarn>false</TrimmerSingleWarn>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.DateTime\TailoredApps.Shared.DateTime.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Email\TailoredApps.Shared.Email.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.ExceptionHandling\TailoredApps.Shared.ExceptionHandling.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.WebApi\TailoredApps.Shared.WebApi.csproj" />
+	</ItemGroup>
+
+</Project>
