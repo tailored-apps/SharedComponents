@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
@@ -48,7 +49,16 @@ public partial class ClientHostingTests(DemoApplication app) : IClassFixture<Dem
     {
         // Blazor names the client's assemblies by their content and lists the names in dotnet.js. A build
         // that left the list and the files out of step shows in a browser only as a page that never loads.
-        var boot = await client.GetStringAsync("/_framework/dotnet.js");
+        // Asked the way a browser asks: a browser accepts gzip, and a compressed copy that is older than the
+        // file it was made from is exactly how this broke once.
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/_framework/dotnet.js");
+        request.Headers.AcceptEncoding.ParseAdd("gzip");
+        using var answer = await client.SendAsync(request);
+        answer.EnsureSuccessStatusCode();
+        await using var body = await answer.Content.ReadAsStreamAsync();
+        await using var content = answer.Content.Headers.ContentEncoding.Contains("gzip") ? new GZipStream(body, CompressionMode.Decompress) : body;
+        using var reader = new StreamReader(content);
+        var boot = await reader.ReadToEndAsync();
         var assemblies = FingerprintedAssembly().Matches(boot).Select(match => match.Groups[1].Value).Distinct().ToList();
 
         Assert.Contains(assemblies, name => name.StartsWith("TailoredApps.Shared.Demo.Client.", StringComparison.Ordinal));

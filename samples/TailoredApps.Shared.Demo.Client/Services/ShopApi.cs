@@ -9,6 +9,7 @@ using TailoredApps.Demo.DataModel.Orders.Messages.Commands;
 using TailoredApps.Demo.DataModel.Orders.Model;
 using TailoredApps.Demo.DataModel.Orders.Responses.Commands;
 using TailoredApps.Demo.DataModel.Orders.Responses.Queries;
+using TailoredApps.Shared.Payments;
 
 namespace TailoredApps.Demo.Client.Services;
 
@@ -51,7 +52,7 @@ public sealed class ShopApi(HttpClient http, Session session)
         => SendAsync(HttpMethod.Delete, $"api/orders/{Uri.EscapeDataString(number)}", null, cancellationToken);
 
     public async Task<IReadOnlyList<string>> GetPaymentProvidersAsync(CancellationToken cancellationToken = default)
-        => (await SendAsync<List<PaymentProviderName>>(HttpMethod.Get, "api/payments/providers", null, cancellationToken)).Select(provider => provider.Key).ToList();
+        => (await SendAsync<List<PaymentProvider>>(HttpMethod.Get, "api/payments/providers", null, cancellationToken)).Select(provider => provider.Id).ToList();
 
     /// <summary>
     /// Plays the gateway: asks the service to deliver the "payment completed" notification Revolut would send.
@@ -90,11 +91,6 @@ public sealed class ShopApi(HttpClient http, Session session)
         }
     }
 
-    /// <summary>The one field of a payment provider the client needs; the rest of the answer is ignored.</summary>
-    private sealed class PaymentProviderName
-    {
-        public string Key { get; set; } = string.Empty;
-    }
 }
 
 /// <summary>The error body of the service (ExceptionHandling): a message, the status, and one entry per invalid field.</summary>

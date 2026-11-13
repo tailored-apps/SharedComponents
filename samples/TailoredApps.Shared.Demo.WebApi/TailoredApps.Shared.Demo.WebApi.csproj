@@ -10,6 +10,14 @@
 	-->
 	<PropertyGroup>
 		<RootNamespace>TailoredApps.Demo.WebApi</RootNamespace>
+		<!--
+			No gzip copies of the static files during a build (a publish still compresses). This project, as
+			the host, is the one that compresses the browser client's files. The SDK inlines the list of the
+			client's assemblies into dotnet.js, and after an incremental build the gzip copy of that file
+			kept the previous list: a browser, which asks for gzip, then requested assemblies that were no
+			longer there and the page never loaded, while a plain request saw nothing wrong.
+		-->
+		<DisableBuildCompression>true</DisableBuildCompression>
 	</PropertyGroup>
 
 	<ItemGroup>

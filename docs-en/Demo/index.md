@@ -139,6 +139,10 @@ spans, the structured log of the mediator's `LoggingBehavior`, and the metrics -
   which one. The AppHost therefore starts it as an executable with the framework named (`net11.0`; the other one with
   `-- --Shop:Framework net10.0`).
 - The AppHost itself is a single-framework project (`net10.0`): the Aspire SDK does not support a cross-targeting build.
+- The shop keeps its address, `http://localhost:5080`. When another stack on the machine already uses that port, pick another:
+  `dotnet run --project samples/TailoredApps.Shared.Demo.AppHost -- --Shop:Port 5180`.
+- Stop the AppHost with Ctrl+C: the orchestrator it started (`dcp`) ends with it. Do not end `dcp` processes by name - another
+  Aspire application on the same machine has its own.
 
 ---
 
@@ -248,6 +252,9 @@ else is the service's own configuration.
   messages and keeps no rules of its own.
 - When the host serves a Blazor WebAssembly client, the static files come before routing, and the client's fallback route must not
   swallow unknown API addresses.
+- Check such a client in a browser, or ask the way a browser does. The sample turns off gzip copies during a build
+  (`DisableBuildCompression`, in the client and in the host): after an incremental build the gzip copy of the client's boot
+  configuration kept the previous list of assemblies, which a plain request never showed and a browser could not load.
 
 ---
 

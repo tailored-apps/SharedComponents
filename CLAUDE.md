@@ -60,7 +60,11 @@ smoke app), e-mail goes to the console and the database is SQLite in memory. Two
 WebAssembly client with MudBlazor that references `.Demo.DataModel` only and is served by the WebApi (it targets `net10.0` alone: Mono
 cannot run the runtime-async `net11.0` assets), and `.Demo.AppHost`, a .NET Aspire host (single framework, `TargetFrameworks` cleared:
 the Aspire SDK cannot cross-target; it starts the multi-targeted WebApi with `AddExecutable` and `--framework`, because `AddProject`
-cannot). Endpoints under `/api/dev/` (token, gateway confirmation) are mapped in the Development environment only.
+cannot; the shop's port under Aspire is `--Shop:Port`, default 5080). Both the client and the WebApi set `DisableBuildCompression`: after an
+incremental build the gzip copy of the client's `dotnet.js` (which holds the list of its assemblies) kept the old list, so a browser failed
+to load the page while a plain request looked fine - verify client changes in a browser. Endpoints under `/api/dev/` (token, gateway
+confirmation) are mapped in the Development environment only. Stop an AppHost by ending its own process; never end `dcp` by name - other
+Aspire applications of the user run on this machine.
 `tests/TailoredApps.Shared.IntegrationTests` starts it with `WebApplicationFactory` (frozen `TimeProvider`, recorded e-mail) and runs in CI
 with the other tests. A new library is added to the demo with a test of its scenario.
 

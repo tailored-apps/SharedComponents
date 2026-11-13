@@ -13,6 +13,8 @@
 	<PropertyGroup>
 		<TargetFrameworks>net10.0</TargetFrameworks>
 		<RootNamespace>TailoredApps.Demo.Client</RootNamespace>
+		<!-- No gzip copies during a build, here and in the host that serves these files: see the WebApi project. -->
+		<DisableBuildCompression>true</DisableBuildCompression>
 	</PropertyGroup>
 
 	<ItemGroup>

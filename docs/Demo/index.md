@@ -139,6 +139,10 @@ spanami, strukturalny log `LoggingBehavior` mediatora oraz metryki — w tym wł
   dopóki nie wskaże mu się platformy. AppHost uruchamia je więc jako plik wykonywalny ze wskazaną platformą (`net11.0`; drugą przez
   `-- --Shop:Framework net10.0`).
 - Sam AppHost jest projektem z jedną platformą (`net10.0`): SDK Aspire nie obsługuje builda dla wielu platform.
+- Sklep zachowuje swój adres, `http://localhost:5080`. Gdy inny stos na tej maszynie zajmuje już ten port, wskaż inny:
+  `dotnet run --project samples/TailoredApps.Shared.Demo.AppHost -- --Shop:Port 5180`.
+- AppHost zatrzymuj przez Ctrl+C: uruchomiony przez niego orkiestrator (`dcp`) kończy się razem z nim. Nie kończ procesów `dcp`
+  po nazwie — inna aplikacja Aspire na tej samej maszynie ma własne.
 
 ---
 
@@ -249,6 +253,9 @@ konfiguracja serwisu.
   i nie trzyma własnych reguł.
 - Gdy host serwuje klienta Blazor WebAssembly, pliki statyczne są przed routingiem, a trasa zapasowa klienta nie może połykać
   nieznanych adresów API.
+- Takiego klienta sprawdzaj w przeglądarce albo pytaj tak jak przeglądarka. Przykład wyłącza kopie gzip przy buildzie
+  (`DisableBuildCompression`, w kliencie i w hoście): po buildzie przyrostowym kopia gzip konfiguracji startowej klienta trzymała
+  poprzednią listę assembly, czego zwykłe żądanie nie pokazywało, a przeglądarka nie potrafiła załadować.
 
 ---
 
