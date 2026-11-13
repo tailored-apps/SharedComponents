@@ -120,23 +120,22 @@ public class Office365EmailProvider : IEmailProvider
         {
             await client.ConnectAsync("outlook.office365.com", 993, SecureSocketOptions.SslOnConnect);
             await client.AuthenticateAsync(oauth2);
+            // Every IMAP round trip is awaited: opening the folder, searching it and downloading each message
+            // talk to the server, so none of them may block the calling thread.
             var folder = client.Inbox;
             if (!string.IsNullOrEmpty(folderName))
             {
-                folder = folder.GetSubfolder(folderName);
+                folder = await folder.GetSubfolderAsync(folderName);
             }
-            folder.Open(FolderAccess.ReadOnly);
+            await folder.OpenAsync(FolderAccess.ReadOnly);
 
             var query = BuildSearchQuery(sender, recipent, fromLast, DateTime.Now);
-
-            var uids = folder.Search(query);
-            var items = folder.Fetch(uids, MessageSummaryItems.UniqueId | MessageSummaryItems.Headers);
+            var uids = await folder.SearchAsync(query);
 
             foreach (var uid in uids)
             {
-                var message = folder.GetMessage(uid);
+                var message = await folder.GetMessageAsync(uid);
                 response.Add(ToMailMessage(message));
-
             }
             await client.DisconnectAsync(true);
         }
