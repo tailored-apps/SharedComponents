@@ -52,7 +52,7 @@ public sealed class ShopApi(HttpClient http, Session session)
         => SendAsync(HttpMethod.Delete, $"api/orders/{Uri.EscapeDataString(number)}", null, cancellationToken);
 
     public async Task<IReadOnlyList<string>> GetPaymentProvidersAsync(CancellationToken cancellationToken = default)
-        => (await SendAsync<List<PaymentProvider>>(HttpMethod.Get, "api/payments/providers", null, cancellationToken)).Select(provider => provider.Id).ToList();
+        => (await SendAsync<List<PaymentProvider>>(HttpMethod.Get, "api/payments/providers", null, cancellationToken)).Select(provider => provider.Id).OfType<string>().ToList();
 
     /// <summary>
     /// Plays the gateway: asks the service to deliver the "payment completed" notification Revolut would send.
