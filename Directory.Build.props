@@ -39,10 +39,14 @@
 		is what gets packed and published. A Debug build is left without it on purpose: a value that changes
 		every second makes every build recompile every project, and gives the files of the sample's browser
 		client (Blazor WebAssembly names them by content) new names each time, so that a build of one target
-		framework left the other one serving names that no longer exist.
+		framework left the other one serving names that no longer exist. For the same reason a Debug build
+		does not take the commit id the SDK would put there instead: it changes with every commit.
 	-->
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
 		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' != 'Release'">
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 	</PropertyGroup>
 
 </Project>
