@@ -21,6 +21,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.ExceptionHandling\TailoredApps.Shared.ExceptionHandling.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.ExceptionHandling.MinimalApi\TailoredApps.Shared.ExceptionHandling.MinimalApi.csproj" />
 	</ItemGroup>
 
 </Project>

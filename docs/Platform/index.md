@@ -11,7 +11,7 @@ Każda paczka `TailoredApps.Shared.*` jest budowana dla kilku platform docelowyc
 
 | Biblioteki | Platformy docelowe |
 |---|---|
-| `DateTime`, `Email`, `Email.Models`, `Email.Office365`, `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore`, `ExceptionHandling`, `MediatR`, `MediatR.Caching`, `MediatR.Email`, `MediatR.ML`, `MediatR.PagedRequest`, `Payments` i wszyscy providerzy płatności, `Querying`, `WebApi` | `net10.0`, `net11.0` |
+| `DateTime`, `Email`, `Email.Models`, `Email.Office365`, `EntityFramework`, `EntityFramework.UnitOfWork.MinimalApi`, `EntityFramework.UnitOfWork.WebApiCore`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `MediatR`, `MediatR.Caching`, `MediatR.Email`, `MediatR.ML`, `MediatR.PagedRequest`, `Payments` i wszyscy providerzy płatności, `Querying`, `WebApi` | `net10.0`, `net11.0` |
 
 !!! info "Wersja 2.0 a starsze platformy"
     Od wersji **2.0** każda biblioteka jest budowana wyłącznie dla `net10.0` i `net11.0`. Aplikacje na `net8.0`,
@@ -87,10 +87,10 @@ a ich kod działa po skompilowaniu do kodu natywnego.
 | Biblioteki | Stan |
 |---|---|
 | `DateTime`, `Querying`, `Email.Models`, `Payments`, `Payments.Provider.Adyen`, `.CashBill`, `.HotPay`, `.PayNow`, `.PayU`, `.Przelewy24`, `.Revolut`, `.Tpay` | **Zgodne.** Sprawdzane natywnie w CI na `net10.0` i `net11.0`, na Linuksie i Windows |
-| `Email`, `ExceptionHandling`, `WebApi` | **Zgodne** w aplikacji na minimal API (zob. niżej). Filtr MVC z `ExceptionHandling` nie ma zastosowania: ASP.NET Core nie obsługuje kontrolerów w NativeAOT |
+| `Email`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `WebApi` | **Zgodne** w aplikacji na minimal API (zob. niżej). Filtr MVC z `ExceptionHandling` nie ma zastosowania: ASP.NET Core nie obsługuje kontrolerów w NativeAOT |
 | `MediatR.Caching` | Kod biblioteki nie zgłasza ostrzeżeń, ale biblioteka ma sens tylko razem z `MediatR` |
 | `MediatR`, `MediatR.Email`, `MediatR.PagedRequest` | Niezgodne: mediator tworzy typy generyczne handlerów w czasie działania, rejestracja skanuje assembly, a domyślny klucz cache serializuje żądanie przez refleksję |
-| `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore` | Niezgodne: EF Core buduje model i zapytania w czasie działania; audyt zmian tworzy typy przez `MakeGenericType` |
+| `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore`, `EntityFramework.UnitOfWork.MinimalApi` | Niezgodne: EF Core buduje model i zapytania w czasie działania; audyt zmian tworzy typy przez `MakeGenericType` |
 | `Email.Office365`, `MediatR.ML`, `Payments.Provider.Stripe` | Niezgodne: zależności (Microsoft.Identity.Web, ML.NET, Stripe.net) opierają się na refleksji |
 
 ### Web API: minimal API tak, kontrolery nie
@@ -99,13 +99,17 @@ NativeAOT w ASP.NET Core obejmuje minimal API, a nie MVC. Sprawdzone na .NET 11 
 
 | Scenariusz | Wynik po `PublishAot` |
 |---|---|
-| Minimal API + `WebApi` + `ExceptionHandling` (middleware) + `Email` + `[Authorize]` z JWT (401 / 403 / 200) | Bez ostrzeżeń, działa natywnie — to robi `tests/TailoredApps.Shared.AotSmoke.Web` |
+| Minimal API + `WebApi` + `ExceptionHandling` (middleware i filtry endpointów z walidatorem FluentValidation) + `Email` + `[Authorize]` z JWT (401 / 403 / 200) | Bez ostrzeżeń, działa natywnie — to robi `tests/TailoredApps.Shared.AotSmoke.Web` |
 | Kontrolery (`AddControllers`, `[ApiController]`, `[Authorize]`) | Około 160 ostrzeżeń z samego MVC; aplikacja startuje, ale **każda trasa kontrolera odpowiada 404** — kontrolery nie są odnajdywane |
 | Kontrolery + EF Core + filtr transakcji | Kilkaset ostrzeżeń z EF Core; aplikacja kończy się przy starcie |
 
 Autoryzacja nie jest przeszkodą: `[Authorize]`, polityki i JWT działają natywnie na endpointach minimal API. Przeszkodą są kontrolery
 i EF Core. Aplikacja z kontrolerami korzysta więc z bibliotek jak dotąd (JIT, ewentualnie ReadyToRun), a NativeAOT wymaga przepisania
 endpointów na minimal API i dostępu do danych bez EF Core.
+
+Dla minimal API są osobne paczki z odpowiednikami filtrów MVC: [ExceptionHandling.MinimalApi](../Libraries/ExceptionHandling/MinimalApi.md)
+(wyjątki i walidacja, zgodna z NativeAOT) oraz [EntityFramework.UnitOfWork.MinimalApi](../Libraries/EntityFramework/UnitOfWork.MinimalApi.md)
+(transakcja na żądanie; działa bez AOT, bo zależy od EF Core).
 
 ### Blazor
 
@@ -214,7 +218,8 @@ Pracujesz z paczkami TailoredApps.Shared.* albo z repozytorium SharedComponents.
   PackageReference bez wersji, wersje w Directory.Packages.props (paczki runtime'owe w obu grupach
   warunkowych: 10.* i 11.*); projekt testów w tests/.
 - Do budowania repozytorium używaj .NET SDK 11.0.100 lub nowszego.
-- Zgodne z trimmingiem i NativeAOT (IsAotCompatible) są: DateTime, Querying, Email, Email.Models, ExceptionHandling, WebApi,
+- Zgodne z trimmingiem i NativeAOT (IsAotCompatible) są: DateTime, Querying, Email, Email.Models, ExceptionHandling,
+  ExceptionHandling.MinimalApi, WebApi,
   Payments oraz providerzy Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut, Tpay.
 - NativeAOT w ASP.NET Core to minimal API: kontrolery MVC nie działają natywnie (trasy odpowiadają 404). [Authorize] i JWT działają.
 - Blazor WebAssembly na net11.0 nie wykonuje metod runtime async (PlatformNotSupportedException): nie wywołuj tam asynchronicznych

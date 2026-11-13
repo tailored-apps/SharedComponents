@@ -17,7 +17,9 @@ Witaj w dokumentacji **TailoredApps Shared Components** — zestawu wielokrotneg
 | [Email.Office365](Libraries/Email/Office365.md) | `TailoredApps.Shared.Email.Office365` | Wysyłanie przez Microsoft Graph API (IMAP OAuth2) |
 | [EntityFramework](Libraries/EntityFramework/index.md) | `TailoredApps.Shared.EntityFramework` | UnitOfWork pattern na EF Core z auditingiem i hookami |
 | [EntityFramework.UnitOfWork.WebApiCore](Libraries/EntityFramework/UnitOfWork.WebApiCore.md) | `TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore` | Automatyczne transakcje przez ASP.NET Core filter |
+| [EntityFramework.UnitOfWork.MinimalApi](Libraries/EntityFramework/UnitOfWork.MinimalApi.md) | `TailoredApps.Shared.EntityFramework.UnitOfWork.MinimalApi` | Automatyczne transakcje dla minimal API przez filtr endpointu |
 | [ExceptionHandling](Libraries/ExceptionHandling/index.md) | `TailoredApps.Shared.ExceptionHandling` | Middleware i filter do obsługi wyjątków w Web API |
+| [ExceptionHandling.MinimalApi](Libraries/ExceptionHandling/MinimalApi.md) | `TailoredApps.Shared.ExceptionHandling.MinimalApi` | Obsługa wyjątków i walidacja FluentValidation dla minimal API (filtry endpointów), zgodna z NativeAOT |
 | [MediatR](Libraries/MediatR/index.md) | `TailoredApps.Shared.MediatR` | Pipeline behaviors: Logging, Validation, Caching, Fallback, Retry |
 | [MediatR.Caching](Libraries/MediatR/Caching.md) | `TailoredApps.Shared.MediatR.Caching` | Marker interface `ICachableRequest` dla cachowania requestów |
 | [MediatR.Email](Libraries/MediatR/Email.md) | `TailoredApps.Shared.MediatR.Email` | `SendMail` command + handler — email przez pipeline MediatR |

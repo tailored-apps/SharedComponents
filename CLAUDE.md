@@ -10,7 +10,7 @@ runtime has to be installed as well for the `net10.0` test runs.
 ## Build
 - Build solution: `dotnet build TailoredApps.Shared.slnx`
 - Build specific project: `dotnet build src/TailoredApps.Shared.DateTime/TailoredApps.Shared.DateTime.csproj`
-- Every library has `GeneratePackageOnBuild`, so a build also packs: `-c Release` leaves all 24 packages in `artifacts/package/release/`.
+- Every library has `GeneratePackageOnBuild`, so a build also packs: `-c Release` leaves all 26 packages in `artifacts/package/release/`.
 
 ## Build output
 - `Directory.Build.props` sets `UseArtifactsOutput`, so nothing is written to per-project `bin/` or `obj/` folders.
@@ -44,11 +44,11 @@ runtime has to be installed as well for the `net10.0` test runs.
 
 # Architecture
 
-The repository is 24 NuGet packages (`TailoredApps.Shared.*`) under `src/`, with one test project per library family under `tests/`.
+The repository is 26 NuGet packages (`TailoredApps.Shared.*`) under `src/`, with one test project per library family under `tests/`.
 Every library is consumed through dependency-injection extension methods. All packages are released together under a single version
 taken from the git tag.
 
-The one application is `samples/TailoredApps.Shared.Demo` (namespace `TailoredApps.Demo`, never packed): a shop Web API that uses all 24
+The one application is `samples/TailoredApps.Shared.Demo` (namespace `TailoredApps.Demo`, never packed): a shop Web API that uses all 26
 libraries, with the payment gateways faked by an HTTP handler (`Payments/FakeGateway.cs`), the console e-mail provider and SQLite in memory.
 `tests/TailoredApps.Shared.IntegrationTests` starts it with `WebApplicationFactory` (frozen `TimeProvider`, recorded e-mail) and runs in CI
 with the other tests. A new library is added to the demo with a test of its scenario.
@@ -83,10 +83,13 @@ with the other tests. A new library is added to the demo with a test of its scen
   `MediatR.PagedRequest`, and `MediatR.ML`, whose namespace is `TailoredApps.Shared.MediatR.ImageClassification`, not the project name.
 - **EntityFramework** - a unit of work over `DbContext` with hooks (before/after save, commit, rollback) that also drive audit change collection,
   plus paging/sorting/filtering extensions (dynamic LINQ with sort-field validation). `EntityFramework.UnitOfWork.WebApiCore` adds the MVC
-  transaction filter (`AddUnitOfWorkForWebApi<,>`). `Querying` holds the framework-free query contracts used by both EntityFramework and `MediatR.PagedRequest`.
+  transaction filter (`AddUnitOfWorkForWebApi<,>`); `EntityFramework.UnitOfWork.MinimalApi` is the same rule as an endpoint filter
+  (`WithUnitOfWorkTransaction()`). `Querying` holds the framework-free query contracts used by both EntityFramework and `MediatR.PagedRequest`.
 - **ExceptionHandling** - `AddExceptionHandlingForWebApi<,>` plus a filter and middleware; an `IExceptionHandlingProvider` maps exceptions to the
   response model. Unexpected exceptions are answered with 500 and a generic message. Exceptions mapped to 4xx are not logged as errors (middleware
   diagnostics suppressed, Debug entry instead), and `LoggingBehavior` logs validation refusals and cancellations at Information.
+  `ExceptionHandling.MinimalApi` holds the endpoint-filter counterparts for minimal APIs (`WithExceptionHandling()`, `WithValidation<T>()`).
+  The `*.MinimalApi` packages were added next to the existing libraries on purpose: the MVC ones were not changed.
 - **Email** - `IEmailProvider` with SMTP, console and Office365 providers (`Register*Provider()`), and message builders that HTML-encode template variables.
 - **WebApi** - `builder.AddTailoredWebApiDefaults()` and `app.MapTailoredWebApiDefaults()` wire OpenTelemetry (OTLP), health checks and HTTP
   client resilience with service discovery from the `WebApiDefaults` configuration section.
@@ -101,7 +104,7 @@ with the other tests. A new library is added to the demo with a test of its scen
 - `release/2.1` is the **2.1.x** maintenance line (branched from `v2.1.0`): fixes only, tagged `v2.1.N` from that branch, compatible with `2.0.0`.
 - `release/1.x` is the **1.6.x** maintenance line (it still builds `net8.0`, `net9.0` and the `netstandard` assets): security fixes only,
   tagged `v1.6.N` from that branch, binary compatible with `1.6.0`.
-- Pushing any `v*` tag publishes all 24 packages to nuget.org and creates the GitHub Release. It cannot be undone, so never push a tag
+- Pushing any `v*` tag publishes all 26 packages to nuget.org and creates the GitHub Release. It cannot be undone, so never push a tag
   unless explicitly asked. `release.yml` uses nuget.org Trusted Publishing (GitHub OIDC, environment `nuget`, secret `NUGET_USER`) - there is
   no stored API key. The job fails if any package push fails; when checking a release, read the push step, not just the run colour.
 - Pull requests target `master` (or `release/**`) and are squash-merged. PR checks: *Build & Test PR* (Windows, includes the public API comparison) and *Docs guard*.

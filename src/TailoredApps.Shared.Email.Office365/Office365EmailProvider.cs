@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
+using System.Threading;
 using System.Threading.Tasks;
 using MailKit;
 using MailKit.Net.Imap;
@@ -29,7 +30,10 @@ public class Office365EmailProvider : IEmailProvider
              "https://outlook.office365.com/.default"
 
         };
-    private readonly IConfidentialClientApplication confidentialClientApplication;
+    // The two things GetMail needs from outside: an OAuth2 access token and an IMAP connection. Production
+    // code gets them from MSAL and MailKit (public constructor); tests supply their own (internal constructor).
+    private readonly Func<CancellationToken, Task<string>> accessTokenProvider;
+    private readonly Func<IImapClient> imapClientFactory;
     /// <summary>
     /// Initializes a new instance of <see cref="Office365EmailProvider"/> and builds
     /// the confidential client application using either a client secret or a certificate.
@@ -69,7 +73,24 @@ public class Office365EmailProvider : IEmailProvider
 
         app.AddInMemoryTokenCache();
 
-        confidentialClientApplication = app;
+        accessTokenProvider = async cancellationToken
+            => (await app.AcquireTokenForClient(scopes).ExecuteAsync(cancellationToken)).AccessToken;
+        imapClientFactory = static () => new ImapClient();
+    }
+
+    /// <summary>
+    /// Creates a provider that takes its access token and its IMAP connection from the caller, so that
+    /// <see cref="GetMail(string, string, string, TimeSpan?, CancellationToken)"/> can be exercised without
+    /// Azure AD and without a mailbox.
+    /// </summary>
+    internal Office365EmailProvider(
+        IOptions<AuthenticationConfig> options,
+        Func<CancellationToken, Task<string>> accessTokenProvider,
+        Func<IImapClient> imapClientFactory)
+    {
+        this.options = options;
+        this.accessTokenProvider = accessTokenProvider;
+        this.imapClientFactory = imapClientFactory;
     }
 
 
@@ -108,42 +129,61 @@ public class Office365EmailProvider : IEmailProvider
     /// Optional time-span filter: only messages delivered within the last <paramref name="fromLast"/> are returned.
     /// </param>
     /// <returns>A collection of <see cref="Models.MailMessage"/> objects matching the specified criteria.</returns>
-    public async Task<ICollection<Models.MailMessage>> GetMail(string folderName = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
+    public Task<ICollection<Models.MailMessage>> GetMail(string folderName = "", string sender = "", string recipent = "", TimeSpan? fromLast = null)
+        => GetMail(folderName, sender, recipent, fromLast, CancellationToken.None);
+
+    /// <summary>
+    /// Retrieves e-mail messages from the configured Office 365 mailbox using IMAP with OAuth2, and stops
+    /// when <paramref name="cancellationToken"/> is cancelled.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="IEmailProvider"/> declares <c>GetMail</c> without a cancellation token; this overload is on the provider itself.
+    /// Reading a mailbox downloads every matching message, so a caller that can give up - a request that was
+    /// aborted, a host that is shutting down - should pass its token.
+    /// </remarks>
+    /// <param name="folderName">The name of the IMAP sub-folder to search in. The inbox when empty.</param>
+    /// <param name="sender">Optional filter: only messages whose From address contains this value are returned.</param>
+    /// <param name="recipent">Optional filter: only messages whose To address contains this value are returned.</param>
+    /// <param name="fromLast">Optional filter: only messages delivered within this time span are returned.</param>
+    /// <param name="cancellationToken">Cancels acquiring the token and every IMAP round trip.</param>
+    /// <returns>A collection of <see cref="Models.MailMessage"/> objects matching the specified criteria.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled.</exception>
+    public async Task<ICollection<Models.MailMessage>> GetMail(string folderName, string sender, string recipent, TimeSpan? fromLast, CancellationToken cancellationToken)
     {
         var response = new List<Models.MailMessage>();
-        var authToken = await confidentialClientApplication.AcquireTokenForClient(scopes).ExecuteAsync();
+        var accessToken = await accessTokenProvider(cancellationToken);
         var mailBox = options.Value.MailBox
             ?? throw new InvalidOperationException($"'{AuthenticationConfig.ConfigurationKey}:MailBox' is not configured.");
-        var oauth2 = new SaslMechanismOAuth2(mailBox, authToken.AccessToken);
+        var oauth2 = new SaslMechanismOAuth2(mailBox, accessToken);
 
-        using (var client = new ImapClient())
+        using (var client = imapClientFactory())
         {
-            await client.ConnectAsync("outlook.office365.com", 993, SecureSocketOptions.SslOnConnect);
-            await client.AuthenticateAsync(oauth2);
+            await client.ConnectAsync("outlook.office365.com", 993, SecureSocketOptions.SslOnConnect, cancellationToken);
+            await client.AuthenticateAsync(oauth2, cancellationToken);
             // Every IMAP round trip is awaited: opening the folder, searching it and downloading each message
             // talk to the server, so none of them may block the calling thread.
             var folder = client.Inbox;
             if (!string.IsNullOrEmpty(folderName))
             {
-                folder = await folder.GetSubfolderAsync(folderName);
+                folder = await folder.GetSubfolderAsync(folderName, cancellationToken);
             }
-            await folder.OpenAsync(FolderAccess.ReadOnly);
+            await folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken);
 
             var query = BuildSearchQuery(sender, recipent, fromLast, DateTime.Now);
-            var uids = await folder.SearchAsync(query);
+            var uids = await folder.SearchAsync(query, cancellationToken);
 
             foreach (var uid in uids)
             {
-                var message = await folder.GetMessageAsync(uid);
+                var message = await folder.GetMessageAsync(uid, cancellationToken);
                 response.Add(ToMailMessage(message));
             }
-            await client.DisconnectAsync(true);
+            await client.DisconnectAsync(true, cancellationToken);
         }
         return response;
     }
 
     /// <summary>
-    /// Builds the IMAP search for <see cref="GetMail"/>: every message, narrowed by each filter that was given.
+    /// Builds the IMAP search for <see cref="GetMail(string, string, string, TimeSpan?, CancellationToken)"/>: every message, narrowed by each filter that was given.
     /// </summary>
     /// <param name="sender">Text the sender must contain; empty for any sender.</param>
     /// <param name="recipent">Text the recipient must contain; empty for any recipient.</param>

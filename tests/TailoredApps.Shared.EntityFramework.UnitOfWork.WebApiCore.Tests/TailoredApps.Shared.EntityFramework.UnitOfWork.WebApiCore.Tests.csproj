@@ -5,6 +5,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="xunit" />
 		<PackageReference Include="xunit.runner.visualstudio">
@@ -20,6 +21,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore\TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.EntityFramework.UnitOfWork.MinimalApi\TailoredApps.Shared.EntityFramework.UnitOfWork.MinimalApi.csproj" />
 	</ItemGroup>
 
 </Project>

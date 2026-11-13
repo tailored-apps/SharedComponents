@@ -103,6 +103,7 @@ public class MailboxMonitorService
 | Typ | Rodzaj | Opis |
 |-----|--------|------|
 | `Office365EmailProvider` | Klasa | Implementacja `IEmailProvider` przez IMAP + OAuth2 |
+| `Office365EmailProvider.GetMail(folder, sender, recipent, fromLast, cancellationToken)` | Metoda | To samo co `GetMail` z interfejsu, z możliwością przerwania: token obejmuje pobranie tokenu OAuth2 i każdą rundę IMAP. Dostępna na klasie providera (interfejs `IEmailProvider` nie ma tokenu) |
 | `AuthenticationConfig` | Klasa | Konfiguracja Azure AD (tenant, clientId, secret/cert) |
 | `AuthenticationConfig.Instance` | Właściwość | URL instancji AAD (domyślnie Azure Public) |
 | `AuthenticationConfig.ApiUrl` | Właściwość | Wiązane z konfiguracji (domyślnie `https://graph.microsoft.com/`), ale nieużywane przez provider |
@@ -159,6 +160,7 @@ var messages = await _emailProvider.GetMail(
 - folder to podfolder skrzynki odbiorczej — nigdy nie podawaj "Inbox"; zostaw pusty, aby czytać skrzynkę odbiorczą
 - ApiUrl jest wiązane, ale nieużywane; host IMAP (outlook.office365.com:993) nie jest konfigurowalny
 - GetMail jest w pełni asynchroniczne (od 3.0 także otwarcie folderu, wyszukiwanie i pobieranie wiadomości): zawsze używaj await, nigdy .Result ani .Wait(); pobiera całe wiadomości, więc zawężaj zapytanie przez folder, sender i fromLast
+- Gdy wywołujący może zrezygnować (przerwane żądanie HTTP, zamykanie hosta), wstrzyknij Office365EmailProvider i użyj przeciążenia GetMail(folder, sender, recipent, fromLast, cancellationToken)
 - Wymaga uprawnień aplikacyjnych IMAP.AccessAsApp w Azure AD
 - Tokeny OAuth2 są automatycznie cache'owane przez MSAL
 - Sekcja konfiguracji: "Mail:Providers:Office365"

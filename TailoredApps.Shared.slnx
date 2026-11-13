@@ -32,8 +32,10 @@
     <Project Path="src/TailoredApps.Shared.Email.Office365/TailoredApps.Shared.Email.Office365.csproj" />
     <Project Path="src/TailoredApps.Shared.Email/TailoredApps.Shared.Email.csproj" />
     <Project Path="src/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore/TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore.csproj" />
+    <Project Path="src/TailoredApps.Shared.EntityFramework.UnitOfWork.MinimalApi/TailoredApps.Shared.EntityFramework.UnitOfWork.MinimalApi.csproj" />
     <Project Path="src/TailoredApps.Shared.EntityFramework/TailoredApps.Shared.EntityFramework.csproj" />
     <Project Path="src/TailoredApps.Shared.ExceptionHandling/TailoredApps.Shared.ExceptionHandling.csproj" />
+    <Project Path="src/TailoredApps.Shared.ExceptionHandling.MinimalApi/TailoredApps.Shared.ExceptionHandling.MinimalApi.csproj" />
     <Project Path="src/TailoredApps.Shared.MediatR.Caching/TailoredApps.Shared.MediatR.Caching.csproj" />
     <Project Path="src/TailoredApps.Shared.MediatR.Email/TailoredApps.Shared.MediatR.Email.csproj" />
     <Project Path="src/TailoredApps.Shared.MediatR.ML/TailoredApps.Shared.MediatR.ML.csproj" />

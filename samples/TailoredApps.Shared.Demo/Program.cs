@@ -80,6 +80,7 @@ pipeline.RegisterPipelineBehaviors(typeof(Program).Assembly);   // cache policie
 
 builder.Services.AddTransient<IValidator<GetProducts>, GetProductsValidator>();
 builder.Services.AddTransient<IValidator<GetProduct>, GetProductValidator>();
+builder.Services.AddTransient<IValidator<NewProduct>, NewProductValidator>();   // used by the minimal-API validation filter
 builder.Services.AddSingleton<HandlerCallCounter>();
 builder.Services.AddSingleton<RecommendationSource>();
 
@@ -143,6 +144,7 @@ var app = builder.Build();
 app.ConfigureExceptionHandler();     // ExceptionHandling middleware
 app.MapTailoredWebApiDefaults();     // /health and /alive
 app.MapControllers();
+app.MapProductEndpoints();          // minimal APIs: the same libraries through endpoint filters
 
 using (var scope = app.Services.CreateScope())
 {
