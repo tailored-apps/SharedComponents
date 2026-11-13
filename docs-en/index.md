@@ -42,8 +42,8 @@ Welcome to the documentation of **TailoredApps Shared Components** — a set of 
 
 ## Demo application
 
-All the libraries together, in a running application: [Demo application and integration tests](Demo/index.md) - a Web API shop
-(`samples/TailoredApps.Shared.Demo`) with faked payment gateways that runs with no account and no network, and tests that drive it over
+All the libraries together, in a running application: [Sample service and integration tests](Demo/index.md) - a Web API shop
+(`samples/`: contract, logic and host, with ForkForward.Mediator and ForkForward.Mapper) with faked payment gateways that runs with no account and no network, and tests that drive it over
 HTTP in CI.
 
 ---

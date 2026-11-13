@@ -21,7 +21,7 @@ runtime has to be installed as well for the `net10.0` test runs.
 - Run specific test project: `dotnet test tests/TailoredApps.Shared.DateTime.Tests/TailoredApps.Shared.DateTime.Tests.csproj`
 - Run single test: `dotnet test --filter "FullyQualifiedName=TailoredApps.Shared.DateTime.Tests.DateTimeProviderTests.As_Library_User_When_Get_Now_I_Get_Mine_System_Date_In_Current_Timezone_And_Local_Kind"`
 - Run on one framework only: add `-f net10.0` (or `-f net11.0`); without it every test runs twice.
-- Run the demo application: `dotnet run --project samples/TailoredApps.Shared.Demo -f net10.0` (`http://localhost:5080`, no network needed).
+- Run the sample service: `dotnet run --project samples/TailoredApps.Shared.Demo.WebApi -f net10.0` (`http://localhost:5080`, no network needed).
 - With coverage, as CI does: `dotnet test TailoredApps.Shared.slnx -p:CollectCoverage=true -p:CoverletOutputFormat=opencover`.
   Write MSBuild properties as `-p:Name=value`: Git Bash on Windows rewrites `/p:` into a path and the command fails with `MSB1008`.
 
@@ -48,8 +48,14 @@ The repository is 26 NuGet packages (`TailoredApps.Shared.*`) under `src/`, with
 Every library is consumed through dependency-injection extension methods. All packages are released together under a single version
 taken from the git tag.
 
-The one application is `samples/TailoredApps.Shared.Demo` (namespace `TailoredApps.Demo`, never packed): a shop Web API that uses all 26
-libraries, with the payment gateways faked by an HTTP handler (`Payments/FakeGateway.cs`), the console e-mail provider and SQLite in memory.
+The one application is the sample service in `samples/` (namespace `TailoredApps.Demo.*`, never packed): a shop Web API that uses all 26
+libraries, laid out like our real services - `TailoredApps.Shared.Demo.DataModel` (messages, responses, models per feature),
+`.Demo.Services` (entities, `ShopDataContext`, repositories on the unit of work, handlers with one interface each, validators, policies,
+mediator processors, mapper profiles; no ASP.NET Core) and `.Demo.WebApi` (`Program` + `Startup`, thin controllers sending messages with
+`ISender`, minimal-API endpoints, JWT roles, the exception provider mapping `ShopException`). It also shows ForkForward.Mapper (samples
+only: no library depends on a mapper) and every mediator feature; pre/post-processors and stream behaviors are registered by name because
+scanning does not find them. The payment gateways are faked by an HTTP handler (`Payments/FakeGateway.cs`, also compiled into the AOT
+smoke app), e-mail goes to the console and the database is SQLite in memory.
 `tests/TailoredApps.Shared.IntegrationTests` starts it with `WebApplicationFactory` (frozen `TimeProvider`, recorded e-mail) and runs in CI
 with the other tests. A new library is added to the demo with a test of its scenario.
 
