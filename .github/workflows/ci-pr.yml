@@ -44,3 +44,64 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # The libraries that declare IsAotCompatible, used by two applications that are compiled to native code and
+  # run: a console one (payments, options, signatures) and a minimal-API one (WebApi defaults, exception
+  # handling, e-mail, [Authorize] with a JWT). The analyzers in the build above only see one library at a
+  # time; the AOT compiler sees the whole dependency closure (every trim and AOT warning is an error in those
+  # projects), and running the result shows what trimming removed. net10.0 has compiler-generated async state
+  # machines, net11.0 runtime async - both have to work natively, on Linux and on Windows.
+  native-aot:
+    name: NativeAOT smoke test (${{ matrix.framework }}, ${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [ net10.0, net11.0 ]
+        os: [ ubuntu-24.04, windows-2025 ]
+        include:
+          - os: ubuntu-24.04
+            rid: linux-x64
+            exe: ''
+          - os: windows-2025
+            rid: win-x64
+            exe: '.exe'
+    env:
+      FRAMEWORK: ${{ matrix.framework }}
+      RID: ${{ matrix.rid }}
+      EXE: ${{ matrix.exe }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setting up .NET SDK 11.0.x
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 11.0.x
+
+      # Windows runners ship the C++ build tools NativeAOT links with; Linux needs clang and zlib.
+      - name: Installing the native toolchain (clang, zlib)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends clang zlib1g-dev
+
+      # The .NET 10 AOT compiler locates the linker with a script that calls vswhere.exe by its bare name.
+      # Depending on the Visual Studio version it is not on the PATH, and publishing net10.0 then fails.
+      - name: Putting vswhere on the PATH
+        if: runner.os == 'Windows'
+        run: echo 'C:\Program Files (x86)\Microsoft Visual Studio\Installer' >> "$GITHUB_PATH"
+
+      - name: Publishing the console application with NativeAOT
+        run: dotnet publish tests/TailoredApps.Shared.AotSmoke -c Release -f "$FRAMEWORK" -r "$RID"
+
+      - name: Running the native console application
+        run: ./artifacts/publish/TailoredApps.Shared.AotSmoke/release_${FRAMEWORK}_${RID}/TailoredApps.Shared.AotSmoke${EXE}
+
+      - name: Publishing the Web API application with NativeAOT
+        run: dotnet publish tests/TailoredApps.Shared.AotSmoke.Web -c Release -f "$FRAMEWORK" -r "$RID"
+
+      - name: Running the native Web API application
+        run: ./artifacts/publish/TailoredApps.Shared.AotSmoke.Web/release_${FRAMEWORK}_${RID}/TailoredApps.Shared.AotSmoke.Web${EXE}

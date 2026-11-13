@@ -38,7 +38,7 @@ public class Przelewy24ServiceOptions
 
 // ─── Internal models ─────────────────────────────────────────────────────────
 
-file class P24RegisterRequest
+internal sealed class P24RegisterRequest
 {
     [JsonPropertyName("merchantId")] public int MerchantId { get; set; }
     [JsonPropertyName("posId")] public int PosId { get; set; }
@@ -54,17 +54,17 @@ file class P24RegisterRequest
     [JsonPropertyName("encoding")] public string Encoding { get; set; } = "UTF-8";
 }
 
-file class P24RegisterResponse
+internal sealed class P24RegisterResponse
 {
     [JsonPropertyName("data")] public P24RegisterData? Data { get; set; }
 }
 
-file class P24RegisterData
+internal sealed class P24RegisterData
 {
     [JsonPropertyName("token")] public string? Token { get; set; }
 }
 
-file class P24VerifyRequest
+internal sealed class P24VerifyRequest
 {
     [JsonPropertyName("merchantId")] public int MerchantId { get; set; }
     [JsonPropertyName("posId")] public int PosId { get; set; }
@@ -74,6 +74,35 @@ file class P24VerifyRequest
     [JsonPropertyName("orderId")] public int OrderId { get; set; }
     [JsonPropertyName("sign")] public string Sign { get; set; } = string.Empty;
 }
+
+// The payloads Przelewy24 signs. The signature is a hash of this JSON, so the order of the members is the
+// order Przelewy24 documents and must not change.
+
+internal sealed record P24RegisterSign(
+    [property: JsonPropertyName("sessionId")] string SessionId,
+    [property: JsonPropertyName("merchantId")] int MerchantId,
+    [property: JsonPropertyName("amount")] long Amount,
+    [property: JsonPropertyName("currency")] string Currency,
+    [property: JsonPropertyName("crc")] string Crc);
+
+internal sealed record P24VerifySign(
+    [property: JsonPropertyName("sessionId")] string SessionId,
+    [property: JsonPropertyName("orderId")] int OrderId,
+    [property: JsonPropertyName("amount")] long Amount,
+    [property: JsonPropertyName("currency")] string Currency,
+    [property: JsonPropertyName("crc")] string Crc);
+
+internal sealed record P24NotificationSign(
+    [property: JsonPropertyName("merchantId")] long MerchantId,
+    [property: JsonPropertyName("posId")] long PosId,
+    [property: JsonPropertyName("sessionId")] string SessionId,
+    [property: JsonPropertyName("amount")] long Amount,
+    [property: JsonPropertyName("originAmount")] long OriginAmount,
+    [property: JsonPropertyName("currency")] string Currency,
+    [property: JsonPropertyName("orderId")] long OrderId,
+    [property: JsonPropertyName("methodId")] long MethodId,
+    [property: JsonPropertyName("statement")] string Statement,
+    [property: JsonPropertyName("crc")] string Crc);
 
 // ─── Interface ────────────────────────────────────────────────────────────────
 
@@ -105,7 +134,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
 
     // Przelewy24 computes its signatures over JSON with unescaped unicode and slashes
     // (PHP JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); mirror that here.
-    private static readonly JsonSerializerOptions SignJson = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+    private static readonly Przelewy24JsonContext SignJson = new(new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
     /// <summary>Inicjalizuje instancję callera.</summary>
     public Przelewy24ServiceCaller(IOptions<Przelewy24ServiceOptions> options, IHttpClientFactory httpClientFactory)
@@ -145,12 +174,12 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
             Sign = sign,
         };
 
-        var content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body, Przelewy24JsonContext.Default.P24RegisterRequest), System.Text.Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/api/v1/transaction/register", content, cancellationToken);
         // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
         await PaymentGatewayException.ThrowIfUnavailableAsync("Przelewy24", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JsonSerializer.Deserialize<P24RegisterResponse>(json);
+        var result = JsonSerializer.Deserialize(json, Przelewy24JsonContext.Default.P24RegisterResponse);
         return (result?.Data?.Token, response.IsSuccessStatusCode ? null : json);
     }
 
@@ -170,7 +199,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
             OrderId = orderId,
             Sign = sign,
         };
-        var content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body, Przelewy24JsonContext.Default.P24VerifyRequest), System.Text.Encoding.UTF8, "application/json");
         var response = await client.PutAsync($"{options.ServiceUrl}/api/v1/transaction/verify", content, cancellationToken);
 
         // A 4xx answer is Przelewy24 refusing the verification; 5xx, 408 and 429 leave the transaction unverified.
@@ -182,7 +211,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
     public string ComputeSign(string sessionId, int merchantId, long amount, string currency)
     {
         // Register sign: {"sessionId","merchantId","amount","currency","crc"} (P24 field order).
-        var json = JsonSerializer.Serialize(new { sessionId, merchantId, amount, currency, crc = options.CrcKey }, SignJson);
+        var json = JsonSerializer.Serialize(new P24RegisterSign(sessionId, merchantId, amount, currency, options.CrcKey), SignJson.P24RegisterSign);
         return Sha384Hex(json);
     }
 
@@ -192,7 +221,7 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
     /// </summary>
     private string ComputeVerifySign(string sessionId, int orderId, long amount, string currency)
     {
-        var json = JsonSerializer.Serialize(new { sessionId, orderId, amount, currency, crc = options.CrcKey }, SignJson);
+        var json = JsonSerializer.Serialize(new P24VerifySign(sessionId, orderId, amount, currency, options.CrcKey), SignJson.P24VerifySign);
         return Sha384Hex(json);
     }
 
@@ -221,19 +250,17 @@ public class Przelewy24ServiceCaller : IPrzelewy24ServiceCaller
             if (!root.TryGetProperty("sign", out var signEl)) return false;
             var receivedSign = signEl.GetString() ?? string.Empty;
 
-            var json = JsonSerializer.Serialize(new
-            {
-                merchantId = GetInt64(root, "merchantId"),
-                posId = GetInt64(root, "posId"),
-                sessionId = GetString(root, "sessionId"),
-                amount = GetInt64(root, "amount"),
-                originAmount = GetInt64(root, "originAmount"),
-                currency = GetString(root, "currency"),
-                orderId = GetInt64(root, "orderId"),
-                methodId = GetInt64(root, "methodId"),
-                statement = GetString(root, "statement"),
-                crc = options.CrcKey,
-            }, SignJson);
+            var json = JsonSerializer.Serialize(new P24NotificationSign(
+                GetInt64(root, "merchantId"),
+                GetInt64(root, "posId"),
+                GetString(root, "sessionId"),
+                GetInt64(root, "amount"),
+                GetInt64(root, "originAmount"),
+                GetString(root, "currency"),
+                GetInt64(root, "orderId"),
+                GetInt64(root, "methodId"),
+                GetString(root, "statement"),
+                options.CrcKey), SignJson.P24NotificationSign);
             var expected = Sha384Hex(json);
             return WebhookSignature.FixedTimeEqualsIgnoreCase(expected, receivedSign);
         }
@@ -431,3 +458,15 @@ public class Przelewy24ConfigureOptions : IConfigureOptions<Przelewy24ServiceOpt
         options.NotifyUrl = s.NotifyUrl;
     }
 }
+
+/// <summary>
+/// JSON metadata for the requests and answers of the Przelewy24 API, generated at compile time: serialization
+/// uses no reflection, so it survives trimming and works under NativeAOT.
+/// </summary>
+[JsonSerializable(typeof(P24RegisterRequest))]
+[JsonSerializable(typeof(P24RegisterResponse))]
+[JsonSerializable(typeof(P24VerifyRequest))]
+[JsonSerializable(typeof(P24RegisterSign))]
+[JsonSerializable(typeof(P24VerifySign))]
+[JsonSerializable(typeof(P24NotificationSign))]
+internal sealed partial class Przelewy24JsonContext : JsonSerializerContext;

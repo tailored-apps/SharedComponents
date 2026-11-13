@@ -53,6 +53,8 @@
     <Project Path="src/TailoredApps.Shared.WebApi/TailoredApps.Shared.WebApi.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/TailoredApps.Shared.AotSmoke/TailoredApps.Shared.AotSmoke.csproj" />
+    <Project Path="tests/TailoredApps.Shared.AotSmoke.Web/TailoredApps.Shared.AotSmoke.Web.csproj" />
     <Project Path="tests/TailoredApps.Shared.DateTime.Tests/TailoredApps.Shared.DateTime.Tests.csproj" />
     <Project Path="tests/TailoredApps.Shared.Email.Tests/TailoredApps.Shared.Email.Tests.csproj" />
     <Project Path="tests/TailoredApps.Shared.EntityFramework.Tests/TailoredApps.Shared.EntityFramework.Tests.csproj" />

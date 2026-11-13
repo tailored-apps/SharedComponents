@@ -34,7 +34,7 @@ public class RevolutServiceOptions
     public int WebhookToleranceSeconds { get; set; } = 300;
 }
 
-file class RevolutOrderRequest
+internal sealed class RevolutOrderRequest
 {
     [JsonPropertyName("amount")] public long Amount { get; set; }
     [JsonPropertyName("currency")] public string Currency { get; set; } = string.Empty;
@@ -43,7 +43,7 @@ file class RevolutOrderRequest
     [JsonPropertyName("email")] public string? Email { get; set; }
 }
 
-file class RevolutOrderResponse
+internal sealed class RevolutOrderResponse
 {
     [JsonPropertyName("id")] public string? Id { get; set; }
     [JsonPropertyName("checkout_url")] public string? CheckoutUrl { get; set; }
@@ -105,12 +105,12 @@ public class RevolutServiceCaller : IRevolutServiceCaller
             ExternalRef = request.AdditionalData ?? Guid.NewGuid().ToString("N"),
             Email = request.Email,
         };
-        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body, RevolutJsonContext.Default.RevolutOrderRequest), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ApiUrl}/1.0/orders", content, cancellationToken);
         // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
         await PaymentGatewayException.ThrowIfUnavailableAsync("Revolut", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
+        var result = JsonSerializer.Deserialize(json, RevolutJsonContext.Default.RevolutOrderResponse);
         return (result?.Id, result?.CheckoutUrl);
     }
 
@@ -123,7 +123,7 @@ public class RevolutServiceCaller : IRevolutServiceCaller
         // A failed status query says nothing about the payment: never report it as a known state.
         await PaymentGatewayException.ThrowIfNotSuccessAsync("Revolut", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JsonSerializer.Deserialize<RevolutOrderResponse>(json);
+        var result = JsonSerializer.Deserialize(json, RevolutJsonContext.Default.RevolutOrderResponse);
         return (result?.State, result?.Id);
     }
 
@@ -350,3 +350,11 @@ public class RevolutConfigureOptions : IConfigureOptions<RevolutServiceOptions>
         options.WebhookToleranceSeconds = s.WebhookToleranceSeconds;
     }
 }
+
+/// <summary>
+/// JSON metadata for the requests and answers of the Revolut API, generated at compile time: serialization
+/// uses no reflection, so it survives trimming and works under NativeAOT.
+/// </summary>
+[JsonSerializable(typeof(RevolutOrderRequest))]
+[JsonSerializable(typeof(RevolutOrderResponse))]
+internal sealed partial class RevolutJsonContext : JsonSerializerContext;

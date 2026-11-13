@@ -15,6 +15,15 @@
 	</PropertyGroup>
 
 	<!--
+		Trimming and NativeAOT. Options are bound from configuration by generated code instead of reflection
+		(ConfigurationBinder.Get<T>() and Bind() are intercepted at compile time), so the binding survives
+		trimming and needs no dynamic code. It only affects projects that call the binder.
+	-->
+	<PropertyGroup>
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+	</PropertyGroup>
+
+	<!--
 		Packaging. Every library is a NuGet package built together with the project, with XML docs.
 		The metadata below is the same for all of them; a project file only adds what is its own
 		(PackageId, Title, Description, PackageTags).

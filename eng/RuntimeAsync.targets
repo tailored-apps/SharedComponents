@@ -1,0 +1,31 @@
+<Project>
+
+  <!--
+    Runtime async (.NET 11+)
+
+    Compiles the async methods of the importing project as runtime-async for the target frameworks that
+    support it (net11.0 and newer). The runtime then suspends and resumes the method itself instead of the
+    C# compiler generating a state machine type per async method: lower overhead and smaller IL. Nothing
+    changes in the source code or in the public API.
+
+    Imported by src/Directory.Build.targets (every library) and samples/Directory.Build.targets (the demo
+    application). The test projects are compiled the classic way on purpose: they then prove that code with
+    compiler-generated state machines and runtime-async code call each other in both directions.
+
+    Why a .targets file: the switch is decided per target framework, and $(TargetFramework) is only
+    reliably known once the project body has been evaluated.
+
+    Why it is conditioned: with the .NET 11 SDK the flag fails the net10.0 build (SYSLIB5007 / CA2252 - the
+    runtime helpers are still experimental there) and is silently ignored on older frameworks. Only the
+    net11.0+ assets get it; the net8.0 / net9.0 / net10.0 assets keep compiler-generated state machines.
+
+    Opt out: runtime async needs CoreCLR or NativeAOT. Mono-based runtimes (e.g. Blazor WebAssembly) cannot
+    execute it on .NET 11. Set <UseRuntimeAsync>false</UseRuntimeAsync> in a project file to keep that
+    project on state machines for every target framework, or pass -p:UseRuntimeAsync=false to switch it off
+    for a whole build.
+  -->
+  <PropertyGroup Condition="'$(UseRuntimeAsync)' != 'false' and '$(TargetFramework)' != '' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0'))">
+    <Features>$(Features);runtime-async=on</Features>
+  </PropertyGroup>
+
+</Project>

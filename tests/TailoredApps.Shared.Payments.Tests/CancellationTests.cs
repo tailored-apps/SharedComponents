@@ -116,4 +116,34 @@ public class CancellationTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => client.MakeFormRequest<object>("http://192.0.2.1/payment", "GET", null, Cancelled()));
     }
+
+    [Fact]
+    public async Task When_The_Response_Type_Is_Not_A_CashBill_Model_Should_Refuse_Before_Sending()
+    {
+        // CashBill answers are read with JSON metadata generated at compile time (no reflection, safe for
+        // trimming and NativeAOT), which exists for the CashBill models only. The address is never contacted.
+        var client = new CashbillHttpClient(NullLogger<CashbillHttpClient>.Instance);
+
+        var exception = await Assert.ThrowsAsync<NotSupportedException>(
+            () => client.MakeFormRequest<NotACashBillModel>("http://192.0.2.1/payment", "GET", null, CancellationToken.None));
+
+        Assert.Contains(nameof(NotACashBillModel), exception.Message);
+    }
+
+    private sealed class NotACashBillModel
+    {
+        public string? Id { get; set; }
+    }
+
+    [Fact]
+    public async Task When_The_Token_Is_Cancelled_Should_Not_List_Providers()
+    {
+        var services = new ServiceCollection();
+        services.AddPayments();
+        using var provider = services.BuildServiceProvider();
+        var payments = provider.GetRequiredService<IPaymentService>();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => payments.GetProviders(Cancelled()));
+        Assert.Empty(await payments.GetProviders(CancellationToken.None));
+    }
 }

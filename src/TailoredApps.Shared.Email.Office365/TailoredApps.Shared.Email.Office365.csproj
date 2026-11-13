@@ -10,6 +10,14 @@
 		<Title>Shared.Email</Title>
 		<PackageId>TailoredApps.Shared.Email.Office365</PackageId>
 		<PackageTags>Mediator support for .NET</PackageTags>
+
+		<!--
+			AuthenticationConfig.Certificate is a Microsoft.Identity.Web CertificateDescription. The generated
+			configuration binder cannot bind it (SYSLIB1100/SYSLIB1101) and would leave it unset, which silently
+			turns certificate sign-in off. This library keeps the reflection binder; it is not a trimming or
+			NativeAOT target (Microsoft.Identity.Web, MailKit).
+		-->
+		<EnableConfigurationBindingGenerator>false</EnableConfigurationBindingGenerator>
 	</PropertyGroup>
 
 	<ItemGroup>

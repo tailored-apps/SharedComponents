@@ -506,6 +506,29 @@ public class Przelewy24ServiceCallerTests
     }
 
     [Fact]
+    public void ComputeSign_With_National_Characters_And_Slashes_Should_Hash_The_Unescaped_Json()
+    {
+        // Przelewy24 signs JSON written the PHP way (JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).
+        // The expected text is spelled out by hand, so it does not depend on any serializer setting.
+        const string expectedJson = "{\"sessionId\":\"zamówienie/42+ą\",\"merchantId\":12345,\"amount\":999,\"currency\":\"PLN\",\"crc\":\"klucz/żółć\"}";
+        var expected = Convert.ToHexString(SHA384.HashData(Encoding.UTF8.GetBytes(expectedJson))).ToLowerInvariant();
+
+        var sign = Build("klucz/żółć", 12345).ComputeSign("zamówienie/42+ą", 12345, 999, "PLN");
+
+        Assert.Equal(expected, sign);
+    }
+
+    [Fact]
+    public void VerifyNotification_With_National_Characters_In_The_Statement_Should_Accept_The_Unescaped_Sign()
+    {
+        const string signedJson = "{\"merchantId\":12345,\"posId\":12345,\"sessionId\":\"sesja/1\",\"amount\":1000,\"originAmount\":1000,\"currency\":\"PLN\",\"orderId\":99,\"methodId\":154,\"statement\":\"Zamówienie nr 99/A\",\"crc\":\"p24crc\"}";
+        var sign = Convert.ToHexString(SHA384.HashData(Encoding.UTF8.GetBytes(signedJson))).ToLowerInvariant();
+        var body = "{\"merchantId\":12345,\"posId\":12345,\"sessionId\":\"sesja/1\",\"amount\":1000,\"originAmount\":1000,\"currency\":\"PLN\",\"orderId\":99,\"methodId\":154,\"statement\":\"Zamówienie nr 99/A\",\"sign\":\"" + sign + "\"}";
+
+        Assert.True(Build("p24crc", 12345).VerifyNotification(body));
+    }
+
+    [Fact]
     public void VerifyNotification_WrongSign_ReturnsFalse()
     {
         var caller = Build("crc");

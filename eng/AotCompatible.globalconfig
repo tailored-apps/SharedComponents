@@ -1,0 +1,8 @@
+# Applied to the libraries that set IsAotCompatible (see src/Directory.Build.targets).
+# A library that declares itself safe for trimming and NativeAOT must stay that way: every diagnostic of the
+# trimming, AOT and single-file analyzers is an error there, not a warning that scrolls by.
+is_global = true
+
+dotnet_analyzer_diagnostic.category-Trimming.severity = error
+dotnet_analyzer_diagnostic.category-AOT.severity = error
+dotnet_analyzer_diagnostic.category-SingleFile.severity = error

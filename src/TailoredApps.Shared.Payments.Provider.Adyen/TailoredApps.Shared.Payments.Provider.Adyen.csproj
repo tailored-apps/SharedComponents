@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Safe for trimming and NativeAOT: the analyzers are on and their warnings are errors; tests/TailoredApps.Shared.AotSmoke proves it natively. -->
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>

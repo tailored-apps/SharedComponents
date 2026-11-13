@@ -29,7 +29,7 @@ public class PayNowServiceOptions
     public string ContinueUrl { get; set; } = string.Empty;
 }
 
-file class PayNowPaymentRequest
+internal sealed class PayNowPaymentRequest
 {
     [JsonPropertyName("amount")] public long Amount { get; set; }
     [JsonPropertyName("currency")] public string Currency { get; set; } = "PLN";
@@ -41,19 +41,19 @@ file class PayNowPaymentRequest
     [JsonPropertyName("returnUrl")] public string? ReturnUrl { get; set; }
 }
 
-file class PayNowBuyer
+internal sealed class PayNowBuyer
 {
     [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
 }
 
-file class PayNowPaymentResponse
+internal sealed class PayNowPaymentResponse
 {
     [JsonPropertyName("paymentId")] public string? PaymentId { get; set; }
     [JsonPropertyName("status")] public string? Status { get; set; }
     [JsonPropertyName("redirectUrl")] public string? RedirectUrl { get; set; }
 }
 
-file class PayNowStatusResponse
+internal sealed class PayNowStatusResponse
 {
     [JsonPropertyName("status")] public string? Status { get; set; }
 }
@@ -110,12 +110,12 @@ public class PayNowServiceCaller : IPayNowServiceCaller
             ReturnUrl = options.ReturnUrl,
         };
 
-        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body, PayNowJsonContext.Default.PayNowPaymentRequest), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/v2/payments", content, cancellationToken);
         // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
         await PaymentGatewayException.ThrowIfUnavailableAsync("PayNow", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JsonSerializer.Deserialize<PayNowPaymentResponse>(json);
+        var result = JsonSerializer.Deserialize(json, PayNowJsonContext.Default.PayNowPaymentResponse);
         return (result?.PaymentId, result?.RedirectUrl);
     }
 
@@ -128,7 +128,7 @@ public class PayNowServiceCaller : IPayNowServiceCaller
         // A failed status query says nothing about the payment: never report it as rejected.
         await PaymentGatewayException.ThrowIfNotSuccessAsync("PayNow", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var status = JsonSerializer.Deserialize<PayNowStatusResponse>(json)?.Status;
+        var status = JsonSerializer.Deserialize(json, PayNowJsonContext.Default.PayNowStatusResponse)?.Status;
         return status switch
         {
             "CONFIRMED" => PaymentStatusEnum.Finished,
@@ -331,3 +331,12 @@ public class PayNowConfigureOptions : IConfigureOptions<PayNowServiceOptions>
         options.ContinueUrl = s.ContinueUrl;
     }
 }
+
+/// <summary>
+/// JSON metadata for the requests and answers of the PayNow API, generated at compile time: serialization
+/// uses no reflection, so it survives trimming and works under NativeAOT.
+/// </summary>
+[JsonSerializable(typeof(PayNowPaymentRequest))]
+[JsonSerializable(typeof(PayNowPaymentResponse))]
+[JsonSerializable(typeof(PayNowStatusResponse))]
+internal sealed partial class PayNowJsonContext : JsonSerializerContext;

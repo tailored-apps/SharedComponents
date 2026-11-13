@@ -1,4 +1,4 @@
-# Target frameworks and runtime async
+# Target frameworks, runtime async and NativeAOT
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tailored-apps/SharedComponents/blob/master/LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-SharedComponents-181717?logo=github)](https://github.com/tailored-apps/SharedComponents)
@@ -52,7 +52,7 @@ The libraries in this repository use it in their `net11.0` assets:
 
 ### How it is enabled in the repository
 
-One place: `src/Directory.Build.targets`. The file appends `runtime-async=on` to the compiler's `Features` property only for target frameworks compatible with `net11.0`:
+One place: `eng/RuntimeAsync.targets`, imported by `src/Directory.Build.targets` (every library) and `samples/Directory.Build.targets` (the [demo application](../Demo/index.md)). The file appends `runtime-async=on` to the compiler's `Features` property only for target frameworks compatible with `net11.0`:
 
 ```xml
 <PropertyGroup Condition="'$(UseRuntimeAsync)' != 'false' and '$(TargetFramework)' != '' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0'))">
@@ -62,14 +62,88 @@ One place: `src/Directory.Build.targets`. The file appends `runtime-async=on` to
 
 The condition is required: setting the flag for `net10.0` fails the build with `SYSLIB5007` / `CA2252`, and on older frameworks the flag is silently ignored.
 
+The test projects are compiled the classic way on purpose, so on `net11.0` every test crosses from state-machine code into runtime-async
+code and back. The `RuntimeAsyncTests` test checks with reflection that the `net11.0` assets of the libraries and the demo hold no state
+machines and the `net10.0` assets no runtime-async methods - if the flag stopped reaching the compiler, nothing else would notice. Runtime
+async under NativeAOT is checked by the smoke application described in [Trimming and NativeAOT](#trimming-and-nativeaot).
+
 ### Switching it off
 
 | Scope | How |
 |---|---|
 | Whole build | `dotnet build TailoredApps.Shared.slnx -p:UseRuntimeAsync=false` |
-| One library | `<UseRuntimeAsync>false</UseRuntimeAsync>` in its `.csproj` file |
+| One library or application | `<UseRuntimeAsync>false</UseRuntimeAsync>` in its `.csproj` file |
 
 With the switch off, the `net11.0` asset is compiled like the others — with state machines.
+
+---
+
+## Trimming and NativeAOT
+
+From version **3.0** some of the libraries declare that they are safe for trimming and NativeAOT (`IsAotCompatible`). An application
+published with `<PublishAot>true</PublishAot>` or `<PublishTrimmed>true</PublishTrimmed>` gets no `IL2xxx` / `IL3xxx` warnings from them,
+and their code works once compiled to native code.
+
+| Libraries | State |
+|---|---|
+| `DateTime`, `Querying`, `Email.Models`, `Payments`, `Payments.Provider.Adyen`, `.CashBill`, `.HotPay`, `.PayNow`, `.PayU`, `.Przelewy24`, `.Revolut`, `.Tpay` | **Compatible.** Checked natively in CI on `net10.0` and `net11.0`, on Linux and Windows |
+| `Email`, `ExceptionHandling`, `WebApi` | **Compatible** in a minimal-API application (see below). The MVC filter of `ExceptionHandling` does not apply: ASP.NET Core does not support controllers under NativeAOT |
+| `MediatR.Caching` | The library's own code raises no warnings, but it is only useful together with `MediatR` |
+| `MediatR`, `MediatR.Email`, `MediatR.PagedRequest` | Not compatible: the mediator creates generic handler types at run time, registration scans assemblies, and the default cache key serializes the request with reflection |
+| `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore` | Not compatible: EF Core builds its model and queries at run time; change auditing creates types with `MakeGenericType` |
+| `Email.Office365`, `MediatR.ML`, `Payments.Provider.Stripe` | Not compatible: their dependencies (Microsoft.Identity.Web, ML.NET, Stripe.net) rely on reflection |
+
+### Web API: minimal APIs yes, controllers no
+
+NativeAOT in ASP.NET Core covers minimal APIs, not MVC. Checked on .NET 11 in this repository:
+
+| Scenario | Result after `PublishAot` |
+|---|---|
+| Minimal API + `WebApi` + `ExceptionHandling` (middleware) + `Email` + `[Authorize]` with a JWT (401 / 403 / 200) | No warnings, works natively - this is what `tests/TailoredApps.Shared.AotSmoke.Web` does |
+| Controllers (`AddControllers`, `[ApiController]`, `[Authorize]`) | About 160 warnings from MVC alone; the application starts, but **every controller route answers 404** - the controllers are not discovered |
+| Controllers + EF Core + the transaction filter | Several hundred warnings from EF Core; the application dies at startup |
+
+Authorization is not the obstacle: `[Authorize]`, policies and JWT work natively on minimal-API endpoints. Controllers and EF Core are.
+An application with controllers therefore keeps using the libraries as before (JIT, ReadyToRun if wanted), and NativeAOT requires its
+endpoints rewritten as minimal APIs and data access without EF Core.
+
+### Blazor
+
+- **Blazor Server / a Blazor Web App rendered on the server** runs on the regular CoreCLR: the libraries work without restrictions and
+  NativeAOT does not apply.
+- **Blazor WebAssembly** runs on the Mono runtime, which in .NET 11 **does not execute runtime-async methods**. Checked: calling an async
+  method of a library from its `net11.0` asset fails with `PlatformNotSupportedException: Runtime Async is not supported on this platform`.
+  Code without `async` (`DateTime`, `Querying`, `Email.Models`, for example) works. Until packages with a separate asset for the browser are
+  published, a WebAssembly application on `net11.0` cannot use the async methods of these libraries; one on `net10.0` gets the asset with
+  state machines and works.
+- What matters in the browser is **trimming** (always on when publishing), not NativeAOT - the libraries in the "Compatible" rows raise no
+  trimmer warnings.
+
+### What was done
+
+- **Options from configuration** are bound by code generated at compile time (the configuration binding generator), not by reflection. The
+  exception is `Email.Office365`, where the generator cannot bind the certificate description.
+- **The JSON of the payment gateways** is serialized through metadata generated at compile time (`JsonSerializerContext`); request bodies and
+  signatures are identical byte for byte. The same goes for the error response of `ExceptionHandling`.
+- **Container registrations** with a generic parameter (`RegisterPaymentProvider<T>()`, `AddPayments<,>()`, `AddExceptionHandlingForWebApi<,>()`)
+  carry annotations that make the trimmer keep the constructors dependency injection calls.
+
+### How it is kept that way
+
+- In a library with `<IsAotCompatible>true</IsAotCompatible>` every warning of the trimming, AOT and single-file analyzers is a **compile
+  error** (`eng/AotCompatible.globalconfig`, wired up in `src/Directory.Build.targets`).
+- `tests/TailoredApps.Shared.AotSmoke` is a console application that uses these libraries the way an application does: container, options
+  from configuration, a payment at every HTTP gateway (through the same gateway fake as the [demo application](../Demo/index.md)),
+  notifications, signatures. `tests/TailoredApps.Shared.AotSmoke.Web` is a minimal-API Web API: it starts on a free port and calls its own
+  endpoints - health, error responses, an e-mail template and SMTP, `[Authorize]` with a JWT, an HTTP client with resilience. The
+  *NativeAOT smoke test* job of the PR checks publishes both with NativeAOT for `net10.0` and `net11.0`, on Linux and Windows, and runs
+  them; in those projects every trim/AOT warning - from dependencies too - is an error. The analyzers see the code of one library, the
+  AOT compiler the whole dependency closure.
+
+```bash
+dotnet publish tests/TailoredApps.Shared.AotSmoke -c Release -f net11.0 -r linux-x64   # needs clang and zlib; on Windows: -r win-x64 and the C++ build tools
+./artifacts/publish/TailoredApps.Shared.AotSmoke/release_net11.0_linux-x64/TailoredApps.Shared.AotSmoke
+```
 
 ---
 
@@ -100,7 +174,8 @@ dotnet test TailoredApps.Shared.slnx
 
 - Do not set `TargetFrameworks`, author, licence or language version in the `.csproj` — they are inherited from `Directory.Build.props` and `src/Directory.Build.props`. A project file holds only what is its own: `PackageId`, `Title`, `Description`, `PackageTags`, references.
 - Add packages as `<PackageReference Include="Name" />` without a version; put the version in `Directory.Packages.props`. A runtime-aligned package goes into both conditional groups (`10.*` for `net10.0`, `11.*` for `net11.0`).
-- Do not set `Features` in the `.csproj` — runtime async is inherited from `src/Directory.Build.targets`.
+- Do not set `Features` in the `.csproj` — runtime async is inherited from `eng/RuntimeAsync.targets`.
+- If the library is to be NativeAOT-compatible: set `<IsAotCompatible>true</IsAotCompatible>`, add it to `tests/TailoredApps.Shared.AotSmoke` with a check of its scenario, and add it to the table in [Trimming and NativeAOT](#trimming-and-nativeaot).
 - Put the test project under `tests/` — it inherits the same target frameworks, so the `net11.0` asset is actually tested.
 
 ---
@@ -125,7 +200,7 @@ You are working with TailoredApps.Shared.* packages or with the SharedComponents
 
 ### Configuration
 - In the repository: the UseRuntimeAsync MSBuild property (on by default for net11.0+), handled
-  in src/Directory.Build.targets. Switch off with -p:UseRuntimeAsync=false or
+  in eng/RuntimeAsync.targets (the libraries and the demo application). Switch off with -p:UseRuntimeAsync=false or
   <UseRuntimeAsync>false</UseRuntimeAsync> in the library's csproj.
 - In an application consuming the packages: no settings.
 
@@ -140,4 +215,12 @@ You are working with TailoredApps.Shared.* packages or with the SharedComponents
   PackageReference without a version, versions in Directory.Packages.props (runtime-aligned packages
   in both conditional groups: 10.* and 11.*); test project under tests/.
 - Build the repository with .NET SDK 11.0.100 or newer.
+- Safe for trimming and NativeAOT (IsAotCompatible): DateTime, Querying, Email, Email.Models, ExceptionHandling, WebApi,
+  Payments and the providers Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut, Tpay.
+- NativeAOT in ASP.NET Core means minimal APIs: MVC controllers do not work natively (their routes answer 404). [Authorize] and JWT do.
+- Blazor WebAssembly on net11.0 does not execute runtime-async methods (PlatformNotSupportedException): do not call the async
+  methods of the libraries from the net11.0 asset there. IL2xxx/IL3xxx warnings are compile errors there:
+  no reflection, no JsonSerializer without a JsonTypeInfo, no ConfigurationBinder outside the generator.
+- The MediatR*, EntityFramework*, Email.Office365, MediatR.ML and Payments.Provider.Stripe libraries are not
+  NativeAOT-compatible - do not suggest them for an application published with PublishAot.
 ```

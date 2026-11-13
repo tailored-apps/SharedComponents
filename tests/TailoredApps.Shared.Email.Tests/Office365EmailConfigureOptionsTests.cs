@@ -40,6 +40,31 @@ public class Office365EmailConfigureOptionsTests
     }
 
     [Fact]
+    public void When_Section_Describes_A_Certificate_Should_Bind_It()
+    {
+        // The certificate is a nested Microsoft.Identity.Web type. A generated configuration binder skips it,
+        // which would switch certificate sign-in off without a word; this pins that it is bound.
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string>
+            {
+                { "Mail:Providers:Office365:Tenant", "contoso.onmicrosoft.com" },
+                { "Mail:Providers:Office365:ClientId", "11111111-2222-3333-4444-555555555555" },
+                { "Mail:Providers:Office365:Certificate:SourceType", "StoreWithThumbprint" },
+                { "Mail:Providers:Office365:Certificate:CertificateStorePath", "CurrentUser/My" },
+                { "Mail:Providers:Office365:Certificate:CertificateThumbprint", "962D129A0000000000000000000000000000ABCD" }
+            })
+            .Build();
+        var options = new AuthenticationConfig();
+
+        new Office365EmailConfigureOptions(configuration).Configure(options);
+
+        Assert.NotNull(options.Certificate);
+        Assert.Equal(Microsoft.Identity.Web.CertificateSource.StoreWithThumbprint, options.Certificate.SourceType);
+        Assert.Equal("CurrentUser/My", options.Certificate.CertificateStorePath);
+        Assert.Equal("962D129A0000000000000000000000000000ABCD", options.Certificate.CertificateThumbprint);
+    }
+
+    [Fact]
     public void When_Section_Is_Missing_Should_Throw_Descriptive_InvalidOperationException()
     {
         // arrange

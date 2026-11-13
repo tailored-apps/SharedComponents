@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
 
@@ -28,7 +29,7 @@ public class ExceptionHandlingOptionsBuilder : IExceptionHandlingOptionsBuilder
     /// </summary>
     /// <typeparam name="Provider">The concrete provider type to register.</typeparam>
     /// <returns>The current builder instance for further chaining.</returns>
-    public IExceptionHandlingOptionsBuilder WithExceptionHandlingProvider<Provider>() where Provider : class, IExceptionHandlingProvider
+    public IExceptionHandlingOptionsBuilder WithExceptionHandlingProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Provider>() where Provider : class, IExceptionHandlingProvider
     {
         Services.AddTransient<IExceptionHandlingProvider, Provider>();
         return this;
@@ -49,7 +50,7 @@ public class ExceptionHandlingOptionsBuilder : IExceptionHandlingOptionsBuilder
 
 internal static class ExceptionHandlingOptionsBuilderExtensions
 {
-    public static IExceptionHandlingOptionsBuilder AddExceptionHandling<TTargetExceptionHandlingProviderInterface, TTargetExceptionHandlingProvider>(this IServiceCollection services)
+    public static IExceptionHandlingOptionsBuilder AddExceptionHandling<TTargetExceptionHandlingProviderInterface, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TTargetExceptionHandlingProvider>(this IServiceCollection services)
         where TTargetExceptionHandlingProvider : class, TTargetExceptionHandlingProviderInterface
         where TTargetExceptionHandlingProviderInterface : class, IExceptionHandlingProvider
     {

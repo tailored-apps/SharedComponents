@@ -1,28 +1,22 @@
 <Project>
 
   <!--
-    Runtime async (.NET 11+)
-
-    Compiles the async methods of every library under src/ as runtime-async for the target frameworks that
-    support it (net11.0 and newer). The runtime then suspends and resumes the method itself instead of the
-    C# compiler generating a state machine type per async method: lower overhead and smaller IL. Nothing
-    changes in the source code or in the public API.
-
-    Why a .targets file: the switch is decided per target framework, and $(TargetFramework) is only
-    reliably known once the project body has been evaluated.
-
-    Why it is conditioned: with the .NET 11 SDK the flag fails the net10.0 build (SYSLIB5007 / CA2252 - the
-    runtime helpers are still experimental there) and is silently ignored on older frameworks. Only the
-    net11.0+ assets get it; the net8.0 / net9.0 / net10.0 assets keep compiler-generated state machines.
-
-    Opt out: runtime async needs CoreCLR or NativeAOT. Mono-based runtimes (e.g. Blazor WebAssembly) cannot
-    execute it on .NET 11. Set <UseRuntimeAsync>false</UseRuntimeAsync> in a library's csproj to keep that
-    library on state machines for every target framework, or pass -p:UseRuntimeAsync=false to switch it off
-    for a whole build.
+    Runtime async (.NET 11+): the async methods of every library are compiled as runtime-async for the
+    target frameworks that support it. The switch and its explanation live in eng/RuntimeAsync.targets,
+    which the samples import as well.
   -->
-  <PropertyGroup Condition="'$(UseRuntimeAsync)' != 'false' and '$(TargetFramework)' != '' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0'))">
-    <Features>$(Features);runtime-async=on</Features>
-  </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)../eng/RuntimeAsync.targets" />
+
+  <!--
+    Trimming and NativeAOT. A library that sets <IsAotCompatible>true</IsAotCompatible> in its project file
+    gets the trimming, AOT and single-file analyzers from the SDK; here their diagnostics become errors for
+    it, so the declaration cannot rot. tests/TailoredApps.Shared.AotSmoke is the proof behind it: it is
+    published with NativeAOT and run in CI, and references exactly these libraries.
+  -->
+  <ItemGroup Condition="'$(IsAotCompatible)' == 'true'">
+    <!-- EditorConfigFiles, not GlobalAnalyzerConfigFiles: the SDK has already copied that list by the time this file is read. -->
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)../eng/AotCompatible.globalconfig" />
+  </ItemGroup>
 
   <!--
     Public API guard

@@ -10,6 +10,8 @@
 		<Title>Shared.DateTime</Title>
 		<PackageId>TailoredApps.Shared.DateTime</PackageId>
 		<PackageTags>Mediator support for .NET</PackageTags>
+		<!-- Safe for trimming and NativeAOT: the analyzers are on and their warnings are errors; tests/TailoredApps.Shared.AotSmoke proves it natively. -->
+		<IsAotCompatible>true</IsAotCompatible>
 	</PropertyGroup>
 
 	<ItemGroup>

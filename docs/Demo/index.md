@@ -19,7 +19,8 @@ CI uruchamia te testy razem z resztą rozwiązania, więc zmiana w bibliotece, k
 dotnet run --project samples/TailoredApps.Shared.Demo -f net10.0
 ```
 
-Profil `http` z `Properties/launchSettings.json` nasłuchuje na `http://localhost:5080` w środowisku Development.
+Profil `http` z `Properties/launchSettings.json` nasłuchuje na `http://localhost:5080` w środowisku Development. Dla `net11.0` demo jest
+kompilowane z runtime async, tak jak biblioteki ([Platformy docelowe](../Platform/index.md#runtime-async-net-11)).
 
 Testy integracyjne:
 

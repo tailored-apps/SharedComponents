@@ -86,12 +86,12 @@ public class TpayServiceOptions
         => Uri.TryCreate(JwsCertificateBaseUrl, UriKind.Absolute, out var url) && url.Scheme == Uri.UriSchemeHttps;
 }
 
-file class TpayTokenResponse
+internal sealed class TpayTokenResponse
 {
     [JsonPropertyName("access_token")] public string AccessToken { get; set; } = string.Empty;
 }
 
-file class TpayTransactionRequest
+internal sealed class TpayTransactionRequest
 {
     [JsonPropertyName("amount")] public decimal Amount { get; set; }
     [JsonPropertyName("description")] public string Description { get; set; } = string.Empty;
@@ -102,46 +102,46 @@ file class TpayTransactionRequest
     [JsonPropertyName("callbacks")] public TpayCallbacks Callbacks { get; set; } = new();
 }
 
-file class TpayPay
+internal sealed class TpayPay
 {
     [JsonPropertyName("groupId")] public int? GroupId { get; set; }
     [JsonPropertyName("channel")] public string? Channel { get; set; }
 }
 
-file class TpayPayer
+internal sealed class TpayPayer
 {
     [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
     /// <inheritdoc/>
     [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
 }
 
-file class TpayCallbacks
+internal sealed class TpayCallbacks
 {
     [JsonPropertyName("payerUrls")] public TpayPayerUrls PayerUrls { get; set; } = new();
     [JsonPropertyName("notification")] public TpayNotification Notification { get; set; } = new();
 }
 
-file class TpayPayerUrls
+internal sealed class TpayPayerUrls
 {
     [JsonPropertyName("success")] public string Success { get; set; } = string.Empty;
     [JsonPropertyName("error")] public string Error { get; set; } = string.Empty;
 }
 
-file class TpayNotification
+internal sealed class TpayNotification
 {
     /// <inheritdoc/>
     [JsonPropertyName("url")] public string Url { get; set; } = string.Empty;
     [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
 }
 
-file class TpayTransactionResponse
+internal sealed class TpayTransactionResponse
 {
     [JsonPropertyName("transactionId")] public string? TransactionId { get; set; }
     [JsonPropertyName("transactionPaymentUrl")] public string? PaymentUrl { get; set; }
     [JsonPropertyName("title")] public string? Title { get; set; }
 }
 
-file class TpayStatusResponse
+internal sealed class TpayStatusResponse
 {
     [JsonPropertyName("status")] public string? Status { get; set; }
 }
@@ -205,7 +205,7 @@ public class TpayServiceCaller : ITpayServiceCaller
         var response = await client.PostAsync($"{options.ServiceUrl}/oauth/auth", content, cancellationToken);
         await PaymentGatewayException.ThrowIfNotSuccessAsync("Tpay", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        return JsonSerializer.Deserialize<TpayTokenResponse>(json)?.AccessToken ?? string.Empty;
+        return JsonSerializer.Deserialize(json, TpayJsonContext.Default.TpayTokenResponse)?.AccessToken ?? string.Empty;
     }
 
     /// <inheritdoc/>
@@ -231,12 +231,12 @@ public class TpayServiceCaller : ITpayServiceCaller
         if (!string.IsNullOrWhiteSpace(request.PaymentChannel))
             body.Pay = new TpayPay { Channel = request.PaymentChannel };
 
-        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(body, TpayJsonContext.Default.TpayTransactionRequest), Encoding.UTF8, "application/json");
         var response = await client.PostAsync($"{options.ServiceUrl}/transactions", content, cancellationToken);
         // 5xx, 408 and 429 mean the gateway did not handle the call; a 4xx answer is a refusal reported below.
         await PaymentGatewayException.ThrowIfUnavailableAsync("Tpay", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var tx = JsonSerializer.Deserialize<TpayTransactionResponse>(json);
+        var tx = JsonSerializer.Deserialize(json, TpayJsonContext.Default.TpayTransactionResponse);
         return (tx?.TransactionId, tx?.PaymentUrl);
     }
 
@@ -250,7 +250,7 @@ public class TpayServiceCaller : ITpayServiceCaller
         // A failed status query says nothing about the payment: never report it as rejected.
         await PaymentGatewayException.ThrowIfNotSuccessAsync("Tpay", response, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var status = JsonSerializer.Deserialize<TpayStatusResponse>(json)?.Status;
+        var status = JsonSerializer.Deserialize(json, TpayJsonContext.Default.TpayStatusResponse)?.Status;
         return status switch
         {
             "correct" => PaymentStatusEnum.Finished,
@@ -634,3 +634,13 @@ public class TpayConfigureOptions : IConfigureOptions<TpayServiceOptions>
         options.JwsRootCertificatePem = s.JwsRootCertificatePem;
     }
 }
+
+/// <summary>
+/// JSON metadata for the requests and answers of the Tpay API, generated at compile time: serialization
+/// uses no reflection, so it survives trimming and works under NativeAOT.
+/// </summary>
+[JsonSerializable(typeof(TpayTokenResponse))]
+[JsonSerializable(typeof(TpayTransactionRequest))]
+[JsonSerializable(typeof(TpayTransactionResponse))]
+[JsonSerializable(typeof(TpayStatusResponse))]
+internal sealed partial class TpayJsonContext : JsonSerializerContext;
