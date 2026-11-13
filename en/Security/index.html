@@ -1,0 +1,2701 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Reusable components for webapps">
+      
+      
+        <meta name="author" content="Tailored Apps.">
+      
+      
+        <link rel="canonical" href="https://shared.tailoredapps.pl/en/Security/">
+      
+      
+        <link rel="prev" href="../Dependencies/">
+      
+      
+        <link rel="next" href="../contributing/">
+      
+      
+        
+          <link rel="alternate" href="/" hreflang="pl">
+        
+          <link rel="alternate" href="/en/" hreflang="en">
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Security - Tailored Apps. .NET Shared Components</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","GOOGLE_ANALYTICS_KEY"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","GOOGLE_ANALYTICS_KEY",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=GOOGLE_ANALYTICS_KEY",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#security-review-september-2026" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Tailored Apps. .NET Shared Components" class="md-header__button md-logo" aria-label="Tailored Apps. .NET Shared Components" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 89 89">
+  <path d="M3.136,17.387l0,42.932l42.932,21.467l-42.932,-64.399Z" />
+  <path d="M21.91,8l42.933,64.398l-18.775,9.388l-42.932,-64.399l18.774,-9.387Z" style="fill-opacity: 0.5" />
+  <path d="M67.535,17.387l-27.262,18.156l21.878,32.818l5.384,2.691l0,-53.665Z" />
+  <path d="M67.535,17.387l0,53.666l18.774,-9.388l0,-53.665l-18.774,9.387Z" style="fill-opacity: 0.25" />
+</svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Tailored Apps. .NET Shared Components
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Security
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="/" hreflang="pl" class="md-select__link">
+              Polski
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/en/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tailored-apps/SharedComponents" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SharedComponents
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../Libraries/DateTime/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Libraries
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Demo/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Demo application
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Migration/v3/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Upgrading to 3.0 (test)
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Migration/v2/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Upgrading to 2.0
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Platform/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Target frameworks
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Dependencies/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Dependencies
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Libraries/Readme/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Tailored Apps. .NET Shared Components" class="md-nav__button md-logo" aria-label="Tailored Apps. .NET Shared Components" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 89 89">
+  <path d="M3.136,17.387l0,42.932l42.932,21.467l-42.932,-64.399Z" />
+  <path d="M21.91,8l42.933,64.398l-18.775,9.388l-42.932,-64.399l18.774,-9.387Z" style="fill-opacity: 0.5" />
+  <path d="M67.535,17.387l-27.262,18.156l21.878,32.818l5.384,2.691l0,-53.665Z" />
+  <path d="M67.535,17.387l0,53.666l18.774,-9.388l0,-53.665l-18.774,9.387Z" style="fill-opacity: 0.25" />
+</svg>
+
+    </a>
+    Tailored Apps. .NET Shared Components
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tailored-apps/SharedComponents" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SharedComponents
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../Libraries/DateTime/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Libraries
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Libraries
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../Libraries/Email/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Email
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Email
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Email/Models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Email/Office365/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Office365
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../Libraries/EntityFramework/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EntityFramework
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    EntityFramework
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/EntityFramework/UnitOfWork.WebApiCore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UnitOfWork.WebApiCore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/EntityFramework/UnitOfWork.MinimalApi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UnitOfWork.MinimalApi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../Libraries/ExceptionHandling/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ExceptionHandling
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    ExceptionHandling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/ExceptionHandling/MinimalApi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MinimalApi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../Libraries/MediatR/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MediatR
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MediatR
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/MediatR/Caching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Caching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/MediatR/Email/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Email
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/MediatR/ML/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/MediatR/PagedRequest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PagedRequest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../Libraries/Payments/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Payments
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Payments
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6_2" id="__nav_2_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Providers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Providers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Payments/Providers/Adyen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adyen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Payments/Providers/CashBill/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CashBill
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Payments/Providers/HotPay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HotPay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Payments/Providers/PayNow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PayNow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Payments/Providers/PayU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PayU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Payments/Providers/Przelewy24/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Przelewy24
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Payments/Providers/Revolut/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Revolut
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Payments/Providers/Stripe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stripe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Payments/Providers/Tpay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tpay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Querying/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Querying
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/WebApi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WebApi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo application
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Migration/v3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading to 3.0 (test)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Migration/v2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading to 2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Platform/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Target frameworks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scope-and-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope and method
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings-and-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings and status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-changed-by-library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What changed, by library
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What changed, by library">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#payments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Payments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptionhandling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExceptionHandling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WebApi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mediatr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MediatR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mediatrml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MediatR.ML
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entityframework-querying" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EntityFramework / Querying
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cicd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI/CD
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#action-items-for-the-repository-owner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Action items for the repository owner
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#follow-ups-not-done-in-this-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow-ups (not done in this change)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-the-fixes-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying the fixes locally
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Libraries/Readme/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scope-and-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope and method
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings-and-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings and status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-changed-by-library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What changed, by library
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What changed, by library">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#payments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Payments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptionhandling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExceptionHandling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WebApi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mediatr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MediatR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mediatrml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MediatR.ML
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entityframework-querying" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EntityFramework / Querying
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cicd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI/CD
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#action-items-for-the-repository-owner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Action items for the repository owner
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#follow-ups-not-done-in-this-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow-ups (not done in this change)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-the-fixes-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying the fixes locally
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/tailored-apps/SharedComponents/edit/master/docs-en/Security/index.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/tailored-apps/SharedComponents/raw/master/docs-en/Security/index.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="security-review-september-2026">Security review - September 2026<a class="headerlink" href="#security-review-september-2026" title="Permanent link">&para;</a></h1>
+<p>This page records the security review of the shared libraries performed on 2 September 2026,
+the fixes that shipped with it, and the items that still need a human decision.</p>
+<h2 id="scope-and-method">Scope and method<a class="headerlink" href="#scope-and-method" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Every library under <code>src/</code> (25 projects, about 12 000 lines of C#), the test projects, the
+  GitHub Actions workflows and the PowerShell automation scripts.</li>
+<li>Static review of all sources in five passes (payments core and providers, EF/Querying,
+  MediatR/Email/ML, WebApi/ExceptionHandling, CI), each finding re-verified against the code
+  before a fix was written.</li>
+<li><code>dotnet list package --vulnerable --include-transitive</code>: <strong>no vulnerable NuGet packages</strong>
+  (direct or transitive). <code>System.Linq.Dynamic.Core</code> is pinned above the CVE-2024-51417 fix.</li>
+<li>Every fix is covered by unit tests; the whole solution (build + 900+ tests) was green before commit.</li>
+</ul>
+<h2 id="findings-and-status">Findings and status<a class="headerlink" href="#findings-and-status" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Severity</th>
+<th>Area</th>
+<th>Finding</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Critical</td>
+<td>Payments (tests)</td>
+<td>A production CashBill shop secret and matching signatures were committed in a test source file (unused test data).</td>
+<td><strong>Removed</strong> from source. Rotation and history purge require the owner - see <a href="#action-items-for-the-repository-owner">Action items</a>.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>High</td>
+<td>ExceptionHandling</td>
+<td>Default provider returned the innermost exception message (SQL errors, hosts, paths) to anonymous callers as HTTP 400 in every environment.</td>
+<td><strong>Fixed</strong>: 500 + generic message; details only in Development or on explicit opt-in.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>High</td>
+<td>Payments (all providers)</td>
+<td>Signature verification silently degraded to an unkeyed hash when the secret was missing, so anyone could forge a "valid" notification.</td>
+<td><strong>Fixed</strong>: fail-closed in all 9 providers (incl. Stripe).</td>
+</tr>
+<tr>
+<td>4</td>
+<td>High</td>
+<td>Payments (CashBill)</td>
+<td>Webhook error message echoed the expected signature (an oracle for forging notifications); legacy <code>TransactionStatusChange</code> performed no verification.</td>
+<td><strong>Fixed</strong>.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>High</td>
+<td>Payments (Revolut)</td>
+<td>Signed payload used <code>v1:</code> instead of <code>v1.</code>; no timestamp check, so a captured webhook was replayable forever.</td>
+<td><strong>Fixed</strong>: correct format, 300 s tolerance (configurable), multi-signature rotation.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>High</td>
+<td>EntityFramework</td>
+<td>Client-controlled <code>SortField</code> passed straight to Dynamic LINQ (navigation traversal, multi-column, schema disclosure); no upper bound on page size.</td>
+<td><strong>Fixed</strong>: identifier validation, allow-list overload, page bounds and overflow checks.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>High</td>
+<td>MediatR</td>
+<td>Default cache key used <code>ToString()</code> on properties, so requests differing only in collection contents shared one entry (cross-user data). Logging scope serialized whole requests (secrets, images).</td>
+<td><strong>Fixed</strong>: content-hash keys; scope carries only type name + correlation id.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>High</td>
+<td>Email</td>
+<td>Template variables inserted verbatim into HTML bodies (phishing links from a trusted sender); comma-separated recipient strings added extra recipients; SMTP TLS off by default.</td>
+<td><strong>Fixed</strong>: HTML-encoding by default (<code>{{{raw}}}</code> opt-out), single recipient, TLS on.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>High</td>
+<td>MediatR.ML</td>
+<td>Training command read any directory and wrote any file path from the request; classification accepted unbounded, unvalidated bytes.</td>
+<td><strong>Fixed</strong>: paths confined to <code>TrainingRoot</code>/<code>ModelsRoot</code>; size and signature validation.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Medium</td>
+<td>WebApi</td>
+<td>Standard resilience handler retried POST/PATCH on every HttpClient, duplicating payments/orders after timeouts.</td>
+<td><strong>Fixed</strong>: unsafe-method retries disabled by default.</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Medium</td>
+<td>Payments</td>
+<td>Non-constant-time signature comparison; case-sensitive header lookup (broken under HTTP/2); unescaped identifiers in gateway URLs; webhook results without a payment id.</td>
+<td><strong>Fixed</strong>: <code>WebhookSignature</code>, case-insensitive dictionaries, <code>PaymentIdentifier</code>, ids populated.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Medium</td>
+<td>Payments (Przelewy24)</td>
+<td>Notification/verify signatures computed over the wrong field sets (every genuine notification rejected).</td>
+<td><strong>Fixed</strong> to the documented field order.</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Medium</td>
+<td>EF UnitOfWork</td>
+<td>Transaction filter committed when the action returned 4xx/5xx; commit-failure handling could leave a dangling transaction and hide the root cause.</td>
+<td><strong>Fixed</strong>.</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Medium</td>
+<td>Email.Office365</td>
+<td>Attachments returned still transfer-encoded and keyed by content type (crash on two attachments of one type).</td>
+<td><strong>Fixed</strong>.</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Medium</td>
+<td>CI/CD</td>
+<td>Write-scoped tokens with persisted credentials, actions pinned to mutable tags, tag name interpolated into shell, NuGet publish without tests and with failures swallowed, unpinned pip installs.</td>
+<td><strong>Fixed</strong>: least-privilege permissions, SHA pins + Dependabot, env-var passing, tests before publish, <code>--skip-duplicate</code>, pinned mkdocs-material.</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Medium</td>
+<td>Payments (Tpay, Adyen)</td>
+<td>Webhook verification does not match the vendor protocol (Tpay: form + md5sum + JWS; Adyen: HMAC over colon-separated fields in <code>additionalData</code>). Fails closed, so not exploitable, but non-functional.</td>
+<td><strong>Fixed in 2.0</strong>: Tpay verifies <code>md5sum</code> and <code>X-JWS-Signature</code> (chain to the Tpay root), Adyen the HMAC from <code>additionalData.hmacSignature</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-changed-by-library">What changed, by library<a class="headerlink" href="#what-changed-by-library" title="Permanent link">&para;</a></h2>
+<h3 id="payments">Payments<a class="headerlink" href="#payments" title="Permanent link">&para;</a></h3>
+<ul>
+<li>New <code>TailoredApps.Shared.Payments.Security.WebhookSignature</code> (constant-time <code>FixedTimeEquals</code>,
+  <code>FixedTimeEqualsIgnoreCase</code>, <code>IsSecretConfigured</code>) and <code>PaymentIdentifier</code> (<code>IsSafe</code>, <code>EnsureSafe</code>).</li>
+<li><code>PaymentWebhookRequest.Headers</code>/<code>Query</code> are case-insensitive regardless of the dictionary assigned;
+  <code>TransactionStatusChangePayload.QueryParameters</code> is never <code>null</code>.</li>
+<li>All providers: fail-closed on empty secret/signature, constant-time comparison, <code>PaymentUniqueId</code>
+  populated from the payload, <code>Processing</code> events returned as <code>Ignore</code>, identifiers validated before
+  URL interpolation, <code>JsonDocument</code> disposed.</li>
+<li>CashBill: legacy path verifies the MD5 signature; error messages no longer contain the expected
+  value; missing secret -&gt; "Signature verification is not configured.".</li>
+<li>Revolut: <code>v1.{timestamp}.{body}</code>, <code>WebhookToleranceSeconds</code> (default 300), rotation signatures.</li>
+<li>Przelewy24: documented sign field sets with unescaped-unicode JSON; currency normalised once.</li>
+<li>PayU: SHA-1 supported, unknown algorithms rejected. PayNow: stable <code>Idempotency-Key</code>, <code>EXPIRED</code>.</li>
+<li>Stripe: missing <code>WebhookSecret</code>/header -&gt; <code>Fail</code>; async payment events handled with ids.</li>
+<li>Adyen: missing <code>success</code> treated as failure; <code>merchantReference</code>/<code>pspReference</code> in results.</li>
+<li>HotPay: the signed service name is the one sent.</li>
+</ul>
+<h3 id="exceptionhandling">ExceptionHandling<a class="headerlink" href="#exceptionhandling" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>DefaultExceptionHandlingProvider</code>: validation -&gt; 400; everything else -&gt; 500 with
+  <code>"An unexpected error occurred."</code>; constructor overloads <code>()</code>, <code>(IHostEnvironment)</code>, <code>(bool)</code>.</li>
+<li>Middleware uses <code>GetRequiredService</code>, skips writing when the response has started, clamps the
+  status code to 400-599. <code>ExceptionOccuredResult</code> honours the model's code. Duplicate DI
+  registration removed. Docs and agent prompt rewritten against the real API.</li>
+</ul>
+<h3 id="webapi">WebApi<a class="headerlink" href="#webapi" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>HttpClientSettings.RetryUnsafeHttpMethods</code> (default <code>false</code>) -&gt; <code>Retry.DisableForUnsafeHttpMethods()</code>.</li>
+</ul>
+<h3 id="mediatr">MediatR<a class="headerlink" href="#mediatr" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>ICachePolicy.GetCacheKey</code> -&gt; <code>{Type.FullName}:{SHA-256(JSON)}</code> via <code>CacheKeyGenerator</code>.</li>
+<li><code>LoggingBehavior</code> no longer serializes the request; stack trace no longer concatenated into the
+  message template. <code>CachingBehavior</code> uses structured log templates.</li>
+</ul>
+<h3 id="email">Email<a class="headerlink" href="#email" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TokenReplacingMailMessageBuilder</code>: single-pass regex replacement, HTML-encoded <code>{{token}}</code>,
+  raw <code>{{{token}}}</code>, <code>HtmlEncodeVariables</code> option, null-safe arguments.</li>
+<li><code>DefaultMessageBuilder</code>: single-pass, longest-key-first, HTML-encoded by default (<code>(bool)</code> ctor).</li>
+<li><code>SmtpEmailProvider</code>: one recipient only (<code>FormatException</code> on lists), <code>CatchAll</code> required when
+  <code>IsProd = false</code>, <code>EnableSsl</code> defaults to <code>true</code>, proper Message-ID.</li>
+<li><code>Office365EmailProvider</code>: attachments decoded and keyed by file name.</li>
+</ul>
+<h3 id="mediatrml">MediatR.ML<a class="headerlink" href="#mediatrml" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>ImageClassificationOptions.TrainingRoot</code>, <code>ModelsRoot</code>, <code>MaxImageBytes</code> (default 10 MB).</li>
+<li><code>TrainImageClassificationModelCommandHandler</code> confines both paths (<code>ArgumentException</code> outside the
+  roots, <code>InvalidOperationException</code> when roots are not configured).</li>
+<li><code>ClassifyImageCommandHandler</code> validates presence, size and JPEG/PNG signature.
+  JPEG detection accepts any <code>FF D8 FF</code> header.</li>
+</ul>
+<h3 id="entityframework-querying">EntityFramework / Querying<a class="headerlink" href="#entityframework-querying" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>QuerySortingExtensions</code>: sort field must be a plain identifier; <code>ApplySorting(..., allowedSortFields)</code>
+  overloads; Dynamic LINQ parse errors rethrown as <code>ArgumentException</code> without type details.</li>
+<li><code>PagingQuery&lt;T&gt;</code>: <code>MaxPageSize</code> (default 1000, static + per-instance), <code>Page &gt;= 1</code>,
+  <code>1 &lt;= Count &lt;= max</code>, overflow-safe skip.</li>
+<li><code>TransactionFilterAttribute</code>: rollback on 4xx/5xx results; <code>AggregateException</code> when both commit and
+  rollback fail. <code>UnitOfWork</code>: commit/rollback release the transaction in <code>finally</code>.</li>
+</ul>
+<h3 id="cicd">CI/CD<a class="headerlink" href="#cicd" title="Permanent link">&para;</a></h3>
+<ul>
+<li>All workflows: <code>permissions: contents: read</code> by default, <code>persist-credentials: false</code>, actions
+  pinned to commit SHAs (with version comments), <code>.github/dependabot.yml</code> for <code>github-actions</code>.</li>
+<li><code>ci.yml</code>: build/test job separated from the <code>gh-pages</code> deploy job (only the latter has <code>contents: write</code>).</li>
+<li><code>release.yml</code>: <code>dotnet test</code> before publishing, every package pushed from <code>artifacts/package/release</code>
+  with <code>--skip-duplicate</code>, the job fails when any push fails, <code>environment: nuget</code> (add required
+  reviewers in repository settings). Publishing uses nuget.org Trusted Publishing: the job exchanges a
+  GitHub OIDC token for an API key valid for one hour, so no long-lived NuGet key is stored in the
+  repository.</li>
+<li><code>release-notes.yml</code>: tag name passed through <code>env</code>, not interpolated into the script.</li>
+<li><code>bump-deps.yml</code>: full test run before the PR is created.</li>
+</ul>
+<h2 id="action-items-for-the-repository-owner">Action items for the repository owner<a class="headerlink" href="#action-items-for-the-repository-owner" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Rotate the CashBill secret</strong> for the shop named in the removed test data, in the CashBill
+   merchant panel. The value has been in git history since commit <code>ed838d6</code>; rotation is the only
+   reliable remedy. If the repository is or was public, also purge the history
+   (<code>git filter-repo</code>) and force-push, which is a destructive operation that was deliberately not
+   performed here.</li>
+<li>The sandbox CashBill secret in <code>tests/TailoredApps.Shared.Payments.Tests/appsettings.json</code>
+   is a test-environment credential; move it to user-secrets/CI secrets if the sandbox shop matters.</li>
+<li>In repository settings, add required reviewers to the new <code>nuget</code> environment so tag pushes
+   cannot publish packages without approval, and make the <em>Docs guard</em> and <em>Build &amp; Test PR</em>
+   checks required on <code>master</code>. Create the nuget.org Trusted Publishing policy and the <code>NUGET_USER</code>
+   secret described under <em>Releasing</em> in <a href="../contributing/">Contributing</a>, then delete the old
+   <code>NUGET_API_KEY</code> secret and revoke that key on nuget.org.</li>
+<li>Configure <code>ImageClassification:TrainingRoot</code> / <code>ModelsRoot</code> in hosts that use the training
+   command, and pass <code>allowedSortFields</code> to <code>ApplySorting</code> for endpoints listing sensitive entities.</li>
+<li>Review consumers that relied on the old behaviours: 400 with exception message (now 500 generic),
+   raw HTML in e-mail variables (now encoded; use <code>{{{token}}}</code>), SMTP without TLS (<code>EnableSsl</code> now
+   <code>true</code>), multi-recipient strings in <code>SendMail</code>, POST retries via the WebApi resilience defaults.</li>
+</ol>
+<h2 id="follow-ups-not-done-in-this-change">Follow-ups (not done in this change)<a class="headerlink" href="#follow-ups-not-done-in-this-change" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Tpay and Adyen: notification verification now follows the vendor protocols, but it has not been
+  exercised with a real sandbox notification - make a test payment before going live.
+  Adyen: the Hosted Checkout session and reading its outcome follow the API specification, also without a test in the Adyen environment.</li>
+<li>A failing gateway is no longer reported as <code>PaymentStatusEnum.Rejected</code>: the HTTP providers throw
+  <code>PaymentGatewayException</code> (2.0), and from 3.0 Stripe does too (before: <code>StripeException</code>).</li>
+<li><code>CachingBehavior</code> no longer returns <code>default</code> for a cache miss on a value-type response (fixed in
+  1.5.1: a default value is treated as a miss and the handler runs). In 2.0 the problem is gone:
+  <code>CachingBehavior</code> uses <code>HybridCache</code>, which tells a miss from a cached default value and protects
+  against the handler running concurrently for the same key.</li>
+<li>Amount conversion to minor units truncates and assumes two decimals; add a shared ISO-4217 helper.</li>
+<li>PayU order creation shares one pooled handler that does not follow redirects (fixed in 1.5.1; it
+  used to create a handler per order). It still bypasses the named client. OAuth tokens (PayU, Tpay)
+  are fetched on every call.</li>
+<li>EF: session-level <code>SET TRANSACTION ISOLATION LEVEL</code> is SQL-Server-only and redundant;
+  multiple <code>AddUnitOfWork</code> registrations cross-wire contexts; audit collector skips proxied entities;
+  <code>HasDefaultValue(DateTime.UtcNow)</code> bakes a constant into migrations.</li>
+<li>Package hygiene: <code>Nullable</code> off in most projects, no <code>PackageReadmeFile</code> in most packages, floating
+  <code>x.*</code> versions without a lock file, <code>SourceRevisionId</code> from <code>UtcNow</code>, dead TFM conditions.</li>
+<li><code>PagedAndSortedRequest</code> duplicates <code>PagedAndSortedQuery</code>; add <code>[Range]</code> attributes.</li>
+</ul>
+<h2 id="verifying-the-fixes-locally">Verifying the fixes locally<a class="headerlink" href="#verifying-the-fixes-locally" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dotnet<span class="w"> </span><span class="nb">test</span><span class="w"> </span>TailoredApps.Shared.slnx
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-m<span class="w"> </span>mkdocs<span class="w"> </span>build<span class="w"> </span>--strict<span class="w"> </span>--config-file<span class="w"> </span>mkdocs.yml
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>python<span class="w"> </span>-m<span class="w"> </span>mkdocs<span class="w"> </span>build<span class="w"> </span>--strict<span class="w"> </span>--config-file<span class="w"> </span>mkdocs-en.yml
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>dotnet<span class="w"> </span>list<span class="w"> </span>TailoredApps.Shared.slnx<span class="w"> </span>package<span class="w"> </span>--vulnerable<span class="w"> </span>--include-transitive
+</span></code></pre></div>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../Dependencies/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Dependencies">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Dependencies
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../contributing/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributing">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Contributing
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy; 2022 Tailored Apps
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tailored-apps/SharedComponents" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": {"json": [".s2"]}, "base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
