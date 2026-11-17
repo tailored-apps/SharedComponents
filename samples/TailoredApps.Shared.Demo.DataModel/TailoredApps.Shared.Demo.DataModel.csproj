@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		The contract of the service: the messages a client sends (commands, queries), what it gets back
+		(responses, models) and the notifications the service publishes. No handlers, no entities, no EF Core:
+		a client of the API, or another service, can reference this project alone.
+	-->
+	<PropertyGroup>
+		<RootNamespace>TailoredApps.Demo.DataModel</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.Caching\TailoredApps.Shared.MediatR.Caching.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.PagedRequest\TailoredApps.Shared.MediatR.PagedRequest.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments\TailoredApps.Shared.Payments.csproj" />
+	</ItemGroup>
+
+</Project>

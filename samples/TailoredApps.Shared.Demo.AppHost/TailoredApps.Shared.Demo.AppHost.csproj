@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<Sdk Name="Aspire.AppHost.Sdk" Version="13.6.5" />
+
+	<!--
+		Starts the sample service under .NET Aspire: one command runs the Web API (which serves the browser
+		client) and opens the dashboard with its logs, traces and metrics - the telemetry the WebApi library
+		already sends. Nothing here is needed to run the sample; `dotnet run` on the WebApi project still works.
+		No container is started: the database stays SQLite in memory.
+	-->
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<!-- One framework, and not through TargetFrameworks: the Aspire SDK does not support a cross-targeting build. -->
+		<TargetFrameworks></TargetFrameworks>
+		<TargetFramework>net10.0</TargetFramework>
+		<RootNamespace>TailoredApps.Demo.AppHost</RootNamespace>
+		<IsAspireHost>true</IsAspireHost>
+		<!-- The AppHost is started with plain `dotnet run`; the Aspire CLI bundle is not used, so its hint is noise here. -->
+		<NoWarn>$(NoWarn);ASPIRE010</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Aspire.Hosting.AppHost" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TailoredApps.Shared.Demo.WebApi\TailoredApps.Shared.Demo.WebApi.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -42,8 +42,8 @@ Witaj w dokumentacji **TailoredApps Shared Components** — zestawu wielokrotneg
 
 ## Aplikacja demo
 
-Wszystkie biblioteki razem, w działającej aplikacji: [Aplikacja demo i testy integracyjne](Demo/index.md) — sklep w Web API
-(`samples/TailoredApps.Shared.Demo`) z podstawionymi bramkami płatności, uruchamiany bez kont i bez sieci, oraz testy, które sprawdzają
+Wszystkie biblioteki razem, w działającej aplikacji: [Przykładowy serwis i testy integracyjne](Demo/index.md) — sklep w Web API
+(`samples/`: kontrakt, logika i host, z ForkForward.Mediator i ForkForward.Mapper) z podstawionymi bramkami płatności, uruchamiany bez kont i bez sieci, oraz testy, które sprawdzają
 go przez HTTP w CI.
 
 ---

@@ -1,0 +1,76 @@
+@page "/products/{Id:int}"
+@inject ShopApi Api
+@inject Basket Basket
+@inject ISnackbar Snackbar
+
+<PageTitle>@(product?.Name ?? "Product")</PageTitle>
+
+@if (error is not null)
+{
+    <MudAlert Severity="Severity.Warning">@error</MudAlert>
+}
+else if (product is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudPaper Class="pa-6" Elevation="1">
+        <MudText Typo="Typo.h4">@product.Name</MudText>
+        <MudText Typo="Typo.subtitle1" Class="mb-4">@product.Category</MudText>
+        <MudText Typo="Typo.h5" Class="mb-4">@Money.Format(product.Price)</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddShoppingCart" OnClick="AddToBasket">Add to basket</MudButton>
+    </MudPaper>
+
+    @* The second visit to this page is answered from the service's cache; the recommendations come through retry and fallback. *@
+    <MudPaper Class="pa-6 mt-6" Elevation="1">
+        <MudText Typo="Typo.h6" Class="mb-2">Recommendations</MudText>
+        @if (recommendations is null)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else if (recommendations.Count == 0)
+        {
+            <MudText>None at the moment.</MudText>
+        }
+        else
+        {
+            @foreach (var recommendation in recommendations)
+            {
+                <MudText>@recommendation</MudText>
+            }
+        }
+    </MudPaper>
+}
+
+@code {
+    private Product? product;
+    private IReadOnlyList<string>? recommendations;
+    private string? error;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        product = null;
+        recommendations = null;
+        error = null;
+
+        try
+        {
+            product = await Api.GetProductAsync(Id);
+            recommendations = await Api.GetRecommendationsAsync(Id);
+        }
+        catch (ApiException exception)
+        {
+            error = exception.Summary;
+        }
+    }
+
+    private void AddToBasket()
+    {
+        Basket.Add(product!);
+        Snackbar.Add($"{product!.Name} is in the basket.", Severity.Info);
+    }
+}

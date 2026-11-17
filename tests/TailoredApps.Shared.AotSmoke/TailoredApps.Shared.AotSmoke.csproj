@@ -57,7 +57,7 @@
 
 	<!-- The gateway fake of the demo application, reused as it is: it has no dependency on the demo. -->
 	<ItemGroup>
-		<Compile Include="..\..\samples\TailoredApps.Shared.Demo\Payments\FakeGateway.cs" Link="FakeGateway.cs" />
+		<Compile Include="..\..\samples\TailoredApps.Shared.Demo.WebApi\Payments\FakeGateway.cs" Link="FakeGateway.cs" />
 	</ItemGroup>
 
 </Project>

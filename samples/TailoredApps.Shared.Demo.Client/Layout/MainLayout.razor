@@ -1,0 +1,63 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject Session Session
+@inject Basket Basket
+@inject ISnackbar Snackbar
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudText Typo="Typo.h6" Class="mr-6">Sample shop</MudText>
+        <MudButton Href="/" Color="Color.Inherit">Catalogue</MudButton>
+        <MudSpacer />
+        <MudBadge Content="@Basket.Count" Visible="@(Basket.Count > 0)" Color="Color.Secondary" Overlap="true" Class="mr-6">
+            <MudButton Href="/basket" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.ShoppingBasket">Basket</MudButton>
+        </MudBadge>
+        @if (Session.IsCatalogAdmin)
+        {
+            <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.VerifiedUser">Catalogue administrator</MudChip>
+            <MudButton Color="Color.Inherit" OnClick="Session.SignOut">Sign out</MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Login" OnClick="SignInAsync">Sign in as catalogue administrator</MudButton>
+        }
+    </MudAppBar>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Session.Changed += StateHasChanged;
+        Basket.Changed += StateHasChanged;
+    }
+
+    private async Task SignInAsync()
+    {
+        try
+        {
+            await Session.SignInAsCatalogAdminAsync();
+            Snackbar.Add("Signed in. You can now add products to the catalogue.", Severity.Success);
+        }
+        catch (ApiException exception)
+        {
+            // The token endpoint is mapped in the Development environment only.
+            Snackbar.Add($"No token: {exception.Summary}", Severity.Error);
+        }
+    }
+
+    public void Dispose()
+    {
+        Session.Changed -= StateHasChanged;
+        Basket.Changed -= StateHasChanged;
+    }
+}

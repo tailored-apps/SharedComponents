@@ -1,11 +1,12 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using TailoredApps.Demo.WebApi;
 using Xunit;
 
 namespace TailoredApps.Demo.IntegrationTests;
 
 /// <summary>
-/// How the async methods of the libraries and of the demo were compiled for the framework the tests run on:
+/// How the async methods of the libraries and of the sample service were compiled for the framework the tests run on:
 /// runtime async for net11.0 and newer, compiler-generated state machines for net10.0 (eng/RuntimeAsync.targets).
 /// The switch is one compiler feature flag; if it stopped reaching the compiler nothing else would notice.
 /// This test project itself is compiled the classic way, so on net11.0 every other test here also crosses
@@ -24,7 +25,9 @@ public class RuntimeAsyncTests
     {
         var assemblies = Methods.Select(m => m.Module.Assembly.GetName().Name).Distinct().ToList();
 
-        Assert.Contains("TailoredApps.Shared.Demo", assemblies);
+        Assert.Contains("TailoredApps.Shared.Demo.WebApi", assemblies);
+        Assert.Contains("TailoredApps.Shared.Demo.Services", assemblies);
+        Assert.Contains("TailoredApps.Shared.Demo.DataModel", assemblies);
         Assert.Contains("TailoredApps.Shared.Payments", assemblies);
         Assert.Contains("TailoredApps.Shared.MediatR", assemblies);
         Assert.Contains("TailoredApps.Shared.EntityFramework", assemblies);
@@ -52,11 +55,20 @@ public class RuntimeAsyncTests
     {
         const BindingFlags all = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
 
-        var demo = typeof(Program).Assembly;
-        return demo.GetReferencedAssemblies()
-            .Where(name => name.Name!.StartsWith("TailoredApps.Shared.", StringComparison.Ordinal))
-            .Select(Assembly.Load)
-            .Append(demo)
+        // The host and everything of this repository it reaches: the sample's own projects and the libraries,
+        // including the ones only the Services project uses.
+        var found = new Dictionary<string, Assembly>(StringComparer.Ordinal);
+        var pending = new Queue<Assembly>([typeof(Program).Assembly]);
+        while (pending.TryDequeue(out var assembly))
+        {
+            if (!found.TryAdd(assembly.GetName().Name!, assembly))
+                continue;
+
+            foreach (var reference in assembly.GetReferencedAssemblies().Where(name => name.Name!.StartsWith("TailoredApps.Shared.", StringComparison.Ordinal)))
+                pending.Enqueue(Assembly.Load(reference));
+        }
+
+        return found.Values
             .SelectMany(LoadableTypes)
             .SelectMany(type => type.GetMethods(all))
             .ToList();

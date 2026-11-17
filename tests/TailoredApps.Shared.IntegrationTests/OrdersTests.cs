@@ -2,8 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using TailoredApps.Demo.Data;
-using TailoredApps.Demo.Orders;
+using TailoredApps.Demo.DataModel.Orders.Messages.Commands;
+using TailoredApps.Demo.DataModel.Orders.Model;
+using TailoredApps.Demo.DataModel.Orders.Responses.Commands;
+using TailoredApps.Demo.Services;
+using OrderStatus = TailoredApps.Demo.Services.Orders.Entities.OrderStatus;
 using Xunit;
 
 namespace TailoredApps.Demo.IntegrationTests;
@@ -20,32 +23,32 @@ public class OrdersTests(DemoApplication app) : IClassFixture<DemoApplication>
     [Fact]
     public async Task When_Creating_An_Order_Should_Save_It_With_The_Sum_Of_The_Prices_And_The_Current_Time()
     {
-        var created = await client.PostAsJsonAsync("/api/orders", new CreateOrder("anna@demo.example", [1, 6]));
+        var created = await client.PostAsJsonAsync("/api/orders", new CreateOrder { CustomerEmail = "anna@demo.example", ProductIds = [1, 6] });
 
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
-        var order = await created.Content.ReadFromJsonAsync<OrderDto>();
+        var order = await created.Content.ReadOrderAsync();
         Assert.NotNull(order);
         Assert.Equal(24.90m + 129.00m, order.Amount);
         Assert.Equal(nameof(OrderStatus.New), order.Status);
         Assert.Equal(DemoApplication.Now, order.CreatedAt);
         Assert.StartsWith("ORD-20261112-", order.Number);
 
-        // Saved and committed by the filter, although the action never called SaveChanges.
-        var stored = await client.GetFromJsonAsync<OrderDto>($"/api/orders/{order.Number}");
-        Assert.Equal(order, stored);
-        Assert.Equal($"/api/orders/{order.Number}", created.Headers.Location?.OriginalString);
+        // Saved and committed by the filter: neither the action, the handler nor the repository saves.
+        var stored = await client.GetOrderAsync(order.Number);
+        Assert.Equivalent(order, stored);
+        Assert.EndsWith($"/api/orders/{order.Number}", created.Headers.Location?.OriginalString);
     }
 
     [Fact]
-    public async Task When_The_Action_Answers_400_Should_Roll_Back_What_It_Added()
+    public async Task When_A_Handler_Refuses_The_Request_Should_Roll_Back_What_It_Added()
     {
         const string email = "rollback@demo.example";
 
-        var response = await client.PostAsJsonAsync("/api/orders", new CreateOrder(email, [1, 999]));
+        var response = await client.PostAsJsonAsync("/api/orders", new CreateOrder { CustomerEmail = email, ProductIds = [1, 999] });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<ShopDataContext>();
         Assert.False(await db.Orders.AnyAsync(o => o.CustomerEmail == email));
     }
 
@@ -74,15 +77,15 @@ public class OrdersTests(DemoApplication app) : IClassFixture<DemoApplication>
         var order = await CreateOrderAsync($"{provider.ToLowerInvariant()}@demo.example");
         var sentBefore = SentTo(gateway);
 
-        var response = await client.PostAsJsonAsync($"/api/orders/{order.Number}/checkout", new Checkout(provider, channel));
+        var response = await client.PostAsJsonAsync($"/api/orders/{order.Number}/checkout", new CheckoutOrder { Provider = provider, Channel = channel });
 
         Assert.True(response.StatusCode == HttpStatusCode.OK, $"{provider}: {(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}");
-        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResult>();
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutOrderResponse>();
         Assert.NotNull(checkout);
         Assert.False(string.IsNullOrEmpty(checkout.RedirectUrl), $"{provider} returned no payment page.");
         Assert.True(Uri.IsWellFormedUriString(checkout.RedirectUrl, UriKind.Absolute), checkout.RedirectUrl);
 
-        var stored = await client.GetFromJsonAsync<OrderDto>($"/api/orders/{order.Number}");
+        var stored = await client.GetOrderAsync(order.Number);
         Assert.Equal(nameof(OrderStatus.AwaitingPayment), stored?.Status);
         Assert.Equal(provider, stored?.PaymentProvider);
 
@@ -101,7 +104,7 @@ public class OrdersTests(DemoApplication app) : IClassFixture<DemoApplication>
         HttpResponseMessage response;
         try
         {
-            response = await client.PostAsJsonAsync($"/api/orders/{order.Number}/checkout", new Checkout(provider, "card"));
+            response = await client.PostAsJsonAsync($"/api/orders/{order.Number}/checkout", new CheckoutOrder { Provider = provider, Channel = "card" });
         }
         finally
         {
@@ -109,7 +112,7 @@ public class OrdersTests(DemoApplication app) : IClassFixture<DemoApplication>
         }
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-        var stored = await client.GetFromJsonAsync<OrderDto>($"/api/orders/{order.Number}");
+        var stored = await client.GetOrderAsync(order.Number);
         Assert.Equal(nameof(OrderStatus.New), stored?.Status);
         Assert.Null(stored?.PaymentProvider);
     }
@@ -125,7 +128,7 @@ public class OrdersTests(DemoApplication app) : IClassFixture<DemoApplication>
         HttpResponseMessage response;
         try
         {
-            response = await client.PostAsJsonAsync($"/api/orders/{order.Number}/checkout", new Checkout(provider, "card"));
+            response = await client.PostAsJsonAsync($"/api/orders/{order.Number}/checkout", new CheckoutOrder { Provider = provider, Channel = "card" });
         }
         finally
         {
@@ -133,7 +136,7 @@ public class OrdersTests(DemoApplication app) : IClassFixture<DemoApplication>
         }
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        var stored = await client.GetFromJsonAsync<OrderDto>($"/api/orders/{order.Number}");
+        var stored = await client.GetOrderAsync(order.Number);
         Assert.Equal(nameof(OrderStatus.New), stored?.Status);
     }
 
@@ -143,10 +146,10 @@ public class OrdersTests(DemoApplication app) : IClassFixture<DemoApplication>
             return app.Gateways.Requests.Count(r => r == $"POST /{gateway}" || r.StartsWith($"POST /{gateway}/", StringComparison.Ordinal));
     }
 
-    private async Task<OrderDto> CreateOrderAsync(string email)
+    private async Task<Order> CreateOrderAsync(string email)
     {
-        var response = await client.PostAsJsonAsync("/api/orders", new CreateOrder(email, [2, 4]));
+        var response = await client.PostAsJsonAsync("/api/orders", new CreateOrder { CustomerEmail = email, ProductIds = [2, 4] });
         response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<OrderDto>())!;
+        return (await response.Content.ReadOrderAsync())!;
     }
 }

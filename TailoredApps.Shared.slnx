@@ -24,7 +24,11 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/samples/">
-    <Project Path="samples/TailoredApps.Shared.Demo/TailoredApps.Shared.Demo.csproj" />
+    <Project Path="samples/TailoredApps.Shared.Demo.AppHost/TailoredApps.Shared.Demo.AppHost.csproj" />
+    <Project Path="samples/TailoredApps.Shared.Demo.Client/TailoredApps.Shared.Demo.Client.csproj" />
+    <Project Path="samples/TailoredApps.Shared.Demo.DataModel/TailoredApps.Shared.Demo.DataModel.csproj" />
+    <Project Path="samples/TailoredApps.Shared.Demo.Services/TailoredApps.Shared.Demo.Services.csproj" />
+    <Project Path="samples/TailoredApps.Shared.Demo.WebApi/TailoredApps.Shared.Demo.WebApi.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/TailoredApps.Shared.DateTime/TailoredApps.Shared.DateTime.csproj" />

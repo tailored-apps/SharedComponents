@@ -21,7 +21,8 @@ runtime has to be installed as well for the `net10.0` test runs.
 - Run specific test project: `dotnet test tests/TailoredApps.Shared.DateTime.Tests/TailoredApps.Shared.DateTime.Tests.csproj`
 - Run single test: `dotnet test --filter "FullyQualifiedName=TailoredApps.Shared.DateTime.Tests.DateTimeProviderTests.As_Library_User_When_Get_Now_I_Get_Mine_System_Date_In_Current_Timezone_And_Local_Kind"`
 - Run on one framework only: add `-f net10.0` (or `-f net11.0`); without it every test runs twice.
-- Run the demo application: `dotnet run --project samples/TailoredApps.Shared.Demo -f net10.0` (`http://localhost:5080`, no network needed).
+- Run the sample service: `dotnet run --project samples/TailoredApps.Shared.Demo.WebApi -f net10.0` (`http://localhost:5080`: the browser client, API under `/api`; no network needed).
+  With the Aspire dashboard (`http://localhost:15080`): `dotnet run --project samples/TailoredApps.Shared.Demo.AppHost`.
 - With coverage, as CI does: `dotnet test TailoredApps.Shared.slnx -p:CollectCoverage=true -p:CoverletOutputFormat=opencover`.
   Write MSBuild properties as `-p:Name=value`: Git Bash on Windows rewrites `/p:` into a path and the command fails with `MSB1008`.
 
@@ -48,13 +49,27 @@ The repository is 26 NuGet packages (`TailoredApps.Shared.*`) under `src/`, with
 Every library is consumed through dependency-injection extension methods. All packages are released together under a single version
 taken from the git tag.
 
-The one application is `samples/TailoredApps.Shared.Demo` (namespace `TailoredApps.Demo`, never packed): a shop Web API that uses all 26
-libraries, with the payment gateways faked by an HTTP handler (`Payments/FakeGateway.cs`), the console e-mail provider and SQLite in memory.
+The one application is the sample service in `samples/` (namespace `TailoredApps.Demo.*`, never packed): a shop Web API that uses all 26
+libraries, laid out like our real services - `TailoredApps.Shared.Demo.DataModel` (messages, responses, models per feature),
+`.Demo.Services` (entities, `ShopDataContext`, repositories on the unit of work, handlers with one interface each, validators, policies,
+mediator processors, mapper profiles; no ASP.NET Core) and `.Demo.WebApi` (`Program` + `Startup`, thin controllers sending messages with
+`ISender`, minimal-API endpoints, JWT roles, the exception provider mapping `ShopException`). It also shows ForkForward.Mapper (samples
+only: no library depends on a mapper) and every mediator feature; pre/post-processors and stream behaviors are registered by name because
+scanning does not find them. The payment gateways are faked by an HTTP handler (`Payments/FakeGateway.cs`, also compiled into the AOT
+smoke app), e-mail goes to the console and the database is SQLite in memory. Two more projects sit around it: `.Demo.Client`, a Blazor
+WebAssembly client with MudBlazor that references `.Demo.DataModel` only and is served by the WebApi (it targets `net10.0` alone: Mono
+cannot run the runtime-async `net11.0` assets), and `.Demo.AppHost`, a .NET Aspire host (single framework, `TargetFrameworks` cleared:
+the Aspire SDK cannot cross-target; it starts the multi-targeted WebApi with `AddExecutable` and `--framework`, because `AddProject`
+cannot; the shop's port under Aspire is `--Shop:Port`, default 5080). Both the client and the WebApi set `DisableBuildCompression`: after an
+incremental build the gzip copy of the client's `dotnet.js` (which holds the list of its assemblies) kept the old list, so a browser failed
+to load the page while a plain request looked fine - verify client changes in a browser. Endpoints under `/api/dev/` (token, gateway
+confirmation) are mapped in the Development environment only. Stop an AppHost by ending its own process; never end `dcp` by name - other
+Aspire applications of the user run on this machine.
 `tests/TailoredApps.Shared.IntegrationTests` starts it with `WebApplicationFactory` (frozen `TimeProvider`, recorded e-mail) and runs in CI
 with the other tests. A new library is added to the demo with a test of its scenario.
 
 ## Build configuration shared by every project
-- `Directory.Build.props` (root): artifacts output, `TargetFrameworks` (`net10.0;net11.0` for every project) and `LangVersion=latest`, so both target frameworks compile with the same C# version.
+- `Directory.Build.props` (root): artifacts output, `TargetFrameworks` (`net10.0;net11.0` for every project) and `LangVersion=latest`, so both target frameworks compile with the same C# version. It stamps the build time into `SourceRevisionId` for Release builds only, and a Debug build carries no commit id either: a value that changes with every build (or commit) made every build recompile everything and renamed the content-named files of the WebAssembly client each time.
 - `eng/RuntimeAsync.targets` (imported by `src/Directory.Build.targets` and `samples/Directory.Build.targets`): turns on runtime async for the `net11.0` assets of the libraries and the demo (`UseRuntimeAsync`, opt out per project or per build). Tests are compiled the classic way on purpose. Never set `Features` or `EnablePreviewFeatures` in a csproj.
 - Trimming and NativeAOT: options are bound by the generated configuration binder (`EnableConfigurationBindingGenerator` in `src/Directory.Build.props`; `Email.Office365` opts out because of its certificate options). A library that is AOT-safe sets `<IsAotCompatible>true</IsAotCompatible>` in its csproj; `eng/AotCompatible.globalconfig` then turns every trimming/AOT analyzer warning into an error there. JSON in those libraries goes through a `JsonSerializerContext` (`JsonSerializer` with a `JsonTypeInfo`, never the reflection overloads); generic parameters that reach the container carry `DynamicallyAccessedMembers`.
 - `tests/TailoredApps.Shared.AotSmoke` (console: payments, options, signatures, the mediator with its behaviors but no cache), `tests/TailoredApps.Shared.AotSmoke.Web` (minimal API: WebApi, ExceptionHandling, Email, `[Authorize]` with JWT) and `tests/TailoredApps.Shared.AotSmoke.Caching` (the MediatR response cache) are applications, not test projects: the *NativeAOT smoke test* job publishes them with NativeAOT for `net10.0` and `net11.0` on Linux and Windows and runs them. Together they reference exactly the `IsAotCompatible` libraries; add a library and a check there when it becomes AOT-safe. The first two allow no trim/AOT warning at all. The caching one exists because `Microsoft.Extensions.Caching.Hybrid` still reports warnings for a JSON fallback: it lets `IL2026`/`IL2070`/`IL3050` through and the job fails when such a warning names any other assembly - never loosen the other two instead. Publishing needs clang and zlib (Linux) or the C++ build tools (Windows). With Visual Studio 2026 a `net10.0` publish fails unless `C:\Program Files (x86)\Microsoft Visual Studio\Installer` (vswhere.exe) is on the PATH.

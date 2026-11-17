@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using TailoredApps.AotSmoke;
-using TailoredApps.Demo.Payments;
+using TailoredApps.Demo.WebApi.Payments;
 using TailoredApps.Shared.DateTime;
 using TailoredApps.Shared.Email.Models;
 using TailoredApps.Shared.Payments;
