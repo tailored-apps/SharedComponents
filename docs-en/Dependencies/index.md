@@ -42,6 +42,24 @@ pwsh ./scripts/New-BumpDocs.ps1 -RecordsPath ./bump-records.json
 
 ---
 
+## Manual changes
+
+Dependency changes made outside the automated bump.
+
+### 2026-11-19: `Microsoft.Bcl.Memory` removed
+
+The reference in `TailoredApps.Shared.MediatR.ML` was redundant, so it was removed together with its entry in
+`Directory.Packages.props`. The `TailoredApps.Shared.MediatR.ML` package no longer lists it among its dependencies.
+
+- It was added in March 2026 to pin a transitive dependency that resolved to `9.0.4` (NU1903, GHSA-73j8-2gch-69rq).
+- For `net10.0` and `net11.0` no package in the library's graph needs it: the ML packages declare it for
+  `netstandard2.0` only, and the library itself does not use it.
+- `Microsoft.Bcl.Memory` versions follow the runtime generation (`10.0.x`, `11.0.x`) and there was one entry for both
+  frameworks: the automated bump would have raised it to `11.0.0` for the `net10.0` asset as well.
+- After the removal `dotnet list TailoredApps.Shared.slnx package --vulnerable --include-transitive` reports no vulnerable package.
+
+---
+
 ## Change log
 
 <!-- BUMP-LOG:START -->
