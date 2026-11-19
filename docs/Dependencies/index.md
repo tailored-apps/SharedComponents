@@ -64,6 +64,25 @@ Referencja w `TailoredApps.Shared.MediatR.ML` była nadmiarowa, więc została u
 
 <!-- BUMP-LOG:START -->
 
+## 2026-11-16
+
+Zaktualizowano **8** referencji pakietów w **1** projekcie.
+
+Źródło: [przebieg workflow](https://github.com/tailored-apps/SharedComponents/actions/runs/43893085293).
+
+**`Directory.Packages.props`**
+
+| Pakiet | Z wersji | Na wersję | Licencja |
+|---|---|---|---|
+| `coverlet.msbuild` | `10.1.0` | `10.1.1` | `MIT` |
+| `MailKit` | `4.18.2` | `5.0.0` | `MIT` |
+| `Microsoft.Extensions.ML` | `5.0.1` | `6.0.0` | `MIT` |
+| `Microsoft.ML` | `5.0.1` | `6.0.0` | `MIT` |
+| `Microsoft.ML.AutoML` | `0.23.1` | `0.24.0` | `MIT` |
+| `Microsoft.ML.ImageAnalytics` | `5.0.1` | `6.0.0` | `MIT` |
+| `Microsoft.ML.Vision` | `5.0.1` | `6.0.0` | `MIT` |
+| `MimeKit` | `4.18.2` | `5.0.0` | `MIT` |
+
 ## 2026-11-09
 
 Zaktualizowano **1** referencję pakietu w **1** projekcie.

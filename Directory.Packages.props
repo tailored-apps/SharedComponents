@@ -15,10 +15,10 @@
 
 	<ItemGroup>
 		<PackageVersion Include="AutoMoqCore" Version="2.*" />
-		<PackageVersion Include="coverlet.msbuild" Version="10.1.0" />
+		<PackageVersion Include="coverlet.msbuild" Version="10.1.1" />
 		<PackageVersion Include="FluentValidation" Version="12.*" />
 		<PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.*" />
-		<PackageVersion Include="MailKit" Version="4.18.2" />
+		<PackageVersion Include="MailKit" Version="5.0.0" />
 		<!--
 			A community fork of MediatR 12.5.0 (Apache-2.0); MediatR itself is commercial from 13.0.
 			Line 13 of the fork targets net10.0 and net11.0 only, is compiled with runtime async on net11.0 and
@@ -32,15 +32,15 @@
 		<!-- Http.Resilience and ServiceDiscovery: no 11.x existed on nuget.org when .NET 11 went GA, so both
 		     frameworks use the 10.x line. Move them to the per-framework groups once 11.x is published. -->
 		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.*" />
-		<PackageVersion Include="Microsoft.Extensions.ML" Version="5.0.1" />
+		<PackageVersion Include="Microsoft.Extensions.ML" Version="6.0.0" />
 		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.*" />
 		<PackageVersion Include="Microsoft.Identity.Web" Version="4.18.0" />
-		<PackageVersion Include="Microsoft.ML" Version="5.0.1" />
-		<PackageVersion Include="Microsoft.ML.AutoML" Version="0.23.1" />
-		<PackageVersion Include="Microsoft.ML.ImageAnalytics" Version="5.0.1" />
-		<PackageVersion Include="Microsoft.ML.Vision" Version="5.0.1" />
+		<PackageVersion Include="Microsoft.ML" Version="6.0.0" />
+		<PackageVersion Include="Microsoft.ML.AutoML" Version="0.24.0" />
+		<PackageVersion Include="Microsoft.ML.ImageAnalytics" Version="6.0.0" />
+		<PackageVersion Include="Microsoft.ML.Vision" Version="6.0.0" />
 		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.*" />
-		<PackageVersion Include="MimeKit" Version="4.18.2" />
+		<PackageVersion Include="MimeKit" Version="5.0.0" />
 		<PackageVersion Include="Moq" Version="4.*" />
 		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.*" />
 		<PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
