@@ -4,15 +4,18 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using TailoredApps.Demo.Data;
-using TailoredApps.Demo.Orders;
+using TailoredApps.Demo.DataModel.Orders.Messages.Commands;
+using TailoredApps.Demo.DataModel.Orders.Model;
+using TailoredApps.Demo.DataModel.Orders.Responses.Commands;
+using OrderStatus = TailoredApps.Demo.Services.Orders.Entities.OrderStatus;
 using Xunit;
 
 namespace TailoredApps.Demo.IntegrationTests;
 
 /// <summary>
-/// A gateway notification, end to end: the Revolut provider checks the signature, the demo marks the order
-/// paid inside the unit of work and sends the confirmation through MediatR.Email and the Email template builder.
+/// A gateway notification, end to end: the Revolut provider checks the signature, the handler marks the order
+/// paid inside the unit of work and publishes OrderPaid; one of its handlers sends the confirmation through
+/// MediatR.Email and the Email template builder.
 /// </summary>
 public class WebhookTests(DemoApplication app) : IClassFixture<DemoApplication>
 {
@@ -29,7 +32,7 @@ public class WebhookTests(DemoApplication app) : IClassFixture<DemoApplication>
         Assert.True(response.StatusCode == HttpStatusCode.OK, $"{(int)response.StatusCode} {answer}");
         Assert.Equal("OK", answer);
 
-        var stored = await client.GetFromJsonAsync<OrderDto>($"/api/orders/{order.Number}");
+        var stored = await client.GetOrderAsync(order.Number);
         Assert.Equal(nameof(OrderStatus.Paid), stored?.Status);
         Assert.Equal(DemoApplication.Now, stored?.PaidAt);
 
@@ -60,7 +63,7 @@ public class WebhookTests(DemoApplication app) : IClassFixture<DemoApplication>
         var response = await client.SendAsync(SignedNotification($$"""{"event":"ORDER_PAYMENT_DECLINED","order_id":"{{paymentId}}"}"""));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var stored = await client.GetFromJsonAsync<OrderDto>($"/api/orders/{order.Number}");
+        var stored = await client.GetOrderAsync(order.Number);
         Assert.Equal(nameof(OrderStatus.PaymentRejected), stored?.Status);
         Assert.DoesNotContain(app.Outbox.Messages, m => m.Recipient == "declined@demo.example");
     }
@@ -75,7 +78,7 @@ public class WebhookTests(DemoApplication app) : IClassFixture<DemoApplication>
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("InvalidSignature", await response.Content.ReadAsStringAsync());
-        var stored = await client.GetFromJsonAsync<OrderDto>($"/api/orders/{order.Number}");
+        var stored = await client.GetOrderAsync(order.Number);
         Assert.Equal(nameof(OrderStatus.AwaitingPayment), stored?.Status);
     }
 
@@ -90,15 +93,15 @@ public class WebhookTests(DemoApplication app) : IClassFixture<DemoApplication>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    private async Task<(OrderDto Order, string PaymentId)> CheckoutAsync(string email)
+    private async Task<(Order Order, string PaymentId)> CheckoutAsync(string email)
     {
-        var created = await client.PostAsJsonAsync("/api/orders", new CreateOrder(email, [2, 4]));   // 19.50 + 54.00
+        var created = await client.PostAsJsonAsync("/api/orders", new CreateOrder { CustomerEmail = email, ProductIds = [2, 4] });   // 19.50 + 54.00
         created.EnsureSuccessStatusCode();
-        var order = (await created.Content.ReadFromJsonAsync<OrderDto>())!;
+        var order = (await created.Content.ReadOrderAsync())!;
 
-        var checkout = await client.PostAsJsonAsync($"/api/orders/{order.Number}/checkout", new Checkout("Revolut", "card"));
+        var checkout = await client.PostAsJsonAsync($"/api/orders/{order.Number}/checkout", new CheckoutOrder { Provider = "Revolut", Channel = "card" });
         checkout.EnsureSuccessStatusCode();
-        var result = (await checkout.Content.ReadFromJsonAsync<CheckoutResult>())!;
+        var result = (await checkout.Content.ReadFromJsonAsync<CheckoutOrderResponse>())!;
         return (order, result.PaymentId!);
     }
 

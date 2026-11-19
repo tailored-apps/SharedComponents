@@ -2,7 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TailoredApps.Demo.Catalog;
+using TailoredApps.Demo.DataModel.Catalog.Messages.Commands;
+using TailoredApps.Demo.DataModel.Catalog.Messages.Queries;
+using TailoredApps.Demo.DataModel.Catalog.Responses.Queries;
+using TailoredApps.Demo.Services.Catalog.Infrastructure;
+using TailoredApps.Demo.Services.Internals;
 using Xunit;
 
 namespace TailoredApps.Demo.IntegrationTests;
@@ -18,7 +22,7 @@ public class CatalogTests(DemoApplication app) : IClassFixture<DemoApplication>
     [Fact]
     public async Task When_Listing_Products_Sorted_By_Price_Descending_Should_Return_The_Requested_Page()
     {
-        var page = await client.GetFromJsonAsync<Page<ProductDto>>("/api/products?page=1&count=3&sortField=Price&sortDir=Desc");
+        var page = await client.GetFromJsonAsync<GetProductsResponse>("/api/products?page=1&count=3&sortField=Price&sortDir=Desc");
 
         Assert.NotNull(page);
         Assert.Equal(7, page.Count);
@@ -28,7 +32,7 @@ public class CatalogTests(DemoApplication app) : IClassFixture<DemoApplication>
     [Fact]
     public async Task When_Asking_For_The_Second_Page_Should_Continue_Where_The_First_Ended()
     {
-        var page = await client.GetFromJsonAsync<Page<ProductDto>>("/api/products?page=2&count=3&sortField=Name&sortDir=Asc");
+        var page = await client.GetFromJsonAsync<GetProductsResponse>("/api/products?page=2&count=3&sortField=Name&sortDir=Asc");
 
         Assert.NotNull(page);
         Assert.Equal(["Filter coffee", "Green tea", "Oolong"], page.Results.Select(p => p.Name));
@@ -37,7 +41,7 @@ public class CatalogTests(DemoApplication app) : IClassFixture<DemoApplication>
     [Fact]
     public async Task When_Filtering_By_Category_Should_Return_Only_That_Category()
     {
-        var page = await client.GetFromJsonAsync<Page<ProductDto>>("/api/products?filter.category=coffee&sortField=Price&sortDir=Asc");
+        var page = await client.GetFromJsonAsync<GetProductsResponse>("/api/products?filter.category=coffee&sortField=Price&sortDir=Asc");
 
         Assert.NotNull(page);
         Assert.Equal(2, page.Count);
@@ -70,11 +74,11 @@ public class CatalogTests(DemoApplication app) : IClassFixture<DemoApplication>
         var counter = app.Services.GetRequiredService<HandlerCallCounter>();
         var before = counter.GetProduct;
 
-        var first = await client.GetFromJsonAsync<ProductDto>("/api/products/6");
-        var second = await client.GetFromJsonAsync<ProductDto>("/api/products/6");
+        var first = await client.GetFromJsonAsync<GetProductResponse>("/api/products/6");
+        var second = await client.GetFromJsonAsync<GetProductResponse>("/api/products/6");
 
-        Assert.Equal("Teapot", first?.Name);
-        Assert.Equal(first, second);
+        Assert.Equal("Teapot", first?.Product.Name);
+        Assert.Equivalent(first, second);
         Assert.Equal(before + 1, counter.GetProduct);   // the second answer came from HybridCache
     }
 
@@ -124,10 +128,10 @@ public class CatalogTests(DemoApplication app) : IClassFixture<DemoApplication>
         source.FailuresLeft = 2;
         var callsBefore = source.Calls;
 
-        var recommendations = await client.GetFromJsonAsync<List<string>>("/api/products/1/recommendations");
+        var response = await client.GetFromJsonAsync<GetRecommendationsResponse>("/api/products/1/recommendations");
 
-        Assert.NotNull(recommendations);
-        Assert.Single(recommendations);
+        Assert.NotNull(response);
+        Assert.Single(response.Recommendations);
         Assert.Equal(callsBefore + 3, source.Calls);   // the first call and two retries
     }
 
@@ -141,7 +145,7 @@ public class CatalogTests(DemoApplication app) : IClassFixture<DemoApplication>
         var response = await client.GetAsync("/api/products/1/recommendations");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Empty(await response.Content.ReadFromJsonAsync<List<string>>() ?? ["not read"]);
+        Assert.Empty((await response.Content.ReadFromJsonAsync<GetRecommendationsResponse>())?.Recommendations ?? ["not read"]);
         Assert.Equal(callsBefore + 3, source.Calls);   // retries ran out, then the fallback answered
         source.FailuresLeft = 0;
     }

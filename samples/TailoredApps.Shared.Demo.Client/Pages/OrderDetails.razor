@@ -1,0 +1,182 @@
+@page "/orders/{Number}"
+@inject ShopApi Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Order @Number</PageTitle>
+
+@if (loadError is not null)
+{
+    <MudAlert Severity="Severity.Warning">@loadError</MudAlert>
+}
+else if (order is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudText Typo="Typo.h5">Order @order.Number</MudText>
+        <MudChip T="string" Color="StatusColor">@order.Status</MudChip>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="Refresh" OnClick="LoadAsync" />
+    </MudStack>
+
+    <MudSimpleTable Elevation="1" Dense="true">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th style="text-align: right">Price</th>
+                <th style="text-align: right">Quantity</th>
+                <th style="text-align: right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in order.Lines)
+            {
+                <tr>
+                    <td>@line.ProductName</td>
+                    <td style="text-align: right">@Money.Format(line.UnitPrice, order.Currency)</td>
+                    <td style="text-align: right">@line.Quantity</td>
+                    <td style="text-align: right">@Money.Format(line.LineTotal, order.Currency)</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" style="text-align: right"><strong>To pay</strong></td>
+                <td style="text-align: right"><strong>@Money.Format(order.Amount, order.Currency)</strong></td>
+            </tr>
+        </tfoot>
+    </MudSimpleTable>
+
+    <MudText Class="mt-4">Ordered by @order.CustomerEmail on @order.CreatedAt.ToLocalTime().ToString("g").</MudText>
+    @if (order.PaidAt is { } paidAt)
+    {
+        <MudText>Paid on @paidAt.ToLocalTime().ToString("g") through @order.PaymentProvider.</MudText>
+    }
+
+    @if (order.Status is "New" or "PaymentRejected")
+    {
+        <MudPaper Class="pa-4 mt-6" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Pay</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.End">
+                <MudSelect T="string" Label="Payment gateway" @bind-Value="provider" Style="max-width: 240px">
+                    @foreach (var name in providers)
+                    {
+                        <MudSelectItem T="string" Value="name">@name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(busy || string.IsNullOrEmpty(provider))" OnClick="CheckoutAsync">Start the payment</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="busy" OnClick="CancelAsync">Cancel the order</MudButton>
+            </MudStack>
+        </MudPaper>
+    }
+    else if (order.Status == "AwaitingPayment")
+    {
+        <MudPaper Class="pa-4 mt-6" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Waiting for @order.PaymentProvider</MudText>
+            @if (checkout is not null)
+            {
+                <MudText Class="mb-2">A real gateway would now show its payment page at <code>@checkout.RedirectUrl</code>. The gateways of this sample are faked, so that address leads nowhere.</MudText>
+            }
+            <MudStack Row="true">
+                @if (order.PaymentProvider == "Revolut")
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="busy" OnClick="SimulateConfirmationAsync">Play the gateway: payment completed</MudButton>
+                }
+                <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="busy" OnClick="CancelAsync">Cancel the order</MudButton>
+            </MudStack>
+            @if (order.PaymentProvider != "Revolut")
+            {
+                <MudText Typo="Typo.caption" Class="mt-2">The sample can play the gateway's confirmation for Revolut only; see the documentation for a signed notification sent with curl.</MudText>
+            }
+        </MudPaper>
+    }
+    else if (order.Status == "Paid")
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-6">Paid. The confirmation was sent to @order.CustomerEmail (in this sample: printed on the service's console).</MudAlert>
+    }
+}
+
+@code {
+    private Order? order;
+    private TailoredApps.Demo.DataModel.Orders.Responses.Commands.CheckoutOrderResponse? checkout;
+    private IReadOnlyList<string> providers = [];
+    private string? provider;
+    private string? loadError;
+    private bool busy;
+
+    [Parameter]
+    public string Number { get; set; } = string.Empty;
+
+    private Color StatusColor => order?.Status switch
+    {
+        "Paid" => Color.Success,
+        "AwaitingPayment" => Color.Info,
+        "PaymentRejected" or "Cancelled" => Color.Error,
+        _ => Color.Default,
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        checkout = null;
+        await LoadAsync();
+        if (providers.Count == 0 && loadError is null)
+        {
+            providers = await Api.GetPaymentProvidersAsync();
+            provider = providers.Contains("Revolut") ? "Revolut" : providers.FirstOrDefault();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            order = await Api.GetOrderAsync(Number);
+            loadError = null;
+        }
+        catch (ApiException exception)
+        {
+            loadError = exception.Summary;
+        }
+    }
+
+    private Task CheckoutAsync() => RunAsync(async () =>
+    {
+        // Revolut and Stripe need a channel; the others ignore it.
+        checkout = await Api.CheckoutAsync(Number, provider!, channel: "card");
+        Snackbar.Add($"{provider} accepted the payment request.", Severity.Success);
+    });
+
+    private Task SimulateConfirmationAsync() => RunAsync(async () =>
+    {
+        await Api.SimulateGatewayConfirmationAsync(Number);
+        Snackbar.Add("The gateway confirmed the payment.", Severity.Success);
+    });
+
+    private Task CancelAsync() => RunAsync(async () =>
+    {
+        await Api.CancelOrderAsync(Number);
+        Snackbar.Add("The order is cancelled.", Severity.Info);
+    });
+
+    /// <summary>Runs one action against the service, shows what it refused, and reads the order again.</summary>
+    private async Task RunAsync(Func<Task> action)
+    {
+        busy = true;
+        try
+        {
+            await action();
+        }
+        catch (ApiException exception)
+        {
+            Snackbar.Add(exception.Summary, Severity.Error);
+        }
+        finally
+        {
+            busy = false;
+        }
+
+        await LoadAsync();
+    }
+}

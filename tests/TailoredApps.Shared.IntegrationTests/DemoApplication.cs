@@ -4,14 +4,22 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TailoredApps.Demo.Payments;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using Microsoft.Extensions.Options;
+using TailoredApps.Demo.DataModel.Orders.Model;
+using TailoredApps.Demo.DataModel.Orders.Responses.Commands;
+using TailoredApps.Demo.DataModel.Orders.Responses.Queries;
+using TailoredApps.Demo.WebApi;
+using TailoredApps.Demo.WebApi.Authentication;
+using TailoredApps.Demo.WebApi.Payments;
 using TailoredApps.Shared.Email;
 using TailoredApps.Shared.Email.Models;
 
 namespace TailoredApps.Demo.IntegrationTests;
 
 /// <summary>
-/// The demo application, started in memory. Two things differ from a normal run: the clock is fixed, so that
+/// The sample service, started in memory. Two things differ from a normal run: the clock is fixed, so that
 /// times can be asserted exactly, and sent e-mail is recorded instead of printed. The log is recorded as well,
 /// next to the usual providers. Everything else, including the fake payment gateways and the in-memory
 /// database, is the application's own configuration.
@@ -29,6 +37,15 @@ public class DemoApplication : WebApplicationFactory<Program>
     public LogRecorder Logs { get; } = new();
 
     public FakeGatewayState Gateways => Services.GetRequiredService<FakeGatewayState>();
+
+    /// <summary>A client whose requests carry a token with these roles, signed with the service's own key.</summary>
+    public HttpClient CreateClientAs(params string[] roles)
+    {
+        var client = CreateClient();
+        var token = DevelopmentTokens.Create(Services.GetRequiredService<IOptions<JwtOptions>>().Value, "integration-test", roles);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -107,10 +124,16 @@ public sealed class LogRecorder : ILoggerProvider
 
 // The shapes of the answers, as a client of the API sees them.
 
-public record Page<T>(List<T> Results, int Count);
-
 public record ErrorResponse(int ErrorCode, string Message, List<ErrorItem> Errors);
 
 public record ErrorItem(string? Field, string Message);
 
-public record CheckoutResult(string Number, string? PaymentId, string? RedirectUrl);
+public static class Answers
+{
+    /// <summary>The order in the answer to POST /api/orders.</summary>
+    public static async Task<Order?> ReadOrderAsync(this HttpContent content)
+        => (await content.ReadFromJsonAsync<CreateOrderResponse>())?.Order;
+
+    public static async Task<Order?> GetOrderAsync(this HttpClient client, string number)
+        => (await client.GetFromJsonAsync<GetOrderResponse>($"/api/orders/{number}"))?.Order;
+}

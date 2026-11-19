@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		What the service does: entities and the data context, repositories over the unit of work, the handlers
+		of the messages declared in the DataModel project, validators, mappings and policies. It knows nothing
+		about HTTP: the WebApi project is one host for it, a worker or a test is another.
+	-->
+	<PropertyGroup>
+		<RootNamespace>TailoredApps.Demo.Services</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FluentValidation" />
+		<PackageReference Include="ForkForward.Mapper" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TailoredApps.Shared.Demo.DataModel\TailoredApps.Shared.Demo.DataModel.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.DateTime\TailoredApps.Shared.DateTime.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.EntityFramework\TailoredApps.Shared.EntityFramework.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR\TailoredApps.Shared.MediatR.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.Email\TailoredApps.Shared.MediatR.Email.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments\TailoredApps.Shared.Payments.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -87,7 +87,7 @@ Po dodaniu strony biblioteki zaktualizuj sekcję `nav:` w `mkdocs.yml` oraz tabe
 
 ### Aplikacja demo i testy integracyjne
 
-[Aplikacja demo](Demo/index.md) (`samples/TailoredApps.Shared.Demo`) używa każdej biblioteki, a `tests/TailoredApps.Shared.IntegrationTests`
+[Przykładowy serwis](Demo/index.md) (`samples/`: projekty `Demo.DataModel`, `Demo.Services`, `Demo.WebApi`) używa każdej biblioteki, a `tests/TailoredApps.Shared.IntegrationTests`
 sprawdza ją przez HTTP. Nowa biblioteka trafia też do demo, razem z testem swojego scenariusza; zmiana, po której biblioteka jest używana
 inaczej, aktualizuje demo. Demo działa bez sieci: zewnętrzna usługa jest podstawiana na poziomie transportu (handler HTTP), nigdy przez
 zmianę biblioteki.

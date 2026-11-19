@@ -1,0 +1,133 @@
+@page "/"
+@implements IDisposable
+@inject ShopApi Api
+@inject Basket Basket
+@inject Session Session
+@inject ISnackbar Snackbar
+
+<PageTitle>Catalogue</PageTitle>
+
+@* Paging, sorting and the filter are done by the service (Querying, MediatR.PagedRequest): the table only asks. *@
+<MudTable T="Product" @ref="table" ServerData="LoadAsync" Hover="true" Dense="true" RowsPerPage="5" Elevation="1">
+    <ToolBarContent>
+        <MudText Typo="Typo.h5">Catalogue</MudText>
+        <MudSpacer />
+        <MudSelect T="string" Label="Category" Value="category" ValueChanged="OnCategoryChangedAsync" Clearable="true" Dense="true" Class="mr-4" Style="max-width: 200px">
+            @foreach (var name in Categories)
+            {
+                <MudSelectItem T="string" Value="name">@name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudTextField T="string" Label="Name contains" Value="nameContains" ValueChanged="OnNameChangedAsync" DebounceInterval="300" Clearable="true" Immediate="true" Style="max-width: 240px" />
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel T="Product" SortLabel="Name" InitialDirection="SortDirection.Ascending">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel T="Product" SortLabel="Category">Category</MudTableSortLabel></MudTh>
+        <MudTh Style="text-align: right"><MudTableSortLabel T="Product" SortLabel="Price">Price</MudTableSortLabel></MudTh>
+        <MudTh />
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name"><MudLink Href="@($"/products/{context.Id}")">@context.Name</MudLink></MudTd>
+        <MudTd DataLabel="Category">@context.Category</MudTd>
+        <MudTd DataLabel="Price" Style="text-align: right">@Money.Format(context.Price)</MudTd>
+        <MudTd Style="text-align: right">
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.AddShoppingCart" OnClick="() => AddToBasket(context)">Add to basket</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No product matches the filter.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new[] { 5, 10, 20 }" />
+    </PagerContent>
+</MudTable>
+
+@if (Session.IsCatalogAdmin)
+{
+    <MudPaper Class="pa-4 mt-6" Elevation="1">
+        <MudText Typo="Typo.h6" Class="mb-2">Add a product</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="5"><MudTextField @bind-Value="newProduct.Name" Label="Name" /></MudItem>
+            <MudItem xs="12" sm="3"><MudTextField @bind-Value="newProduct.Category" Label="Category" /></MudItem>
+            <MudItem xs="12" sm="2"><MudNumericField @bind-Value="newProduct.Price" Label="Price" Min="0" Format="0.00" /></MudItem>
+            <MudItem xs="12" sm="2" Class="d-flex align-end"><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddProductAsync">Add</MudButton></MudItem>
+        </MudGrid>
+        @* The service validates (FluentValidation); the client only shows what it said. *@
+        @foreach (var error in addErrors)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@error</MudAlert>
+        }
+    </MudPaper>
+}
+
+@code {
+    private static readonly string[] Categories = ["tea", "coffee", "accessories"];
+
+    private MudTable<Product>? table;
+    private string? category;
+    private string? nameContains;
+    private AddProduct newProduct = new();
+    private List<string> addErrors = [];
+
+    protected override void OnInitialized() => Session.Changed += StateHasChanged;
+
+    private async Task<TableData<Product>> LoadAsync(TableState state, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await Api.GetProductsAsync(
+                page: state.Page + 1,
+                count: state.PageSize,
+                sortField: string.IsNullOrEmpty(state.SortLabel) ? "Name" : state.SortLabel,
+                descending: state.SortDirection == SortDirection.Descending,
+                category,
+                nameContains,
+                cancellationToken);
+
+            return new TableData<Product> { Items = response.Results, TotalItems = response.Count };
+        }
+        catch (ApiException exception)
+        {
+            Snackbar.Add(exception.Summary, Severity.Error);
+            return new TableData<Product> { Items = [], TotalItems = 0 };
+        }
+    }
+
+    private Task OnCategoryChangedAsync(string? value)
+    {
+        category = value;
+        return table!.ReloadServerData();
+    }
+
+    private Task OnNameChangedAsync(string? value)
+    {
+        nameContains = value;
+        return table!.ReloadServerData();
+    }
+
+    private void AddToBasket(Product product)
+    {
+        Basket.Add(product);
+        Snackbar.Add($"{product.Name} is in the basket.", Severity.Info);
+    }
+
+    private async Task AddProductAsync()
+    {
+        addErrors = [];
+        try
+        {
+            var added = await Api.AddProductAsync(newProduct);
+            Snackbar.Add($"{added.Name} added to the catalogue.", Severity.Success);
+            newProduct = new AddProduct();
+            await table!.ReloadServerData();
+        }
+        catch (ApiException exception)
+        {
+            addErrors = exception.Error.Errors.Count > 0
+                ? exception.Error.Errors.Select(error => error.Message).ToList()
+                : [exception.Summary];
+        }
+    }
+
+    public void Dispose() => Session.Changed -= StateHasChanged;
+}

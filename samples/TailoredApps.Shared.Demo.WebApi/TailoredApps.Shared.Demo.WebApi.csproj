@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<!--
+		The HTTP host of the sample service: controllers and minimal-API endpoints that pass messages to the
+		mediator, authentication, the error responses, and the composition of everything (Startup).
+
+		The root namespace is not below TailoredApps.Shared on purpose: inside that namespace the simple names
+		DateTime, Email or Payments would resolve to the libraries' namespaces instead of the types an
+		application means.
+	-->
+	<PropertyGroup>
+		<RootNamespace>TailoredApps.Demo.WebApi</RootNamespace>
+		<!--
+			No gzip copies of the static files during a build (a publish still compresses). This project, as
+			the host, is the one that compresses the browser client's files. The SDK inlines the list of the
+			client's assemblies into dotnet.js, and after an incremental build the gzip copy of that file
+			kept the previous list: a browser, which asks for gzip, then requested assemblies that were no
+			longer there and the page never loaded, while a plain request saw nothing wrong.
+		-->
+		<DisableBuildCompression>true</DisableBuildCompression>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TailoredApps.Shared.Demo.DataModel\TailoredApps.Shared.Demo.DataModel.csproj" />
+		<ProjectReference Include="..\TailoredApps.Shared.Demo.Services\TailoredApps.Shared.Demo.Services.csproj" />
+		<!-- The browser client: this host serves its files, so the page and the API share one origin. -->
+		<ProjectReference Include="..\TailoredApps.Shared.Demo.Client\TailoredApps.Shared.Demo.Client.csproj" />
+	</ItemGroup>
+
+	<!-- Every library in src/, by project reference: the sample always runs against the current source. -->
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.*\TailoredApps.Shared.*.csproj" />
+	</ItemGroup>
+
+	<!-- The e-mail templates are read from the content root at run time, so they go wherever the application goes. -->
+	<ItemGroup>
+		<None Remove="EmailTemplates\**" />
+		<Content Include="EmailTemplates\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+	</ItemGroup>
+
+</Project>
