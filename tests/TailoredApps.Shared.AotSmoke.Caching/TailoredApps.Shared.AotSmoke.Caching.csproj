@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<!--
-		The third NativeAOT smoke application: the response cache of the MediatR libraries.
+		The third NativeAOT smoke application: the response cache of the Mediator libraries.
 
 		It is separate because of its one dependency that is not clean yet. Microsoft.Extensions.Caching.Hybrid
 		still contains a JSON fallback that serializes by reflection (DefaultJsonSerializerFactory), and the AOT
@@ -33,8 +33,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR\TailoredApps.Shared.MediatR.csproj" />
-		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.Caching\TailoredApps.Shared.MediatR.Caching.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Mediator\TailoredApps.Shared.Mediator.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Mediator.Caching\TailoredApps.Shared.Mediator.Caching.csproj" />
 	</ItemGroup>
 
 </Project>

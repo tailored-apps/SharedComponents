@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tailored-apps/SharedComponents/blob/master/LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-SharedComponents-181717?logo=github)](https://github.com/tailored-apps/SharedComponents)
 
-Witaj w dokumentacji **TailoredApps Shared Components** — zestawu wielokrotnego użytku bibliotek .NET, które przyspieszają tworzenie profesjonalnych aplikacji webowych. Każda biblioteka rozwiązuje jeden konkretny problem i jest zaprojektowana pod kątem testowalności, rozszerzalności i integracji z ekosystemem ASP.NET Core + MediatR.
+Witaj w dokumentacji **TailoredApps Shared Components** — zestawu wielokrotnego użytku bibliotek .NET, które przyspieszają tworzenie profesjonalnych aplikacji webowych. Każda biblioteka rozwiązuje jeden konkretny problem i jest zaprojektowana pod kątem testowalności, rozszerzalności i integracji z ekosystemem ASP.NET Core + mediator.
 
 ---
 
@@ -20,11 +20,11 @@ Witaj w dokumentacji **TailoredApps Shared Components** — zestawu wielokrotneg
 | [EntityFramework.UnitOfWork.MinimalApi](Libraries/EntityFramework/UnitOfWork.MinimalApi.md) | `TailoredApps.Shared.EntityFramework.UnitOfWork.MinimalApi` | Automatyczne transakcje dla minimal API przez filtr endpointu |
 | [ExceptionHandling](Libraries/ExceptionHandling/index.md) | `TailoredApps.Shared.ExceptionHandling` | Middleware i filter do obsługi wyjątków w Web API |
 | [ExceptionHandling.MinimalApi](Libraries/ExceptionHandling/MinimalApi.md) | `TailoredApps.Shared.ExceptionHandling.MinimalApi` | Obsługa wyjątków i walidacja FluentValidation dla minimal API (filtry endpointów), zgodna z NativeAOT |
-| [MediatR](Libraries/MediatR/index.md) | `TailoredApps.Shared.MediatR` | Pipeline behaviors: Logging, Validation, Caching, Fallback, Retry |
-| [MediatR.Caching](Libraries/MediatR/Caching.md) | `TailoredApps.Shared.MediatR.Caching` | Marker interface `ICachableRequest` dla cachowania requestów |
-| [MediatR.Email](Libraries/MediatR/Email.md) | `TailoredApps.Shared.MediatR.Email` | `SendMail` command + handler — email przez pipeline MediatR |
-| [MediatR.ML](Libraries/MediatR/ML.md) | `TailoredApps.Shared.MediatR.ML` | Klasyfikacja obrazów przez ML.NET w pipelines MediatR |
-| [MediatR.PagedRequest](Libraries/MediatR/PagedRequest.md) | `TailoredApps.Shared.MediatR.PagedRequest` | Bazowy request MediatR z paginacją i sortowaniem |
+| [Mediator](Libraries/Mediator/index.md) | `TailoredApps.Shared.Mediator` | Pipeline behaviors: Logging, Validation, Caching, Fallback, Retry |
+| [Mediator.Caching](Libraries/Mediator/Caching.md) | `TailoredApps.Shared.Mediator.Caching` | Marker interface `ICachableRequest` dla cachowania requestów |
+| [Mediator.Email](Libraries/Mediator/Email.md) | `TailoredApps.Shared.Mediator.Email` | `SendMail` command + handler — email przez pipeline'em mediatora |
+| [Mediator.ML](Libraries/Mediator/ML.md) | `TailoredApps.Shared.Mediator.ML` | Klasyfikacja obrazów przez ML.NET w pipeline'ach mediatora |
+| [Mediator.PagedRequest](Libraries/Mediator/PagedRequest.md) | `TailoredApps.Shared.Mediator.PagedRequest` | Bazowy request mediatora z paginacją i sortowaniem |
 | [Payments](Libraries/Payments/index.md) | `TailoredApps.Shared.Payments` | Abstrakcja bramki płatności — IPaymentService + IPaymentProvider |
 | [Payments.Provider.Adyen](Libraries/Payments/Providers/Adyen.md) | `TailoredApps.Shared.Payments.Provider.Adyen` | Integracja Adyen |
 | [Payments.Provider.CashBill](Libraries/Payments/Providers/CashBill.md) | `TailoredApps.Shared.Payments.Provider.CashBill` | Integracja CashBill |
@@ -52,7 +52,7 @@ go przez HTTP w CI.
 
 Przechodzisz z 1.x na 2.0? Zmiany wymagane w kodzie aplikacji — obsługa awarii bramki płatności, wymagane pola `PaymentRequest`, webhooki Tpay i Adyen — zebrano na stronie [Aktualizacja do 2.0](Migration/v2.md).
 
-Linia **3.0** jest w fazie testowej (`3.0.0-preview.N`): biblioteki MediatR przechodzą na ForkForward.Mediator. Co zmienić w aplikacji: [Aktualizacja do 3.0](Migration/v3.md).
+Linia **3.0** jest w fazie testowej (`3.0.0-preview.N`): biblioteki mediatora przechodzą na ForkForward.Mediator i zmieniają nazwę z `TailoredApps.Shared.MediatR*` na `TailoredApps.Shared.Mediator*`. Co zmienić w aplikacji: [Aktualizacja do 3.0](Migration/v3.md).
 
 ---
 
@@ -66,7 +66,7 @@ Od wersji 2.0 biblioteki są wydawane dla `net10.0` i `net11.0`; starsze platfor
 
 ```bash
 # Zainstaluj wybraną bibliotekę
-dotnet add package TailoredApps.Shared.MediatR
+dotnet add package TailoredApps.Shared.Mediator
 dotnet add package TailoredApps.Shared.EntityFramework
 dotnet add package TailoredApps.Shared.Payments
 ```

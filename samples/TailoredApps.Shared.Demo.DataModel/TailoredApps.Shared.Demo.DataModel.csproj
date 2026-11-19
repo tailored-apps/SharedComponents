@@ -10,8 +10,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.Caching\TailoredApps.Shared.MediatR.Caching.csproj" />
-		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.PagedRequest\TailoredApps.Shared.MediatR.PagedRequest.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Mediator.Caching\TailoredApps.Shared.Mediator.Caching.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Mediator.PagedRequest\TailoredApps.Shared.Mediator.PagedRequest.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments\TailoredApps.Shared.Payments.csproj" />
 	</ItemGroup>
 

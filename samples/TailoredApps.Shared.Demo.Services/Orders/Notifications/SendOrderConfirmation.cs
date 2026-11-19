@@ -2,12 +2,12 @@ using System.Globalization;
 using ForkForward.Mediator;
 using Microsoft.Extensions.Logging;
 using TailoredApps.Demo.DataModel.Orders.Messages.Notifications;
-using TailoredApps.Shared.MediatR.Email.Messages.Commands;
+using TailoredApps.Shared.Mediator.Email.Messages.Commands;
 
 namespace TailoredApps.Demo.Services.Orders.Notifications;
 
 /// <summary>
-/// One of the two handlers of <see cref="OrderPaid"/>: mails the customer (MediatR.Email).
+/// One of the two handlers of <see cref="OrderPaid"/>: mails the customer (Mediator.Email).
 /// The default publisher runs the handlers one after another and an exception from one of them reaches the
 /// code that published - here the handler of the gateway's notification. A mail server that is down must
 /// not turn a confirmed payment into a failed request, so this handler logs its failure and lets it end here.

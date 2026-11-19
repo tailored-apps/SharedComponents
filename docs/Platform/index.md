@@ -11,7 +11,7 @@ Każda paczka `TailoredApps.Shared.*` jest budowana dla kilku platform docelowyc
 
 | Biblioteki | Platformy docelowe |
 |---|---|
-| `DateTime`, `Email`, `Email.Models`, `Email.Office365`, `EntityFramework`, `EntityFramework.UnitOfWork.MinimalApi`, `EntityFramework.UnitOfWork.WebApiCore`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `MediatR`, `MediatR.Caching`, `MediatR.Email`, `MediatR.ML`, `MediatR.PagedRequest`, `Payments` i wszyscy providerzy płatności, `Querying`, `WebApi` | `net10.0`, `net11.0` |
+| `DateTime`, `Email`, `Email.Models`, `Email.Office365`, `EntityFramework`, `EntityFramework.UnitOfWork.MinimalApi`, `EntityFramework.UnitOfWork.WebApiCore`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `Mediator`, `Mediator.Caching`, `Mediator.Email`, `Mediator.ML`, `Mediator.PagedRequest`, `Payments` i wszyscy providerzy płatności, `Querying`, `WebApi` | `net10.0`, `net11.0` |
 
 !!! info "Wersja 2.0 a starsze platformy"
     Od wersji **2.0** każda biblioteka jest budowana wyłącznie dla `net10.0` i `net11.0`. Aplikacje na `net8.0`,
@@ -45,7 +45,7 @@ Biblioteki z tego repozytorium korzystają z tego mechanizmu w assetach `net11.0
 - **Nie potrzeba zmiennych środowiskowych** ani `<EnablePreviewFeatures>`.
 
 !!! warning "Wymaga CoreCLR lub NativeAOT"
-    Runtime async działa na CoreCLR i NativeAOT. Runtime Mono — używany m.in. przez **Blazor WebAssembly** — nie potrafi w .NET 11 wykonać takich metod. Jeżeli chcesz użyć którejś z bibliotek zawierających kod `async` po stronie klienta Blazor WebAssembly na `net11.0`, zbuduj ją z wyłączonym runtime async (patrz niżej). Biblioteki `DateTime`, `Email.Models`, `MediatR.Caching` i `Querying` nie zawierają kodu `async` i nie są tym objęte.
+    Runtime async działa na CoreCLR i NativeAOT. Runtime Mono — używany m.in. przez **Blazor WebAssembly** — nie potrafi w .NET 11 wykonać takich metod. Jeżeli chcesz użyć którejś z bibliotek zawierających kod `async` po stronie klienta Blazor WebAssembly na `net11.0`, zbuduj ją z wyłączonym runtime async (patrz niżej). Biblioteki `DateTime`, `Email.Models`, `Mediator.Caching` i `Querying` nie zawierają kodu `async` i nie są tym objęte.
 
 !!! info "Status funkcji"
     W .NET 11 runtime async jest funkcją typu *opt-in*, którą dokumentacja Microsoftu wciąż opisuje jako preview: [What's new in the .NET 11 runtime](https://learn.microsoft.com/dotnet/core/whats-new/dotnet-11/runtime).
@@ -88,9 +88,9 @@ a ich kod działa po skompilowaniu do kodu natywnego.
 |---|---|
 | `DateTime`, `Querying`, `Email.Models`, `Payments`, `Payments.Provider.Adyen`, `.CashBill`, `.HotPay`, `.PayNow`, `.PayU`, `.Przelewy24`, `.Revolut`, `.Tpay` | **Zgodne.** Sprawdzane natywnie w CI na `net10.0` i `net11.0`, na Linuksie i Windows |
 | `Email`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `WebApi` | **Zgodne** w aplikacji na minimal API (zob. niżej). Filtr MVC z `ExceptionHandling` nie ma zastosowania: ASP.NET Core nie obsługuje kontrolerów w NativeAOT |
-| `MediatR`, `MediatR.Caching`, `MediatR.Email`, `MediatR.PagedRequest` | **Zgodne** (na ForkForward.Mediator 13), gdy handlery, behaviory i polityki są rejestrowane po nazwie, a nie skanowaniem — zob. [MediatR: Trimming i NativeAOT](../Libraries/MediatR/index.md#trimming-i-nativeaot). Aplikacja, która cache'uje odpowiedzi, dostaje ostrzeżenia z samego `Microsoft.Extensions.Caching.Hybrid`; cache działa natywnie |
+| `Mediator`, `Mediator.Caching`, `Mediator.Email`, `Mediator.PagedRequest` | **Zgodne** (na ForkForward.Mediator 13), gdy handlery, behaviory i polityki są rejestrowane po nazwie, a nie skanowaniem — zob. [Mediator: Trimming i NativeAOT](../Libraries/Mediator/index.md#trimming-i-nativeaot). Aplikacja, która cache'uje odpowiedzi, dostaje ostrzeżenia z samego `Microsoft.Extensions.Caching.Hybrid`; cache działa natywnie |
 | `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore`, `EntityFramework.UnitOfWork.MinimalApi` | Niezgodne: EF Core buduje model i zapytania w czasie działania; audyt zmian tworzy typy przez `MakeGenericType` |
-| `Email.Office365`, `MediatR.ML`, `Payments.Provider.Stripe` | Niezgodne: zależności (Microsoft.Identity.Web, ML.NET, Stripe.net) opierają się na refleksji |
+| `Email.Office365`, `Mediator.ML`, `Payments.Provider.Stripe` | Niezgodne: zależności (Microsoft.Identity.Web, ML.NET, Stripe.net) opierają się na refleksji |
 
 ### Web API: minimal API tak, kontrolery nie
 
@@ -130,7 +130,7 @@ Dla minimal API są osobne paczki z odpowiednikami filtrów MVC: [ExceptionHandl
   są identyczne co do bajta. To samo dotyczy odpowiedzi błędu w `ExceptionHandling`.
 - **Rejestracje w kontenerze** z parametrem generycznym (`RegisterPaymentProvider<T>()`, `AddPayments<,>()`, `AddExceptionHandlingForWebApi<,>()`)
   mają adnotacje, dzięki którym trimmer zachowuje konstruktory wywoływane przez dependency injection.
-- **MediatR** ma rejestrację bez skanowania (`AddPipelineBehaviors<,>()`, `AddCachePolicy<,,>()`, `AddFallbackHandler<,,>()`,
+- **Mediator** ma rejestrację bez skanowania (`AddPipelineBehaviors<,>()`, `AddCachePolicy<,,>()`, `AddFallbackHandler<,,>()`,
   `AddRetryPolicy<,,>()`), serializację odpowiedzi w cache generowanymi metadanymi (`AddCacheSerialization`) i klucz cache liczony
   z `JsonTypeInfo`. Skanowanie assembly zostaje dla zwykłych aplikacji i jest oznaczone `RequiresUnreferencedCode`.
 
@@ -226,14 +226,14 @@ Pracujesz z paczkami TailoredApps.Shared.* albo z repozytorium SharedComponents.
   warunkowych: 10.* i 11.*); projekt testów w tests/.
 - Do budowania repozytorium używaj .NET SDK 11.0.100 lub nowszego.
 - Zgodne z trimmingiem i NativeAOT (IsAotCompatible) są: DateTime, Querying, Email, Email.Models, ExceptionHandling,
-  ExceptionHandling.MinimalApi, WebApi, MediatR, MediatR.Caching, MediatR.Email, MediatR.PagedRequest,
+  ExceptionHandling.MinimalApi, WebApi, Mediator, Mediator.Caching, Mediator.Email, Mediator.PagedRequest,
   Payments oraz providerzy Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut, Tpay.
 - NativeAOT w ASP.NET Core to minimal API: kontrolery MVC nie działają natywnie (trasy odpowiadają 404). [Authorize] i JWT działają.
 - Blazor WebAssembly na net11.0 nie wykonuje metod runtime async (PlatformNotSupportedException): nie wywołuj tam asynchronicznych
   metod bibliotek z assetu net11.0. W nich ostrzeżenia IL2xxx/IL3xxx są błędami kompilacji:
   nie używaj refleksji, JsonSerializer bez JsonTypeInfo ani ConfigurationBinder poza generatorem.
-- Biblioteki EntityFramework*, Email.Office365, MediatR.ML i Payments.Provider.Stripe nie są zgodne z NativeAOT -
+- Biblioteki EntityFramework*, Email.Office365, Mediator.ML i Payments.Provider.Stripe nie są zgodne z NativeAOT -
   nie proponuj ich w aplikacji publikowanej z PublishAot.
-- MediatR w aplikacji z PublishAot: bez skanowania - cfg.AddRequestHandler<,,>() dla handlerów, AddPipelineBehaviors<,>() dla każdego
+- Mediator w aplikacji z PublishAot: bez skanowania - cfg.AddRequestHandler<,,>() dla handlerów, AddPipelineBehaviors<,>() dla każdego
   requestu, AddCachePolicy / AddFallbackHandler / AddRetryPolicy, AddCacheSerialization(context) i własny GetCacheKey.
 ```

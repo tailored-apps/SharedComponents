@@ -125,7 +125,7 @@ public async Task<CustomerListResult> GetCustomersAsync(
 | `ISortingParameters` | Interfejs | `SortField`, `SortDir`, `IsSortingSpecified` |
 | `IQueryParameters` | Interfejs | Łączy `IPagingParameters` + `ISortingParameters` |
 | `IQuery<T>` | Interfejs | Zapytanie z obiektem filtru: `Filter` |
-| `IPagedAndSortedRequest<TResponse, TQuery, TModel>` | Interfejs | Kontrakt MediatR request z paginacją (używany przez MediatR.PagedRequest) |
+| `IPagedAndSortedRequest<TResponse, TQuery, TModel>` | Interfejs | Kontrakt requestu mediatora z paginacją (używany przez Mediator.PagedRequest) |
 | `IsSortBy(string)` | Metoda | Case-insensitive porównanie z `SortField` |
 | `QueryMap<TDestination, TSource>` | Klasa | Para wyrażeń: `Destination` (pole modelu/DTO) i `Source` (odpowiadające mu pole encji). Tylko je przechowuje — nic w tym pakiecie nie interpretuje mapowania |
 

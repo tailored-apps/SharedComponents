@@ -19,8 +19,8 @@
 		<ProjectReference Include="..\TailoredApps.Shared.Demo.DataModel\TailoredApps.Shared.Demo.DataModel.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.DateTime\TailoredApps.Shared.DateTime.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.EntityFramework\TailoredApps.Shared.EntityFramework.csproj" />
-		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR\TailoredApps.Shared.MediatR.csproj" />
-		<ProjectReference Include="..\..\src\TailoredApps.Shared.MediatR.Email\TailoredApps.Shared.MediatR.Email.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Mediator\TailoredApps.Shared.Mediator.csproj" />
+		<ProjectReference Include="..\..\src\TailoredApps.Shared.Mediator.Email\TailoredApps.Shared.Mediator.Email.csproj" />
 		<ProjectReference Include="..\..\src\TailoredApps.Shared.Payments\TailoredApps.Shared.Payments.csproj" />
 	</ItemGroup>
 

@@ -125,7 +125,7 @@ public async Task<CustomerListResult> GetCustomersAsync(
 | `ISortingParameters` | Interface | `SortField`, `SortDir`, `IsSortingSpecified` |
 | `IQueryParameters` | Interface | Combines `IPagingParameters` + `ISortingParameters` |
 | `IQuery<T>` | Interface | Query with a filter object: `Filter` |
-| `IPagedAndSortedRequest<TResponse, TQuery, TModel>` | Interface | MediatR request contract with paging (used by MediatR.PagedRequest) |
+| `IPagedAndSortedRequest<TResponse, TQuery, TModel>` | Interface | Mediator request contract with paging (used by Mediator.PagedRequest) |
 | `IsSortBy(string)` | Method | Case-insensitive comparison with `SortField` |
 | `QueryMap<TDestination, TSource>` | Class | A pair of expressions, `Destination` (a field of the model/DTO) and `Source` (the matching field of the entity). It only holds them - nothing in this package interprets the mapping |
 

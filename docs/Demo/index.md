@@ -1,7 +1,7 @@
 # Przykładowy serwis i testy integracyjne
 
 !!! info "Linia 3.0 (faza testowa)"
-    Przykład jest w repozytorium od linii 3.0 (`master`) i korzysta z bibliotek MediatR na **ForkForward.Mediator**
+    Przykład jest w repozytorium od linii 3.0 (`master`) i korzysta z bibliotek Mediator na **ForkForward.Mediator**
     (zob. [Aktualizacja do 3.0](../Migration/v3.md)). Nie jest paczką NuGet — nie trafia na nuget.org.
 
 W `samples/` jest mały sklep zbudowany tak, jak budujemy prawdziwy serwis: kontrakt, logika i host HTTP, a wokół nich klient
@@ -43,7 +43,7 @@ dotnet test tests/TailoredApps.Shared.IntegrationTests/TailoredApps.Shared.Integ
 
 | Projekt | Co zawiera | Od czego zależy |
 |---|---|---|
-| `TailoredApps.Shared.Demo.DataModel` | Kontrakt. Dla każdej funkcji (`Catalog`, `Orders`): `Messages/Commands`, `Messages/Queries`, `Messages/Notifications`, `Responses/…`, `Model` | kontrakty mediatora, `MediatR.PagedRequest`, `MediatR.Caching`, `Payments` — bez EF Core i bez handlerów |
+| `TailoredApps.Shared.Demo.DataModel` | Kontrakt. Dla każdej funkcji (`Catalog`, `Orders`): `Messages/Commands`, `Messages/Queries`, `Messages/Notifications`, `Responses/…`, `Model` | kontrakty mediatora, `Mediator.PagedRequest`, `Mediator.Caching`, `Payments` — bez EF Core i bez handlerów |
 | `TailoredApps.Shared.Demo.Services` | Logika. Dla każdej funkcji: `Entities`, `Handlers` (każdy z interfejsem w `Interfaces/Handlers`), `Infrastructure` (repozytoria na unit of work, za `Interfaces/Infrastructure`), `Validation`, `Policies` (cache, retry, fallback), `Processing` (pre- i post-procesory, akcja i handler wyjątku, behavior strumienia), `Exceptions`, mapowanie EF (`IModelBuilder`) i profil mappera. W katalogu głównym `ShopDataContext` | `DataModel`, EF Core, biblioteki — nic z ASP.NET Core |
 | `TailoredApps.Shared.Demo.WebApi` | Host. `Program` (buduje, zasila bazę, uruchamia) i `Startup` (`ConfigureServices`, `Configure`), `Controllers`, `Endpoints` (minimal API), `Authentication`, `ExceptionHandling`. Serwuje też pliki klienta | oba powyższe i każda biblioteka |
 | `TailoredApps.Shared.Demo.Client` | Klient w przeglądarce: Blazor WebAssembly z MudBlazor, bez własnego JavaScriptu. `Pages` (katalog, produkt, koszyk, zamówienie), `Services` (`ShopApi`, `Session`, `Basket`) | tylko `DataModel` — komunikaty i odpowiedzi to typy serwera |
@@ -64,12 +64,12 @@ wycofuje; **provider wyjątków** nadaje kształt błędowi. Żadna warstwa nie 
 | [ExceptionHandling](../Libraries/ExceptionHandling/index.md) | `ShopExceptionHandlingProvider`: `ShopException` odpowiada własnym statusem i komunikatem, reszta domyślnie | `GET /api/products/999` (404), duplikat produktu (409) |
 | [EntityFramework](../Libraries/EntityFramework/index.md), [UnitOfWork.WebApiCore](../Libraries/EntityFramework/UnitOfWork.WebApiCore.md) | `ShopDataContext` z jednym `IModelBuilder` na funkcję, repozytoria na `IUnitOfWork<IShopDataContext>`, filtr transakcji | `POST /api/orders` z nieistniejącym produktem: 400 i nic nie zostaje w bazie |
 | [UnitOfWork.MinimalApi](../Libraries/EntityFramework/UnitOfWork.MinimalApi.md), [ExceptionHandling.MinimalApi](../Libraries/ExceptionHandling/MinimalApi.md) | `Endpoints/ProductEndpoints.cs`: grupa z `WithExceptionHandling()`, `WithUnitOfWorkTransaction()` i `WithValidation<AddProduct>()`, wysyłająca te same komunikaty | `POST /api/minimal/products`, `GET /api/minimal/products/{name}` |
-| [Querying](../Libraries/Querying/index.md), [MediatR.PagedRequest](../Libraries/MediatR/PagedRequest.md) | `GetProducts` z `ProductFilter`; w `ProductRepository`: `ApplySorting` z listą dozwolonych pól, `ProjectTo` mappera, `PagingAsync` | `GET /api/products?page=1&count=3&sortField=Price&sortDir=Desc&filter.category=tea` |
-| [MediatR](../Libraries/MediatR/index.md), [MediatR.Caching](../Libraries/MediatR/Caching.md) | pięć behaviorów wokół każdego requestu; `GetProduct` (polityka cache), `GetRecommendations` (retry, fallback) | `GET /api/products/1`, `GET /api/products/0`, `GET /api/products/1/recommendations` |
+| [Querying](../Libraries/Querying/index.md), [Mediator.PagedRequest](../Libraries/Mediator/PagedRequest.md) | `GetProducts` z `ProductFilter`; w `ProductRepository`: `ApplySorting` z listą dozwolonych pól, `ProjectTo` mappera, `PagingAsync` | `GET /api/products?page=1&count=3&sortField=Price&sortDir=Desc&filter.category=tea` |
+| [Mediator](../Libraries/Mediator/index.md), [Mediator.Caching](../Libraries/Mediator/Caching.md) | pięć behaviorów wokół każdego requestu; `GetProduct` (polityka cache), `GetRecommendations` (retry, fallback) | `GET /api/products/1`, `GET /api/products/0`, `GET /api/products/1/recommendations` |
 | [Payments](../Libraries/Payments/index.md) + 9 providerów | `AddPayments().Register…Provider()`, `CheckoutOrderCommandHandler`, `ReceivePaymentNotificationCommandHandler` | `POST /api/orders/{number}/checkout`, `POST /api/webhooks/{provider}`, `GET /api/payments/providers` |
-| [Email](../Libraries/Email/index.md), [Email.Models](../Libraries/Email/Models.md), [MediatR.Email](../Libraries/MediatR/Email.md) | `SendOrderConfirmation`: `SendMail` z szablonem `EmailTemplates/order-confirmation.html`, provider konsolowy | wiadomość na konsoli po opłaceniu zamówienia |
+| [Email](../Libraries/Email/index.md), [Email.Models](../Libraries/Email/Models.md), [Mediator.Email](../Libraries/Mediator/Email.md) | `SendOrderConfirmation`: `SendMail` z szablonem `EmailTemplates/order-confirmation.html`, provider konsolowy | wiadomość na konsoli po opłaceniu zamówienia |
 | [Email.Office365](../Libraries/Email/Office365.md) | `GET /api/inbox` — tylko z `Demo:Office365Inbox` i aplikacją Azure AD | bez konfiguracji: 501 |
-| [MediatR.ML](../Libraries/MediatR/ML.md) | `POST /api/images/classify` — tylko z `ImageClassification:ModelFilePath` | bez modelu: 501 |
+| [Mediator.ML](../Libraries/Mediator/ML.md) | `POST /api/images/classify` — tylko z `ImageClassification:ModelFilePath` | bez modelu: 501 |
 
 ---
 

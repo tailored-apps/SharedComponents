@@ -2,11 +2,11 @@ using System.Text.Json.Serialization;
 using ForkForward.Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using TailoredApps.AotSmoke.Caching;
-using TailoredApps.Shared.MediatR.Caching;
-using TailoredApps.Shared.MediatR.DI;
-using TailoredApps.Shared.MediatR.Interfaces.Caching;
+using TailoredApps.Shared.Mediator.Caching;
+using TailoredApps.Shared.Mediator.DI;
+using TailoredApps.Shared.Mediator.Interfaces.Caching;
 
-// The response cache of the MediatR libraries, natively: a cached object and a cached value, serialized with
+// The response cache of the Mediator libraries, natively: a cached object and a cached value, serialized with
 // JSON metadata generated at compile time. See the project file for why this is an application of its own.
 
 var failures = 0;

@@ -1,11 +1,11 @@
 using TailoredApps.Demo.DataModel.Catalog.Model;
 using TailoredApps.Demo.DataModel.Catalog.Responses.Queries;
-using TailoredApps.Shared.MediatR.PagedRequest;
+using TailoredApps.Shared.Mediator.PagedRequest;
 using TailoredApps.Shared.Querying;
 
 namespace TailoredApps.Demo.DataModel.Catalog.Messages.Queries;
 
-/// <summary>A page of products: Querying + MediatR.PagedRequest.</summary>
+/// <summary>A page of products: Querying + Mediator.PagedRequest.</summary>
 public class GetProducts : PagedAndSortedRequest<GetProductsResponse, ProductFilter, Product>
 {
     /// <summary>The only properties a client may sort by.</summary>

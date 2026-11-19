@@ -1,6 +1,6 @@
 using TailoredApps.Demo.DataModel.Catalog.Messages.Queries;
 using TailoredApps.Demo.DataModel.Catalog.Responses.Queries;
-using TailoredApps.Shared.MediatR.Interfaces.Handlers;
+using TailoredApps.Shared.Mediator.Interfaces.Handlers;
 
 namespace TailoredApps.Demo.Services.Catalog.Policies;
 

@@ -1,7 +1,7 @@
 # Sample service and integration tests
 
 !!! info "3.0 line (test phase)"
-    The sample is in the repository from the 3.0 line (`master`) and uses the MediatR libraries on **ForkForward.Mediator**
+    The sample is in the repository from the 3.0 line (`master`) and uses the Mediator libraries on **ForkForward.Mediator**
     (see [Upgrading to 3.0](../Migration/v3.md)). It is not a NuGet package and is never published to nuget.org.
 
 `samples/` holds a small shop built the way a real service of ours is built: the contract, the logic and the HTTP host, with a browser
@@ -44,7 +44,7 @@ dotnet test tests/TailoredApps.Shared.IntegrationTests/TailoredApps.Shared.Integ
 
 | Project | What it holds | Depends on |
 |---|---|---|
-| `TailoredApps.Shared.Demo.DataModel` | The contract. Per feature (`Catalog`, `Orders`): `Messages/Commands`, `Messages/Queries`, `Messages/Notifications`, `Responses/…`, `Model` | the mediator contracts, `MediatR.PagedRequest`, `MediatR.Caching`, `Payments` - no EF Core, no handlers |
+| `TailoredApps.Shared.Demo.DataModel` | The contract. Per feature (`Catalog`, `Orders`): `Messages/Commands`, `Messages/Queries`, `Messages/Notifications`, `Responses/…`, `Model` | the mediator contracts, `Mediator.PagedRequest`, `Mediator.Caching`, `Payments` - no EF Core, no handlers |
 | `TailoredApps.Shared.Demo.Services` | The logic. Per feature: `Entities`, `Handlers` (one interface each under `Interfaces/Handlers`), `Infrastructure` (repositories over the unit of work, behind `Interfaces/Infrastructure`), `Validation`, `Policies` (cache, retry, fallback), `Processing` (pre/post-processors, exception action and handler, stream behavior), `Exceptions`, the EF mapping (`IModelBuilder`) and the mapper profile. `ShopDataContext` at the root | `DataModel`, EF Core, the libraries - nothing of ASP.NET Core |
 | `TailoredApps.Shared.Demo.WebApi` | The host. `Program` (builds, seeds, runs) and `Startup` (`ConfigureServices`, `Configure`), `Controllers`, `Endpoints` (minimal API), `Authentication`, `ExceptionHandling`. It also serves the client's files | both, and every library |
 | `TailoredApps.Shared.Demo.Client` | The browser client: Blazor WebAssembly with MudBlazor, no JavaScript of its own. `Pages` (catalogue, product, basket, order), `Services` (`ShopApi`, `Session`, `Basket`) | `DataModel` only - the messages and responses are the server's own types |
@@ -65,12 +65,12 @@ filter** commits or rolls back; the **exception provider** shapes the error. No 
 | [ExceptionHandling](../Libraries/ExceptionHandling/index.md) | `ShopExceptionHandlingProvider`: a `ShopException` answers with its own status and message, everything else with the defaults | `GET /api/products/999` (404), a duplicate product (409) |
 | [EntityFramework](../Libraries/EntityFramework/index.md), [UnitOfWork.WebApiCore](../Libraries/EntityFramework/UnitOfWork.WebApiCore.md) | `ShopDataContext` with one `IModelBuilder` per feature, repositories on `IUnitOfWork<IShopDataContext>`, the transaction filter | `POST /api/orders` with a missing product: 400, and nothing is left in the database |
 | [UnitOfWork.MinimalApi](../Libraries/EntityFramework/UnitOfWork.MinimalApi.md), [ExceptionHandling.MinimalApi](../Libraries/ExceptionHandling/MinimalApi.md) | `Endpoints/ProductEndpoints.cs`: a group with `WithExceptionHandling()`, `WithUnitOfWorkTransaction()` and `WithValidation<AddProduct>()`, sending the same messages | `POST /api/minimal/products`, `GET /api/minimal/products/{name}` |
-| [Querying](../Libraries/Querying/index.md), [MediatR.PagedRequest](../Libraries/MediatR/PagedRequest.md) | `GetProducts` with `ProductFilter`; in `ProductRepository`: `ApplySorting` with an allow-list, the mapper's `ProjectTo`, `PagingAsync` | `GET /api/products?page=1&count=3&sortField=Price&sortDir=Desc&filter.category=tea` |
-| [MediatR](../Libraries/MediatR/index.md), [MediatR.Caching](../Libraries/MediatR/Caching.md) | the five behaviors around every request; `GetProduct` (cache policy), `GetRecommendations` (retry, fallback) | `GET /api/products/1`, `GET /api/products/0`, `GET /api/products/1/recommendations` |
+| [Querying](../Libraries/Querying/index.md), [Mediator.PagedRequest](../Libraries/Mediator/PagedRequest.md) | `GetProducts` with `ProductFilter`; in `ProductRepository`: `ApplySorting` with an allow-list, the mapper's `ProjectTo`, `PagingAsync` | `GET /api/products?page=1&count=3&sortField=Price&sortDir=Desc&filter.category=tea` |
+| [Mediator](../Libraries/Mediator/index.md), [Mediator.Caching](../Libraries/Mediator/Caching.md) | the five behaviors around every request; `GetProduct` (cache policy), `GetRecommendations` (retry, fallback) | `GET /api/products/1`, `GET /api/products/0`, `GET /api/products/1/recommendations` |
 | [Payments](../Libraries/Payments/index.md) + 9 providers | `AddPayments().Register…Provider()`, `CheckoutOrderCommandHandler`, `ReceivePaymentNotificationCommandHandler` | `POST /api/orders/{number}/checkout`, `POST /api/webhooks/{provider}`, `GET /api/payments/providers` |
-| [Email](../Libraries/Email/index.md), [Email.Models](../Libraries/Email/Models.md), [MediatR.Email](../Libraries/MediatR/Email.md) | `SendOrderConfirmation`: `SendMail` with the `EmailTemplates/order-confirmation.html` template, the console provider | the message on the console once the order is paid |
+| [Email](../Libraries/Email/index.md), [Email.Models](../Libraries/Email/Models.md), [Mediator.Email](../Libraries/Mediator/Email.md) | `SendOrderConfirmation`: `SendMail` with the `EmailTemplates/order-confirmation.html` template, the console provider | the message on the console once the order is paid |
 | [Email.Office365](../Libraries/Email/Office365.md) | `GET /api/inbox` - only with `Demo:Office365Inbox` and an Azure AD application | without configuration: 501 |
-| [MediatR.ML](../Libraries/MediatR/ML.md) | `POST /api/images/classify` - only with `ImageClassification:ModelFilePath` | without a model: 501 |
+| [Mediator.ML](../Libraries/Mediator/ML.md) | `POST /api/images/classify` - only with `ImageClassification:ModelFilePath` | without a model: 501 |
 
 ---
 
