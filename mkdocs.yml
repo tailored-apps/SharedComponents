@@ -33,12 +33,12 @@ nav:
       - ExceptionHandling:
           - Overview: Libraries/ExceptionHandling/index.md
           - MinimalApi: Libraries/ExceptionHandling/MinimalApi.md
-      - MediatR:
-          - Overview: Libraries/MediatR/index.md
-          - Caching: Libraries/MediatR/Caching.md
-          - Email: Libraries/MediatR/Email.md
-          - ML: Libraries/MediatR/ML.md
-          - PagedRequest: Libraries/MediatR/PagedRequest.md
+      - Mediator:
+          - Overview: Libraries/Mediator/index.md
+          - Caching: Libraries/Mediator/Caching.md
+          - Email: Libraries/Mediator/Email.md
+          - ML: Libraries/Mediator/ML.md
+          - PagedRequest: Libraries/Mediator/PagedRequest.md
       - Payments:
           - Overview: Libraries/Payments/index.md
           - Providers:

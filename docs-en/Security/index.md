@@ -3,6 +3,8 @@
 This page records the security review of the shared libraries performed on 2 September 2026,
 the fixes that shipped with it, and the items that still need a human decision.
 
+The libraries are named as they were on the day of the review: `MediatR` and `MediatR.ML` are `Mediator` and `Mediator.ML` from 3.0.
+
 ## Scope and method
 
 - Every library under `src/` (25 projects, about 12 000 lines of C#), the test projects, the

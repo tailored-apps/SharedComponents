@@ -1,6 +1,6 @@
 using TailoredApps.Demo.DataModel.Catalog.Messages.Queries;
 using TailoredApps.Demo.DataModel.Catalog.Responses.Queries;
-using TailoredApps.Shared.MediatR.Interfaces.Caching;
+using TailoredApps.Shared.Mediator.Interfaces.Caching;
 
 namespace TailoredApps.Demo.Services.Catalog.Policies;
 

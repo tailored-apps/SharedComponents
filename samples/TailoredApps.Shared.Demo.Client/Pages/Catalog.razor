@@ -7,7 +7,7 @@
 
 <PageTitle>Catalogue</PageTitle>
 
-@* Paging, sorting and the filter are done by the service (Querying, MediatR.PagedRequest): the table only asks. *@
+@* Paging, sorting and the filter are done by the service (Querying, Mediator.PagedRequest): the table only asks. *@
 <MudTable T="Product" @ref="table" ServerData="LoadAsync" Hover="true" Dense="true" RowsPerPage="5" Elevation="1">
     <ToolBarContent>
         <MudText Typo="Typo.h5">Catalogue</MudText>

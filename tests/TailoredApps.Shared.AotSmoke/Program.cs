@@ -252,7 +252,7 @@ catch (InvalidOperationException exception)
         message.Topic == "Order 42" && Enum.GetName(SortDirection.Desc) == "Desc");
 }
 
-// The MediatR libraries on the mediator's reflection-free registration.
+// The Mediator libraries on the mediator's reflection-free registration.
 await MediatorChecks.RunAsync(Check);
 
 Console.WriteLine(failures == 0 ? "All checks passed." : $"{failures} check(s) failed.");

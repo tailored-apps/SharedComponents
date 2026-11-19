@@ -3,6 +3,8 @@
 Ta strona dokumentuje przegląd bezpieczeństwa bibliotek współdzielonych wykonany 2 września 2026,
 poprawki, które z nim trafiły do repozytorium, oraz punkty wymagające decyzji człowieka.
 
+Biblioteki występują pod nazwami z dnia przeglądu: `MediatR` i `MediatR.ML` to od wersji 3.0 `Mediator` i `Mediator.ML`.
+
 ## Zakres i metoda
 
 - Wszystkie biblioteki w `src/` (25 projektów, ok. 12 000 linii C#), projekty testowe,

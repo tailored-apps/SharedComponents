@@ -2,13 +2,13 @@ using ForkForward.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using TailoredApps.Shared.Email.Models;
 using TailoredApps.Shared.Email.Office365;
-using TailoredApps.Shared.MediatR.ImageClassification.Domain.DataModel.Message.Commands;
-using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Infrastructure;
+using TailoredApps.Shared.Mediator.ImageClassification.Domain.DataModel.Message.Commands;
+using TailoredApps.Shared.Mediator.ImageClassification.Interfaces.Infrastructure;
 
 namespace TailoredApps.Demo.WebApi.Controllers;
 
 /// <summary>
-/// The two libraries that need something outside the service: a trained model (MediatR.ML) and an
+/// The two libraries that need something outside the service: a trained model (Mediator.ML) and an
 /// Office 365 mailbox (Email.Office365). Each is wired only when it is configured; otherwise its endpoint
 /// says so with 501.
 /// </summary>

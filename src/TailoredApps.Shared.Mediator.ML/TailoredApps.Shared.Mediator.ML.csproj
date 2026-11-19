@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+<ItemGroup>
+		<Folder Include="Domain\Exception\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.ML" />
+		<PackageReference Include="Microsoft.ML" />
+		<PackageReference Include="Microsoft.ML.ImageAnalytics" />
+		<PackageReference Include="Microsoft.ML.Vision" />
+		<PackageReference Include="Microsoft.ML.AutoML" />
+		<PackageReference Include="FluentValidation" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="TailoredApps.Shared.Mediator.ML.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TailoredApps.Shared.Mediator\TailoredApps.Shared.Mediator.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Options" />
+
+	</ItemGroup>
+</Project>

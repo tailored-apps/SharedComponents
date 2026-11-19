@@ -28,10 +28,10 @@ using TailoredApps.Shared.EntityFramework.UnitOfWork.WebApiCore;
 using TailoredApps.Shared.ExceptionHandling.Interfaces;
 using TailoredApps.Shared.ExceptionHandling.WebApiCore;
 using TailoredApps.Shared.ExceptionHandling.WebApiCore.Middleware;
-using TailoredApps.Shared.MediatR.DI;
-using TailoredApps.Shared.MediatR.Email.Handlers;
-using TailoredApps.Shared.MediatR.ImageClassification.Infrastructure;
-using TailoredApps.Shared.MediatR.ImageClassification.Interfaces.Domain.Models;
+using TailoredApps.Shared.Mediator.DI;
+using TailoredApps.Shared.Mediator.Email.Handlers;
+using TailoredApps.Shared.Mediator.ImageClassification.Infrastructure;
+using TailoredApps.Shared.Mediator.ImageClassification.Interfaces.Domain.Models;
 using TailoredApps.Shared.Payments;
 using TailoredApps.Shared.Payments.Provider.Adyen;
 using TailoredApps.Shared.Payments.Provider.CashBill;
@@ -117,7 +117,7 @@ public class Startup(IConfiguration configuration, IWebHostEnvironment environme
         // ── ForkForward.Mapper: the profiles of the Services assembly ───────────────────────────────────────
         services.AddAutoMapper(typeof(ShopDataContext).Assembly);
 
-        // ── ForkForward.Mediator and the MediatR libraries ──────────────────────────────────────────────────
+        // ── ForkForward.Mediator and the Mediator libraries ──────────────────────────────────────────────────
         var imageModel = configuration[ImageClassificationOptions.ModelFilePathConfig];
         var imageClassification = !string.IsNullOrWhiteSpace(imageModel) && File.Exists(imageModel);
 
@@ -125,9 +125,9 @@ public class Startup(IConfiguration configuration, IWebHostEnvironment environme
         {
             // Scanning finds request, stream and notification handlers, exception handlers and exception actions.
             cfg.RegisterServicesFromAssembly(typeof(ShopDataContext).Assembly);
-            cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly);          // MediatR.Email
+            cfg.RegisterServicesFromAssembly(typeof(SendMailCommandHandler).Assembly);          // Mediator.Email
             if (imageClassification)
-                cfg.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).Assembly); // MediatR.ML
+                cfg.RegisterServicesFromAssembly(typeof(AddPredictionEngineExtension).Assembly); // Mediator.ML
 
             // It does not find pre- and post-processors or stream behaviors: these are named.
             cfg.AddRequestPreProcessor<NormalizeCustomerEmail>();
@@ -148,7 +148,7 @@ public class Startup(IConfiguration configuration, IWebHostEnvironment environme
         // The validators the validation behavior (and the minimal-API validation filter) runs.
         services.AddValidatorsFromAssemblyContaining<ShopDataContext>();
 
-        // ── MediatR.ML: only with a trained model ───────────────────────────────────────────────────────────
+        // ── Mediator.ML: only with a trained model ───────────────────────────────────────────────────────────
         if (imageClassification)
         {
             services.AddPredictionEngine(engine =>

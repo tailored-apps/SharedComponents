@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<AssemblyName>TailoredApps.Shared.Mediator</AssemblyName>
+		<RootNamespace>TailoredApps.Shared.Mediator</RootNamespace>
+		
+		<Product>Shared.Mediator</Product>
+		<Description>Pipeline behaviours for ForkForward.Mediator registered in one place: logging, FluentValidation, response caching (HybridCache), fallback and retry with a circuit breaker.</Description>
+		<Summary>Pipeline behaviours for ForkForward.Mediator registered in one place: logging, FluentValidation, response caching (HybridCache), fallback and retry with a circuit breaker.</Summary>
+		<Title>Shared.Mediator</Title>
+		<PackageId>TailoredApps.Shared.Mediator</PackageId>
+		<PackageTags>Mediator support for .NET</PackageTags>
+
+		<!-- Safe for trimming and NativeAOT: the analyzers are on and their warnings are errors; tests/TailoredApps.Shared.AotSmoke proves it natively. -->
+		<IsAotCompatible>true</IsAotCompatible>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FluentValidation" />
+		<PackageReference Include="ForkForward.Mediator" />
+		<PackageReference Include="Scrutor" />
+
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Options" />
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TailoredApps.Shared.Mediator.Caching\TailoredApps.Shared.Mediator.Caching.csproj" />
+	</ItemGroup>
+
+</Project>

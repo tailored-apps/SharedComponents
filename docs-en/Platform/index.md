@@ -11,7 +11,7 @@ Every `TailoredApps.Shared.*` package is built for several target frameworks at 
 
 | Libraries | Target frameworks |
 |---|---|
-| `DateTime`, `Email`, `Email.Models`, `Email.Office365`, `EntityFramework`, `EntityFramework.UnitOfWork.MinimalApi`, `EntityFramework.UnitOfWork.WebApiCore`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `MediatR`, `MediatR.Caching`, `MediatR.Email`, `MediatR.ML`, `MediatR.PagedRequest`, `Payments` and every payment provider, `Querying`, `WebApi` | `net10.0`, `net11.0` |
+| `DateTime`, `Email`, `Email.Models`, `Email.Office365`, `EntityFramework`, `EntityFramework.UnitOfWork.MinimalApi`, `EntityFramework.UnitOfWork.WebApiCore`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `Mediator`, `Mediator.Caching`, `Mediator.Email`, `Mediator.ML`, `Mediator.PagedRequest`, `Payments` and every payment provider, `Querying`, `WebApi` | `net10.0`, `net11.0` |
 
 !!! info "Version 2.0 and older frameworks"
     From version **2.0** every library targets `net10.0` and `net11.0` only. Applications on `net8.0`, `net9.0`,
@@ -45,7 +45,7 @@ The libraries in this repository use it in their `net11.0` assets:
 - **No environment variables** and no `<EnablePreviewFeatures>` are needed.
 
 !!! warning "Requires CoreCLR or NativeAOT"
-    Runtime async works on CoreCLR and NativeAOT. The Mono runtime — used by **Blazor WebAssembly**, among others — cannot execute such methods in .NET 11. If you want to use one of the libraries that contain `async` code on the Blazor WebAssembly client side on `net11.0`, build it with runtime async switched off (see below). `DateTime`, `Email.Models`, `MediatR.Caching` and `Querying` contain no `async` code and are not affected.
+    Runtime async works on CoreCLR and NativeAOT. The Mono runtime — used by **Blazor WebAssembly**, among others — cannot execute such methods in .NET 11. If you want to use one of the libraries that contain `async` code on the Blazor WebAssembly client side on `net11.0`, build it with runtime async switched off (see below). `DateTime`, `Email.Models`, `Mediator.Caching` and `Querying` contain no `async` code and are not affected.
 
 !!! info "Feature status"
     In .NET 11 runtime async is an opt-in feature that Microsoft's documentation still describes as a preview: [What's new in the .NET 11 runtime](https://learn.microsoft.com/dotnet/core/whats-new/dotnet-11/runtime).
@@ -88,9 +88,9 @@ and their code works once compiled to native code.
 |---|---|
 | `DateTime`, `Querying`, `Email.Models`, `Payments`, `Payments.Provider.Adyen`, `.CashBill`, `.HotPay`, `.PayNow`, `.PayU`, `.Przelewy24`, `.Revolut`, `.Tpay` | **Compatible.** Checked natively in CI on `net10.0` and `net11.0`, on Linux and Windows |
 | `Email`, `ExceptionHandling`, `ExceptionHandling.MinimalApi`, `WebApi` | **Compatible** in a minimal-API application (see below). The MVC filter of `ExceptionHandling` does not apply: ASP.NET Core does not support controllers under NativeAOT |
-| `MediatR`, `MediatR.Caching`, `MediatR.Email`, `MediatR.PagedRequest` | **Compatible** (on ForkForward.Mediator 13) when handlers, behaviors and policies are registered by name instead of by scanning - see [MediatR: Trimming and NativeAOT](../Libraries/MediatR/index.md#trimming-and-nativeaot). An application that caches responses gets warnings from `Microsoft.Extensions.Caching.Hybrid` itself; the cache works natively |
+| `Mediator`, `Mediator.Caching`, `Mediator.Email`, `Mediator.PagedRequest` | **Compatible** (on ForkForward.Mediator 13) when handlers, behaviors and policies are registered by name instead of by scanning - see [Mediator: Trimming and NativeAOT](../Libraries/Mediator/index.md#trimming-and-nativeaot). An application that caches responses gets warnings from `Microsoft.Extensions.Caching.Hybrid` itself; the cache works natively |
 | `EntityFramework`, `EntityFramework.UnitOfWork.WebApiCore`, `EntityFramework.UnitOfWork.MinimalApi` | Not compatible: EF Core builds its model and queries at run time; change auditing creates types with `MakeGenericType` |
-| `Email.Office365`, `MediatR.ML`, `Payments.Provider.Stripe` | Not compatible: their dependencies (Microsoft.Identity.Web, ML.NET, Stripe.net) rely on reflection |
+| `Email.Office365`, `Mediator.ML`, `Payments.Provider.Stripe` | Not compatible: their dependencies (Microsoft.Identity.Web, ML.NET, Stripe.net) rely on reflection |
 
 ### Web API: minimal APIs yes, controllers no
 
@@ -130,7 +130,7 @@ Minimal APIs have packages of their own with the counterparts of the MVC filters
   signatures are identical byte for byte. The same goes for the error response of `ExceptionHandling`.
 - **Container registrations** with a generic parameter (`RegisterPaymentProvider<T>()`, `AddPayments<,>()`, `AddExceptionHandlingForWebApi<,>()`)
   carry annotations that make the trimmer keep the constructors dependency injection calls.
-- **MediatR** has registration without scanning (`AddPipelineBehaviors<,>()`, `AddCachePolicy<,,>()`, `AddFallbackHandler<,,>()`,
+- **Mediator** has registration without scanning (`AddPipelineBehaviors<,>()`, `AddCachePolicy<,,>()`, `AddFallbackHandler<,,>()`,
   `AddRetryPolicy<,,>()`), cached responses serialized with generated metadata (`AddCacheSerialization`) and a cache key built from a
   `JsonTypeInfo`. Assembly scanning stays for ordinary applications and is marked `RequiresUnreferencedCode`.
 
@@ -227,14 +227,14 @@ You are working with TailoredApps.Shared.* packages or with the SharedComponents
   in both conditional groups: 10.* and 11.*); test project under tests/.
 - Build the repository with .NET SDK 11.0.100 or newer.
 - Safe for trimming and NativeAOT (IsAotCompatible): DateTime, Querying, Email, Email.Models, ExceptionHandling,
-  ExceptionHandling.MinimalApi, WebApi, MediatR, MediatR.Caching, MediatR.Email, MediatR.PagedRequest,
+  ExceptionHandling.MinimalApi, WebApi, Mediator, Mediator.Caching, Mediator.Email, Mediator.PagedRequest,
   Payments and the providers Adyen, CashBill, HotPay, PayNow, PayU, Przelewy24, Revolut, Tpay.
 - NativeAOT in ASP.NET Core means minimal APIs: MVC controllers do not work natively (their routes answer 404). [Authorize] and JWT do.
 - Blazor WebAssembly on net11.0 does not execute runtime-async methods (PlatformNotSupportedException): do not call the async
   methods of the libraries from the net11.0 asset there. IL2xxx/IL3xxx warnings are compile errors there:
   no reflection, no JsonSerializer without a JsonTypeInfo, no ConfigurationBinder outside the generator.
-- The EntityFramework*, Email.Office365, MediatR.ML and Payments.Provider.Stripe libraries are not
+- The EntityFramework*, Email.Office365, Mediator.ML and Payments.Provider.Stripe libraries are not
   NativeAOT-compatible - do not suggest them for an application published with PublishAot.
-- MediatR in an application with PublishAot: no scanning - cfg.AddRequestHandler<,,>() for handlers, AddPipelineBehaviors<,>() for
+- Mediator in an application with PublishAot: no scanning - cfg.AddRequestHandler<,,>() for handlers, AddPipelineBehaviors<,>() for
   every request, AddCachePolicy / AddFallbackHandler / AddRetryPolicy, AddCacheSerialization(context) and your own GetCacheKey.
 ```

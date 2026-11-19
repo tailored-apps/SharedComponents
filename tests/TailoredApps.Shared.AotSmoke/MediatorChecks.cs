@@ -5,20 +5,20 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TailoredApps.Shared.Email;
 using TailoredApps.Shared.Email.MailMessageBuilder;
-using TailoredApps.Shared.MediatR.DI;
-using TailoredApps.Shared.MediatR.Email.Handlers;
-using TailoredApps.Shared.MediatR.Email.Messages.Commands;
-using TailoredApps.Shared.MediatR.Email.Responses;
-using TailoredApps.Shared.MediatR.Interfaces.Caching;
-using TailoredApps.Shared.MediatR.Interfaces.Handlers;
-using TailoredApps.Shared.MediatR.Interfaces.Messages;
-using TailoredApps.Shared.MediatR.PagedRequest;
+using TailoredApps.Shared.Mediator.DI;
+using TailoredApps.Shared.Mediator.Email.Handlers;
+using TailoredApps.Shared.Mediator.Email.Messages.Commands;
+using TailoredApps.Shared.Mediator.Email.Responses;
+using TailoredApps.Shared.Mediator.Interfaces.Caching;
+using TailoredApps.Shared.Mediator.Interfaces.Handlers;
+using TailoredApps.Shared.Mediator.Interfaces.Messages;
+using TailoredApps.Shared.Mediator.PagedRequest;
 using TailoredApps.Shared.Querying;
 
 namespace TailoredApps.AotSmoke;
 
 /// <summary>
-/// The MediatR libraries the way a NativeAOT application uses them: handlers, fallback handlers and retry
+/// The Mediator libraries the way a NativeAOT application uses them: handlers, fallback handlers and retry
 /// settings are registered by name instead of being found by scanning, and the behaviors are registered closed
 /// per request (the container cannot close an open generic over a value type natively).
 /// The response cache is checked by its own application, TailoredApps.Shared.AotSmoke.Caching: HybridCache is
@@ -40,7 +40,7 @@ internal static class MediatorChecks
             cfg.AddRequestHandler<Touch, TouchHandler>();
             cfg.AddRequestHandler<GetQuote, string, GetQuoteHandler>();
             cfg.AddRequestHandler<FindItems, ItemPage, FindItemsHandler>();
-            cfg.AddRequestHandler<SendMail, SendMailResponse, SendMailCommandHandler>();   // MediatR.Email
+            cfg.AddRequestHandler<SendMail, SendMailResponse, SendMailCommandHandler>();   // Mediator.Email
         });
 
         new PipelineRegistration(services)

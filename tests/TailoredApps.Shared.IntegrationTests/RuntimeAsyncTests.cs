@@ -29,7 +29,7 @@ public class RuntimeAsyncTests
         Assert.Contains("TailoredApps.Shared.Demo.Services", assemblies);
         Assert.Contains("TailoredApps.Shared.Demo.DataModel", assemblies);
         Assert.Contains("TailoredApps.Shared.Payments", assemblies);
-        Assert.Contains("TailoredApps.Shared.MediatR", assemblies);
+        Assert.Contains("TailoredApps.Shared.Mediator", assemblies);
         Assert.Contains("TailoredApps.Shared.EntityFramework", assemblies);
     }
 

@@ -3,7 +3,7 @@
 Contracts for list queries: a query with paging, sorting and a filter object, and a result with one page of
 items plus the total count. The package has no dependencies, so the same types can be used in an API contract,
 in a service and in the data layer. `TailoredApps.Shared.EntityFramework` and
-`TailoredApps.Shared.MediatR.PagedRequest` build on these contracts.
+`TailoredApps.Shared.Mediator.PagedRequest` build on these contracts.
 
 ## Installation
 
@@ -62,7 +62,7 @@ if (query.IsPagingSpecified)
 | `IPagedAndSortedQuery<TQuery>`, `IQuery<T>` | The contract of the query and of its filter |
 | `IPagingParameters`, `ISortingParameters`, `IQueryParameters` | Read-only views of the paging values, the sorting values, and both |
 | `IPagedResult<T>` | `Results` (the page) and `Count` (the total) |
-| `IPagedAndSortedRequest<TResponse, TQuery, TModel>` | Query contract tied to a response type; implemented by `MediatR.PagedRequest` |
+| `IPagedAndSortedRequest<TResponse, TQuery, TModel>` | Query contract tied to a response type; implemented by `Mediator.PagedRequest` |
 | `SortDirection` | `Undefined = 0`, `Asc = 1`, `Desc = 2` |
 | `QueryMap<TDestination, TSource>` | A pair of expressions naming a field of a model and the matching field of an entity |
 

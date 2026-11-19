@@ -15,7 +15,7 @@ namespace TailoredApps.Demo.IntegrationTests;
 /// <summary>
 /// A gateway notification, end to end: the Revolut provider checks the signature, the handler marks the order
 /// paid inside the unit of work and publishes OrderPaid; one of its handlers sends the confirmation through
-/// MediatR.Email and the Email template builder.
+/// Mediator.Email and the Email template builder.
 /// </summary>
 public class WebhookTests(DemoApplication app) : IClassFixture<DemoApplication>
 {

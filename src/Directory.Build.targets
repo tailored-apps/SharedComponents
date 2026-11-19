@@ -45,7 +45,8 @@
   </PropertyGroup>
 
   <!--
-    3.0 replaces MediatR with ForkForward.Mediator. Request, handler and pipeline types in the public API of
+    3.0 replaces MediatR with ForkForward.Mediator and renames the mediator libraries from TailoredApps.Shared.MediatR*
+    to TailoredApps.Shared.Mediator*, so nuget.org has no 2.0.0 package with their id. Request, handler and pipeline types in the public API of
     the mediator libraries move to another namespace and assembly, which is a breaking change made on
     purpose, so those libraries are left out of the comparison with 2.0.0. The other libraries are still
     compared: 3.0 may break them too, but only deliberately. A deliberate removal is recorded member by member
@@ -54,7 +55,7 @@
     members of DateTime, ExceptionHandling, Payments.Provider.PayNow and Payments.Provider.Tpay that way.
     Once 3.0.0 is published, remove this group and those files and raise PublicApiBaselineVersion to 3.0.0.
   -->
-  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('TailoredApps.Shared.MediatR'))">
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('TailoredApps.Shared.Mediator'))">
     <SkipPublicApiValidation>true</SkipPublicApiValidation>
   </PropertyGroup>
 

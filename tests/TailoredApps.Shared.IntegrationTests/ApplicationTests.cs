@@ -7,7 +7,7 @@ namespace TailoredApps.Demo.IntegrationTests;
 
 /// <summary>
 /// What the application offers: the registered payment providers and their channels, and the two optional
-/// features (MediatR.ML, Email.Office365), which answer 501 until they are configured.
+/// features (Mediator.ML, Email.Office365), which answer 501 until they are configured.
 /// </summary>
 public class ApplicationTests(DemoApplication app) : IClassFixture<DemoApplication>
 {

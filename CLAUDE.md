@@ -33,8 +33,8 @@ runtime has to be installed as well for the `net10.0` test runs.
 - `dotnet build TailoredApps.Shared.slnx -c Release -p:ValidatePublicApi=true` compares the public API of every library with the same
   package at the baseline version on nuget.org (`PublicApiBaselineVersion` in `src/Directory.Build.targets`, currently `2.0.0`) and fails
   on a breaking change (`CP0001`, `CP0002`, ...). Adding API passes. The *Build & Test PR* workflow builds with the switch on.
-- On `master` (3.0) the `TailoredApps.Shared.MediatR*` libraries are left out of the comparison (a group in `src/Directory.Build.targets`):
-  their public API changed on purpose. A deliberate break in another library is recorded member by member in that library's
+- On `master` (3.0) the `TailoredApps.Shared.Mediator*` libraries are left out of the comparison (a group in `src/Directory.Build.targets`):
+  3.0 renamed them from `TailoredApps.Shared.MediatR*`, so the baseline has no package with their id, and their public API changed on purpose. A deliberate break in another library is recorded member by member in that library's
   `CompatibilitySuppressions.xml` (build it with `-p:ValidatePublicApi=true -p:ApiCompatGenerateSuppressionFile=true`, review it), so the rest
   of its API stays guarded; DateTime, ExceptionHandling, PayNow and Tpay have one for the obsolete members 3.0 removed. When `3.0.0` is
   published, remove the group and the suppression files and raise the baseline to `3.0.0`.
@@ -72,8 +72,8 @@ with the other tests. A new library is added to the demo with a test of its scen
 - `Directory.Build.props` (root): artifacts output, `TargetFrameworks` (`net10.0;net11.0` for every project) and `LangVersion=latest`, so both target frameworks compile with the same C# version. It stamps the build time into `SourceRevisionId` for Release builds only, and a Debug build carries no commit id either: a value that changes with every build (or commit) made every build recompile everything and renamed the content-named files of the WebAssembly client each time.
 - `eng/RuntimeAsync.targets` (imported by `src/Directory.Build.targets` and `samples/Directory.Build.targets`): turns on runtime async for the `net11.0` assets of the libraries and the demo (`UseRuntimeAsync`, opt out per project or per build). Tests are compiled the classic way on purpose. Never set `Features` or `EnablePreviewFeatures` in a csproj.
 - Trimming and NativeAOT: options are bound by the generated configuration binder (`EnableConfigurationBindingGenerator` in `src/Directory.Build.props`; `Email.Office365` opts out because of its certificate options). A library that is AOT-safe sets `<IsAotCompatible>true</IsAotCompatible>` in its csproj; `eng/AotCompatible.globalconfig` then turns every trimming/AOT analyzer warning into an error there. JSON in those libraries goes through a `JsonSerializerContext` (`JsonSerializer` with a `JsonTypeInfo`, never the reflection overloads); generic parameters that reach the container carry `DynamicallyAccessedMembers`.
-- `tests/TailoredApps.Shared.AotSmoke` (console: payments, options, signatures, the mediator with its behaviors but no cache), `tests/TailoredApps.Shared.AotSmoke.Web` (minimal API: WebApi, ExceptionHandling, Email, `[Authorize]` with JWT) and `tests/TailoredApps.Shared.AotSmoke.Caching` (the MediatR response cache) are applications, not test projects: the *NativeAOT smoke test* job publishes them with NativeAOT for `net10.0` and `net11.0` on Linux and Windows and runs them. Together they reference exactly the `IsAotCompatible` libraries; add a library and a check there when it becomes AOT-safe. The first two allow no trim/AOT warning at all. The caching one exists because `Microsoft.Extensions.Caching.Hybrid` still reports warnings for a JSON fallback: it lets `IL2026`/`IL2070`/`IL3050` through and the job fails when such a warning names any other assembly - never loosen the other two instead. Publishing needs clang and zlib (Linux) or the C++ build tools (Windows). With Visual Studio 2026 a `net10.0` publish fails unless `C:\Program Files (x86)\Microsoft Visual Studio\Installer` (vswhere.exe) is on the PATH.
-- Known platform limits, verified on .NET 11: MVC controllers do not work under NativeAOT (routes answer 404) and EF Core is not AOT-ready, so the EntityFramework family stays outside the AOT set (as do `MediatR.ML`, Stripe and `Email.Office365`, because of their dependencies); the container cannot close an open generic service over a value type under NativeAOT, which is why the MediatR behaviors have a closed, per-request registration; Blazor WebAssembly (Mono) cannot execute runtime-async methods, so the `net11.0` assets fail there with `PlatformNotSupportedException`.
+- `tests/TailoredApps.Shared.AotSmoke` (console: payments, options, signatures, the mediator with its behaviors but no cache), `tests/TailoredApps.Shared.AotSmoke.Web` (minimal API: WebApi, ExceptionHandling, Email, `[Authorize]` with JWT) and `tests/TailoredApps.Shared.AotSmoke.Caching` (the mediator response cache) are applications, not test projects: the *NativeAOT smoke test* job publishes them with NativeAOT for `net10.0` and `net11.0` on Linux and Windows and runs them. Together they reference exactly the `IsAotCompatible` libraries; add a library and a check there when it becomes AOT-safe. The first two allow no trim/AOT warning at all. The caching one exists because `Microsoft.Extensions.Caching.Hybrid` still reports warnings for a JSON fallback: it lets `IL2026`/`IL2070`/`IL3050` through and the job fails when such a warning names any other assembly - never loosen the other two instead. Publishing needs clang and zlib (Linux) or the C++ build tools (Windows). With Visual Studio 2026 a `net10.0` publish fails unless `C:\Program Files (x86)\Microsoft Visual Studio\Installer` (vswhere.exe) is on the PATH.
+- Known platform limits, verified on .NET 11: MVC controllers do not work under NativeAOT (routes answer 404) and EF Core is not AOT-ready, so the EntityFramework family stays outside the AOT set (as do `Mediator.ML`, Stripe and `Email.Office365`, because of their dependencies); the container cannot close an open generic service over a value type under NativeAOT, which is why the mediator behaviors have a closed, per-request registration; Blazor WebAssembly (Mono) cannot execute runtime-async methods, so the `net11.0` assets fail there with `PlatformNotSupportedException`.
 - Package versions are managed centrally in `Directory.Packages.props`; a project file lists `<PackageReference Include="X" />` without a version.
   Packages tied to the runtime generation (`Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore*`) have one `PackageVersion` per target
   framework in conditional groups (`net10.0` -> `10.*`, `net11.0` -> `11.*`). Adding such a dependency means adding it to both groups.
@@ -90,18 +90,18 @@ with the other tests. A new library is added to the demo with a test of its scen
   Signature checks must fail closed and use `Payments/Security/WebhookSignature` (constant time); identifiers placed in gateway URLs go through `PaymentIdentifier`.
   A gateway that cannot handle a call (5xx, 408, 429, no answer) is `PaymentGatewayException` from every provider; creating a payment turns a 4xx into
   `Rejected`, and a failed status query is always `PaymentGatewayException`. A provider on an SDK translates its exceptions (Stripe: `StripeException`).
-- **MediatR** - built on **ForkForward.Mediator** (a fork of MediatR 12.5.0; namespace `ForkForward.Mediator`, registration `AddMediator`), not on the
-  MediatR package; the library and namespace names keep `MediatR`. `PipelineRegistration` adds the behaviours in a fixed order:
+- **Mediator** - built on **ForkForward.Mediator** (a fork of MediatR 12.5.0; namespace `ForkForward.Mediator`, registration `AddMediator`), not on the
+  MediatR package; 3.0 renamed the libraries, packages and namespaces from `TailoredApps.Shared.MediatR*` to `TailoredApps.Shared.Mediator*` (the old ids stay on nuget.org with 2.x and the first two previews). Inside `TailoredApps.Shared.*` namespaces the class `Mediator` of the fork has to be written `ForkForward.Mediator.Mediator`: the short name is a namespace there (CS0118). `PipelineRegistration` adds the behaviours in a fixed order:
   Logging -> Validation (FluentValidation) -> Caching -> Fallback -> Retry.
   A request opts in by having an `ICachePolicy<,>`, `IFallbackHandler<,>` or `IRetryableRequest<,>` implementation, which assembly scanning (Scrutor) registers.
   Caching uses `HybridCache` (registered by `RegisterPipelineBehaviors()`). Scanning is marked `RequiresUnreferencedCode`; a trimmed or NativeAOT
   application registers by name instead (`AddPipelineBehaviors<,>()` / `AddPipelineBehaviorsWithoutCaching<,>()`, `AddCachePolicy`, `AddFallbackHandler`,
-  `AddRetryPolicy`, `AddCacheSerialization(JsonSerializerContext)`), and the default cache key refuses to run without reflection-based JSON. Satellites: `MediatR.Caching` (marker contracts), `MediatR.Email`,
-  `MediatR.PagedRequest`, and `MediatR.ML`, whose namespace is `TailoredApps.Shared.MediatR.ImageClassification`, not the project name.
+  `AddRetryPolicy`, `AddCacheSerialization(JsonSerializerContext)`), and the default cache key refuses to run without reflection-based JSON. Satellites: `Mediator.Caching` (marker contracts), `Mediator.Email`,
+  `Mediator.PagedRequest`, and `Mediator.ML`, whose namespace is `TailoredApps.Shared.Mediator.ImageClassification`, not the project name.
 - **EntityFramework** - a unit of work over `DbContext` with hooks (before/after save, commit, rollback) that also drive audit change collection,
   plus paging/sorting/filtering extensions (dynamic LINQ with sort-field validation). `EntityFramework.UnitOfWork.WebApiCore` adds the MVC
   transaction filter (`AddUnitOfWorkForWebApi<,>`); `EntityFramework.UnitOfWork.MinimalApi` is the same rule as an endpoint filter
-  (`WithUnitOfWorkTransaction()`). `Querying` holds the framework-free query contracts used by both EntityFramework and `MediatR.PagedRequest`.
+  (`WithUnitOfWorkTransaction()`). `Querying` holds the framework-free query contracts used by both EntityFramework and `Mediator.PagedRequest`.
 - **ExceptionHandling** - `AddExceptionHandlingForWebApi<,>` plus a filter and middleware; an `IExceptionHandlingProvider` maps exceptions to the
   response model. Unexpected exceptions are answered with 500 and a generic message. Exceptions mapped to 4xx are not logged as errors (middleware
   diagnostics suppressed, Debug entry instead), and `LoggingBehavior` logs validation refusals and cancellations at Information.
@@ -111,13 +111,13 @@ with the other tests. A new library is added to the demo with a test of its scen
 - **WebApi** - `builder.AddTailoredWebApiDefaults()` and `app.MapTailoredWebApiDefaults()` wire OpenTelemetry (OTLP), health checks and HTTP
   client resilience with service discovery from the `WebApiDefaults` configuration section.
 
-`Payments.Tests` covers the core library and every provider; `MediatR.Tests` also covers `MediatR.Email` and `MediatR.PagedRequest`; `Email.Tests` also covers `Email.Office365`.
+`Payments.Tests` covers the core library and every provider; `Mediator.Tests` also covers `Mediator.Email` and `Mediator.PagedRequest`; `Email.Tests` also covers `Email.Office365`.
 
 # Branches and releases
 
 - `master` is the **3.0** line, in a test phase: pre-releases are tagged `v3.0.0-preview.N`, and breaking changes are allowed until `3.0.0`
   but must be deliberate (the PR build still compares the libraries with `2.0.0`, see *Public API compatibility*). 3.0 replaces MediatR with
-  ForkForward.Mediator in the `MediatR*` libraries; `docs/Migration/v3.md` lists what an application has to change.
+  ForkForward.Mediator and renames the `MediatR*` libraries to `Mediator*`; `docs/Migration/v3.md` lists what an application has to change.
 - `release/2.1` is the **2.1.x** maintenance line (branched from `v2.1.0`): fixes only, tagged `v2.1.N` from that branch, compatible with `2.0.0`.
 - `release/1.x` is the **1.6.x** maintenance line (it still builds `net8.0`, `net9.0` and the `netstandard` assets): security fixes only,
   tagged `v1.6.N` from that branch, binary compatible with `1.6.0`.

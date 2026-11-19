@@ -12,8 +12,8 @@ using Xunit;
 namespace TailoredApps.Demo.IntegrationTests;
 
 /// <summary>
-/// The product catalogue: Querying, MediatR.PagedRequest and the EntityFramework paging and sorting for the
-/// list; the MediatR pipeline (validation, caching, retry, fallback) and ExceptionHandling for single products.
+/// The product catalogue: Querying, Mediator.PagedRequest and the EntityFramework paging and sorting for the
+/// list; the mediator pipeline (validation, caching, retry, fallback) and ExceptionHandling for single products.
 /// </summary>
 public class CatalogTests(DemoApplication app) : IClassFixture<DemoApplication>
 {
