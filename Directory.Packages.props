@@ -26,9 +26,9 @@
 		-->
 		<PackageVersion Include="ForkForward.Mediator" Version="13.0.0" />
 		<!-- Used by the sample service in samples/ only: the libraries do not depend on a mapper. -->
-		<PackageVersion Include="ForkForward.Mapper" Version="14.1.1" />
+		<PackageVersion Include="ForkForward.Mapper" Version="15.0.0" />
 		<PackageVersion Include="MudBlazor" Version="9.*" />
-		<PackageVersion Include="Aspire.Hosting.AppHost" Version="13.6.5" />
+		<PackageVersion Include="Aspire.Hosting.AppHost" Version="17.0.0" />
 		<!-- Http.Resilience and ServiceDiscovery: no 11.x existed on nuget.org when .NET 11 went GA, so both
 		     frameworks use the 10.x line. Move them to the per-framework groups once 11.x is published. -->
 		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.*" />
