@@ -64,6 +64,19 @@ The reference in `TailoredApps.Shared.MediatR.ML` was redundant, so it was remov
 
 <!-- BUMP-LOG:START -->
 
+## 2026-11-23
+
+Updated **2** package references across **1** project.
+
+Source: [workflow run](https://github.com/tailored-apps/SharedComponents/actions/runs/45229570226).
+
+**`Directory.Packages.props`**
+
+| Package | From | To | License |
+|---|---|---|---|
+| `Aspire.Hosting.AppHost` | `13.6.5` | `17.0.0` | `MIT` |
+| `ForkForward.Mapper` | `14.1.1` | `15.0.0` | `MIT` |
+
 ## 2026-11-16
 
 Updated **8** package references across **1** project.
